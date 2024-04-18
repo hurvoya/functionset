@@ -1,0 +1,18 @@
+XGBoost (eXtreme Gradient Boosting) est une implémentation avancée de l'algorithme de boosting par gradient qui est largement utilisée pour des tâches de régression et de classification, y compris la classification binaire. L'objectif de XGBoost, comme pour d'autres algorithmes de boosting, est de combiner une série de modèles de base faibles (généralement des arbres de décision) pour créer un modèle robuste et performant.
+
+Fonctionnement de XGBoost
+Modèles de base faibles : XGBoost construit le modèle final en ajoutant de manière itérative des arbres de décision. Chaque arbre est un "modèle de base" et est ajouté pour corriger les erreurs des arbres précédemment ajoutés.
+Gradient Boosting : L'algorithme utilise le gradient de la fonction de perte pour comprendre comment bien un modèle de base est en train de prédire les résultats. Chaque arbre supplémentaire est construit de manière à réduire les erreurs (le gradient de la perte) des arbres précédents.
+Optimisation régularisée : XGBoost ajoute de la régularisation à la fonction de perte pour contrôler le surajustement, ce qui est une amélioration par rapport à l'implémentation du gradient boosting dans d'autres algorithmes.
+Hyperparamètres importants et leur impact
+max_depth : Détermine la profondeur maximale de chaque arbre. Une valeur plus élevée permet au modèle de capturer des interactions plus complexes mais peut aussi mener à un surajustement. Plage recommandée : 3 à 10.
+learning_rate (également connu sous le nom de eta) : Détermine à quel point chaque arbre ajouté peut corriger les erreurs des arbres précédents. Une valeur plus faible signifie que le modèle est plus robuste et généralise mieux, mais nécessite plus d'arbres pour converger. Plage recommandée : 0.01 à 0.3.
+n_estimators : Nombre total d'arbres à construire. Plus il y a d'arbres, plus le modèle peut être précis, jusqu'à un certain point où il peut commencer à surajuster. Plage recommandée : 100 à 300.
+subsample : Fraction des échantillons utilisés pour construire chaque arbre. Si inférieur à 1, cela ajoute du bagging au modèle, augmentant la robustesse. Plage recommandée : 0.5 à 1.
+colsample_bytree : Fraction des caractéristiques utilisées pour construire chaque arbre. Comme subsample, cela aide à prévenir le surajustement. Plage recommandée : 0.5 à 1.
+gamma (min_split_loss) : Un seuil pour faire des partitions plus poussées sur un arbre. Une valeur plus élevée conduit à des arbres plus conservateurs. Plage recommandée : 0 à 20.
+reg_lambda et reg_alpha : Ce sont des paramètres de régularisation L2 et L1 sur les poids respectivement, qui aident à éviter le surajustement en pénalisant les modèles plus complexes. Plage recommandée : Dépend de la sensibilité aux données, commencez avec de petites valeurs comme 1 ou 0.
+Utilisation dans la classification binaire
+Dans un cadre de classification binaire, XGBoost tente de prédire la probabilité qu'une observation appartienne à l'une des deux classes. La fonction de perte typiquement utilisée est la "logistic loss" pour la classification. XGBoost ajustera les poids de chaque arbre de manière à minimiser cette perte sur l'ensemble d'apprentissage, tout en utilisant la validation croisée et les techniques de régularisation pour s'assurer que le modèle généralise bien aux nouvelles données.
+
+L'utilisation de ces paramètres dépend fortement des données spécifiques et des caractéristiques du problème. Il est toujours recommandé de commencer avec des valeurs modérées pour les hyperparamètres et d'utiliser des méthodes comme la validation croisée et la recherche d'hyperparamètres pour affiner ces valeurs à ton cas spécifique.
