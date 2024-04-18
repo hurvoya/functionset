@@ -1,0 +1,49 @@
+from sklearn.model_selection import GridSearchCV
+from xgboost import XGBClassifier
+from sklearn.metrics import make_scorer, accuracy_score, precision_score, recall_score, f1_score
+
+# Définir l'espace des hyperparamètres pour GridSearchCV
+param_grid = {
+    'max_depth': [3, 4, 5, 6, 7, 8, 9],
+    'learning_rate': [0.01, 0.1, 0.2, 0.3],
+    'n_estimators': [100, 200, 300, 400, 500],
+    'subsample': [0.5, 0.7, 0.9, 1.0],
+    'colsample_bytree': [0.5, 0.7, 0.9, 1.0],
+}
+# Tu auras besoin de remplacer cette partie par ta propre façon de séparer les données.
+# Je vais supposer que tu as une fonction qui retourne le train et le test set pour un mois donné.
+# Puisque GridSearchCV s'occupe de la validation croisée, nous n'avons pas besoin de TimeSeriesSplit ici.
+
+model = XGBClassifier(random_state=42)
+grid_search = GridSearchCV(
+    estimator=model,
+    param_grid=param_grid,
+    scoring=make_scorer(f1_score),  # Tu peux ajuster cela selon la métrique de ton choix
+    n_jobs=-1,
+    cv=3,  # Le nombre de 'folds' dans la CV, à ajuster selon tes besoins
+    verbose=1
+)
+
+# Tu dois maintenant boucler sur tes mois, ajuster les sets et effectuer la recherche de grille pour chaque mois.
+# Si tu veux une recherche de grille sur l'ensemble des données, tu peux le faire une seule fois, en dehors de la boucle.
+# Assure-toi d'avoir défini 'X_train' et 'y_train' correctement en utilisant ton DataFrame.
+
+grid_search.fit(X_train, y_train)
+
+# Après la recherche, tu peux obtenir les meilleurs paramètres et le meilleur score.
+print("Meilleurs paramètres:", grid_search.best_params_)
+print("Meilleur score:", grid_search.best_score_)
+
+# Pour chaque mois, tu voudras peut-être sauvegarder les résultats dans ton DataFrame de résultats.
+# Supposons que 'results' est ton DataFrame de résultats et que tu es dans une boucle itérant sur les mois.
+# ...
+
+# Ajout des résultats au DataFrame
+results = results.append({
+    'train_scope': train_scope,
+    'test_scope': test_scope,
+    'observation': test_observation,
+    'best_params': grid_search.best_params_,
+    'best_score': grid_search.best_score_,
+    # Ajoute ici d'autres métriques ou informations si nécessaire
+}, ignore_index=True)
