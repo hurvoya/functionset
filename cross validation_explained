@@ -1,0 +1,19 @@
+
+Choisir le nombre de splits pour la validation croisée (aussi appelé k dans une validation croisée k-fold) est une décision importante qui peut affecter la performance, la variance de l'estimation des performances de ton modèle, ainsi que le coût computationnel du processus d'entraînement et de validation. Voici plusieurs points à considérer pour faire un choix éclairé :
+
+1. Taille de l'échantillon
+Grands ensembles de données : Pour des jeux de données très grands, un nombre plus petit de folds (comme 3 ou 5) peut être suffisant. Cela réduit le coût computationnel sans compromettre la fiabilité des estimations de performance du modèle.
+Petits ensembles de données : Pour des ensembles plus petits, utiliser un nombre plus élevé de folds (comme 10 ou même une validation croisée leave-one-out) peut aider à maximiser l'utilisation des données disponibles pour l'entraînement, tout en fournissant une estimation plus stable des performances du modèle.
+2. Variance des estimations
+Validation croisée avec plus de folds : Augmenter le nombre de folds réduit généralement la variance de l'estimation des performances du modèle, car chaque itération de formation utilise une grande partie de l'ensemble de données, rendant les résultats de chaque fold plus représentatifs et plus stables.
+Validation croisée avec moins de folds : Réduire le nombre de folds augmente généralement la variance des estimations, car moins de données sont utilisées pour entraîner le modèle à chaque itération, ce qui peut rendre les résultats plus sensibles à des partitions spécifiques des données.
+3. Coût computationnel
+Validation croisée k-fold : Augmenter le nombre de folds augmente le temps de calcul car le modèle doit être entraîné k fois. Pour des modèles complexes et des jeux de données volumineux, cela peut devenir coûteux en termes de temps et de ressources.
+Optimisation : Si le coût computationnel est une préoccupation majeure, envisage d'abord une validation avec moins de folds pour une exploration rapide, puis utilise plus de folds ou une technique de validation plus robuste pour finaliser le modèle.
+4. Objectif du modèle et robustesse
+Modèles pour la production : Pour un modèle destiné à être déployé en production, où la robustesse et la fiabilité sont essentielles, utiliser un nombre plus élevé de folds peut aider à assurer que le modèle fonctionne bien sur une large gamme de données possibles.
+Modèles expérimentaux : Pour les expérimentations rapides et les phases initiales de développement de modèles, un nombre moins élevé de folds peut suffire et permettre des cycles d'itération plus rapides.
+Pratique courante
+Validation croisée 5-fold ou 10-fold : Ces deux sont les plus couramment utilisés dans de nombreuses applications car ils offrent un bon équilibre entre la variance des estimations, la robustesse et le coût computationnel.
+Validation croisée stratifiée : Pour la classification, en particulier avec des classes déséquilibrées, la validation croisée stratifiée assure que chaque fold contient à peu près la même proportion de chaque classe cible, ce qui peut donner des résultats de validation plus fiables.
+En résumé, le choix du nombre de splits pour la validation croisée dépend de la taille de ton ensemble de données, de la variance acceptable dans l'estimation de performance, du coût computationnel que tu es prêt à supporter, et de la phase de développement du modèle.
