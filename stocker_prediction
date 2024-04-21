@@ -1,0 +1,44 @@
+Étape 1: Préparer la structure de stockage des prédictions
+Avant de commencer la boucle sur les splits, prépare un DataFrame vide destiné à stocker les résultats. Ce DataFrame pourrait inclure les identifiants des contrats, les caractéristiques pertinentes, les vraies cibles, et les prédictions du modèle.
+
+Étape 2: Générer les prédictions et les stocker
+À chaque itération de ton processus de split, après avoir entraîné le modèle, génère les prédictions pour l'ensemble de test et stocke les informations nécessaires dans le DataFrame. Voici un exemple de code pour illustrer cela :
+
+import pandas as pd
+
+# Supposons que 'df' est ton DataFrame original contenant toutes les données
+
+# Création d'un DataFrame vide pour stocker les résultats
+predictions_df = pd.DataFrame()
+
+# Boucle sur chaque ensemble de paramètres et chaque split de données
+for index, row in df_params.iterrows():
+    params = {
+        'max_depth': row['max_depth'],
+        'learning_rate': row['learning_rate'],
+        'n_estimators': row['n_estimators'],
+        # autres hyperparamètres si nécessaire
+    }
+    
+    # Extraction des données pour le split actuel
+    X_train = X_train_splits[row['split_id']]
+    y_train = y_train_splits[row['split_id']]
+    X_test = X_test_splits[row['split_id']]
+    y_test = y_test_splits[row['split_id']]
+    
+    # Entraînement du modèle
+    model = train_xgboost(params, X_train, y_train)
+    
+    # Générer des prédictions
+    y_pred = model.predict(X_test)
+    
+    # Création d'un DataFrame temporaire pour ce split
+    temp_df = df.loc[X_test.index]
+    temp_df['predicted'] = y_pred
+    temp_df['actual'] = y_test
+    temp_df['split_id'] = row['split_id']
+    
+    # Concaténation avec le DataFrame de prédictions
+    predictions_df = pd.concat([predictions_df, temp_df], ignore_index=True)
+
+# Maintenant, `predictions_df` contient les prédictions avec les données pour chaque split
