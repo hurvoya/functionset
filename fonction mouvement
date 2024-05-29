@@ -1,0 +1,35 @@
+import pandas as pd
+
+def calculate_contract_movements(df):
+    # Filtrer les événements AMODRE et trier par contrat et HINUOD
+    df_amodre = df[df['WPT_HITYHI'] == 'AMODRE'].sort_values(by=['KTR_HICTCT', 'HINUOD'])
+    
+    # Ajouter une colonne de décalage pour obtenir les événements précédents
+    df_amodre['prev_HICDET'] = df_amodre.groupby('KTR_HICTCT')['HICDET'].shift()
+    df_amodre['prev_HINUOD'] = df_amodre.groupby('KTR_HICTCT')['HINUOD'].shift()
+    
+    # Filtrer les événements consécutifs ou ceux avec le plus petit HINUOD pour chaque contrat
+    df_amodre['valid_movement'] = ((df_amodre['HINUOD'] == df_amodre['prev_HINUOD'] + 1) |
+                                   (df_amodre.groupby('KTR_HICTCT')['HINUOD'].transform('min') == df_amodre['HINUOD']))
+
+    # Construire la colonne CONTRACT_MVT en concaténant les premières lettres
+    df_amodre['CONTRACT_MVT'] = df_amodre['prev_HICDET'].str[0] + df_amodre['HICDET'].str[0]
+
+    # Joindre la nouvelle colonne au dataframe original
+    df = df.merge(df_amodre[['KTR_HICTCT', 'HINUOD', 'CONTRACT_MVT']], on=['KTR_HICTCT', 'HINUOD'], how='left')
+
+    return df
+
+# Exemple d'utilisation
+# Assumons que df est votre DataFrame initial
+# df = pd.read_csv('votre_fichier.csv')  # Lire le DataFrame à partir d'un fichier CSV, par exemple
+df = pd.DataFrame({
+    'HICDET': ['A', 'B', 'C', 'A', 'B', 'A'],
+    'WPT_HITYHI': ['AMODRE', 'AMODRE', 'AMODRE', 'AMODRE', 'AMODRE', 'AMODRE'],
+    'HINUOD': [1, 2, 3, 4, 5, 6],
+    'KTR_HICTCT': ['C1', 'C1', 'C1', 'C2', 'C2', 'C3'],
+    'HIDTJO': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-01', '2024-01-02', '2024-01-01']
+})
+
+df = calculate_contract_movements(df)
+print(df)
