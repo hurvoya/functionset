@@ -1,0 +1,48 @@
+import pandas as pd
+
+def calculer_stats_par_mois(df_event, df_ech, colonnes_analyse):
+    # Convertir les dates en datetime
+    df_event['event_date'] = pd.to_datetime(df_event['event_date'])
+    df_ech['ech_date'] = pd.to_datetime(df_ech['ech_date'])
+
+    # Extraire l'année et le mois des dates
+    df_event['year_month'] = df_event['event_date'].dt.to_period('M')
+    df_ech['year_month'] = df_ech['ech_date'].dt.to_period('M')
+
+    # Calculer les statistiques globales
+    stats_globales = df_event.groupby('year_month').agg(
+        Nb_prel=('CONTRACT', 'count'),
+        Nb_RAV=('RAV', lambda x: x.isin(['RAV OK', 'RAV KO']).sum()),
+        Nb_RAV_OK=('RAV', lambda x: (x == 'RAV OK').sum())
+    )
+    stats_globales['Succès_rate'] = stats_globales['Nb_RAV_OK'] / stats_globales['Nb_RAV']
+    
+    # Initialiser le dataframe de résultats avec les statistiques globales
+    resultat = stats_globales.reset_index()
+
+    # Calculer les statistiques par les colonnes spécifiées
+    for colonne in colonnes_analyse:
+        stats_par_colonne = df_event.groupby(['year_month', colonne]).agg(
+            Nb_prel=('CONTRACT', 'count'),
+            Nb_RAV=('RAV', lambda x: x.isin(['RAV OK', 'RAV KO']).sum()),
+            Nb_RAV_OK=('RAV', lambda x: (x == 'RAV OK').sum())
+        )
+        stats_par_colonne['Succès_rate'] = stats_par_colonne['Nb_RAV_OK'] / stats_par_colonne['Nb_RAV']
+        
+        # Réinitialiser l'index pour que les colonnes year_month et colonne soient des colonnes normales
+        stats_par_colonne = stats_par_colonne.reset_index()
+        
+        # Ajouter ces statistiques au dataframe de résultats
+        resultat = pd.concat([resultat, stats_par_colonne], axis=0, ignore_index=True)
+
+    # Trier le dataframe résultat par year_month et les colonnes spécifiées
+    resultat = resultat.sort_values(by=['year_month'] + colonnes_analyse).reset_index(drop=True)
+    
+    return resultat
+
+# Exemple d'utilisation
+# df_event = pd.read_csv('path_to_event_data.csv')
+# df_ech = pd.read_csv('path_to_ech_data.csv')
+# colonnes_analyse = ['market', 'financed_amount', 'flags']
+# resultat = calculer_stats_par_mois(df_event, df_ech, colonnes_analyse)
+# print(resultat)
