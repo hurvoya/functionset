@@ -1,0 +1,54 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def lire_et_visualiser_stats(fichier_stats, colonnes_analyse):
+    # Lire le fichier de statistiques
+    df_stats = pd.read_csv(fichier_stats)
+    
+    # Convertir la colonne year_month en datetime pour un meilleur tri
+    df_stats['year_month'] = pd.to_datetime(df_stats['year_month'].astype(str), format='%Y-%m')
+
+    # Créer des visualisations globales
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_stats[df_stats[colonnes_analyse[0]].isnull()], x='year_month', y='Nb_prel', marker='o')
+    plt.title('Nombre de prélèvements global par mois')
+    plt.xlabel('Mois')
+    plt.ylabel('Nombre de prélèvements')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_stats[df_stats[colonnes_analyse[0]].isnull()], x='year_month', y='Succès_rate', marker='o')
+    plt.title('Taux de succès global par mois')
+    plt.xlabel('Mois')
+    plt.ylabel('Taux de succès')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    # Créer des visualisations pour chaque variable spécifiée
+    for colonne in colonnes_analyse:
+        plt.figure(figsize=(12, 6))
+        sns.lineplot(data=df_stats[df_stats[colonne].notnull()], x='year_month', y='Nb_prel', hue=colonne, marker='o')
+        plt.title(f'Nombre de prélèvements par mois et par {colonne}')
+        plt.xlabel('Mois')
+        plt.ylabel('Nombre de prélèvements')
+        plt.xticks(rotation=45)
+        plt.legend(title=colonne)
+        plt.tight_layout()
+        plt.show()
+        
+        plt.figure(figsize=(12, 6))
+        sns.lineplot(data=df_stats[df_stats[colonne].notnull()], x='year_month', y='Succès_rate', hue=colonne, marker='o')
+        plt.title(f'Taux de succès par mois et par {colonne}')
+        plt.xlabel('Mois')
+        plt.ylabel('Taux de succès')
+        plt.xticks(rotation=45)
+        plt.legend(title=colonne)
+        plt.tight_layout()
+        plt.show()
+
+# Exemple d'utilisation
+# lire_et_visualiser_stats('path_to_stats_file.csv', ['market', 'flags'])
