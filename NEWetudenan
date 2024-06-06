@@ -1,0 +1,59 @@
+import pandas as pd
+import missingno as msno
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Fonction pour afficher les statistiques des valeurs manquantes
+def missing_values_stats(df):
+    missing_stats = df.isnull().sum().reset_index()
+    missing_stats.columns = ['Column', 'Missing Values']
+    missing_stats['Percentage'] = (missing_stats['Missing Values'] / df.shape[0]) * 100
+    return missing_stats.sort_values(by='Missing Values', ascending=False)
+
+# Fonction pour visualiser les valeurs manquantes
+def visualize_missing_values(df):
+    plt.figure(figsize=(10, 6))
+    msno.matrix(df)
+    plt.show()
+    plt.figure(figsize=(10, 6))
+    msno.bar(df)
+    plt.show()
+
+# Fonction pour générer des box plots pour chaque colonne
+def generate_box_plots(df):
+    numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
+    categorical_columns = df.select_dtypes(include=['object', 'category']).columns
+
+    for col in numerical_columns:
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(x=df[col])
+        plt.title(f'Box plot for {col}')
+        plt.show()
+
+    for col in categorical_columns:
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(x=df[col])
+        plt.title(f'Box plot for {col}')
+        plt.show()
+
+# Exemple d'utilisation
+df = pd.read_csv('votre_fichier.csv')
+
+# Analyse des valeurs manquantes
+missing_stats = missing_values_stats(df)
+print(missing_stats)
+
+# Visualisation des valeurs manquantes
+visualize_missing_values(df)
+
+# Génération des box plots
+generate_box_plots(df)
+
+
+
+
+from pandas_profiling import ProfileReport
+
+# Générer un rapport de profiling
+profile = ProfileReport(df, title="Profiling Report", explorative=True)
+profile.to_file("report.html")
