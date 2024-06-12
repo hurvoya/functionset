@@ -1,0 +1,79 @@
+Pour que les graphiques soient clairs et ne tracent pas de points pour les lignes concernées (les sous-types qui n'ont pas assez de données), nous devons nous assurer que seules les lignes qui satisfont au seuil sont tracées.
+
+Voici la fonction ajustée pour visualiser les données en appliquant un filtre de seuil pour éviter les graphiques encombrés, sans tracer de points pour les lignes concernées :
+
+Fonction pour créer les graphiques avec filtrage par seuil
+python
+Copy code
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def creer_graphiques_seuil(df_long, seuil=5):
+    # Graphiques globaux
+    df_global = df_long[df_long['type'] == 'Global']
+    
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_global[df_global['stat'] == 'Nb_prel'], x='year_month', y='value', marker='o')
+    plt.title('Nombre de prélèvements global par mois')
+    plt.xlabel('Mois')
+    plt.ylabel('Nombre de prélèvements')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_global[df_global['stat'] == 'Succès_rate'], x='year_month', y='value', marker='o')
+    plt.title('Taux de succès global par mois')
+    plt.xlabel('Mois')
+    plt.ylabel('Taux de succès')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    # Graphiques par variable spécifiée
+    for var in df_long['type'].unique():
+        if var != 'Global':
+            df_var = df_long[df_long['type'] == var]
+            
+            plt.figure(figsize=(12, 6))
+            for sous_type in df_var['sous-type'].unique():
+                df_subset_prel = df_var[(df_var['sous-type'] == sous_type) & (df_var['stat'] == 'Nb_prel')]
+                if df_subset_prel['value'].sum() >= seuil:
+                    sns.lineplot(data=df_subset_prel, x='year_month', y='value', label=sous_type, marker='o')
+            plt.title(f'Nombre de prélèvements par mois et par {var}')
+            plt.xlabel('Mois')
+            plt.ylabel('Nombre de prélèvements')
+            plt.xticks(rotation=45)
+            plt.legend(title=var)
+            plt.tight_layout()
+            plt.show()
+            
+            plt.figure(figsize=(12, 6))
+            for sous_type in df_var['sous-type'].unique():
+                df_subset_rate = df_var[(df_var['sous-type'] == sous_type) & (df_var['stat'] == 'Succès_rate')]
+                if df_subset_rate['value'].sum() >= seuil:
+                    sns.lineplot(data=df_subset_rate, x='year_month', y='value', label=sous_type, marker='o')
+            plt.title(f'Taux de succès par mois et par {var}')
+            plt.xlabel('Mois')
+            plt.ylabel('Taux de succès')
+            plt.xticks(rotation=45)
+            plt.legend(title=var)
+            plt.tight_layout()
+            plt.show()
+
+# Exemple d'utilisation
+# df_long = preparer_df_pour_graphiques(resultat)
+# creer_graphiques_seuil(df_long)
+Explication du code
+Graphiques globaux :
+
+Les graphiques pour les statistiques globales (nombre de prélèvements et taux de succès) sont tracés sans filtrage.
+Graphiques par variable spécifiée :
+
+Pour chaque variable spécifiée (type), nous traçons les sous-types qui ont un nombre total de prélèvements supérieur ou égal au seuil (seuil).
+Les sous-types qui ne satisfont pas au seuil ne sont pas tracés.
+Visualisation :
+
+Les graphiques sont tracés en utilisant seaborn avec des lignes et des points (marker='o') pour chaque sous-type qui satisfait au seuil.
+Les titres, labels et légendes sont ajoutés pour rendre les graphiques informatifs.
+En utilisant cette méthode, vous évitez de tracer des points pour les sous-types avec peu de données, ce qui aide à rendre les graphiques plus clairs et évite les fluctuations extrêmes.
