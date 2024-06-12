@@ -1,0 +1,87 @@
+Pour traiter le problème des petits échantillons par mois, il est possible d'utiliser quelques techniques pour rendre les graphiques plus lisibles et éviter les taux de succès extrêmes dus à la petite taille de l'échantillon :
+
+Smoothing (lissage) :
+
+Utilisez des techniques de lissage comme la moyenne mobile pour lisser les données et atténuer les fluctuations dues aux petits échantillons.
+Filtrage des petits échantillons :
+
+Filtrer les points de données où le nombre d'individus est inférieur à un certain seuil.
+Ajout d'une barre d'erreur :
+
+Ajouter des barres d'erreur pour indiquer la variation due à la taille de l'échantillon.
+Exemple de mise en œuvre
+python
+Copy code
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def moyenne_mobile(series, window):
+    return series.rolling(window=window, min_periods=1).mean()
+
+def creer_graphiques_ameliores(df_long, seuil=5, window=3):
+    # Graphiques globaux
+    df_global = df_long[df_long['type'] == 'Global']
+    
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_global[df_global['stat'] == 'Nb_prel'], x='year_month', y='value', marker='o')
+    plt.title('Nombre de prélèvements global par mois')
+    plt.xlabel('Mois')
+    plt.ylabel('Nombre de prélèvements')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    
+    plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_global[df_global['stat'] == 'Succès_rate'], x='year_month', y='value', marker='o')
+    plt.title('Taux de succès global par mois')
+    plt.xlabel('Mois')
+    plt.ylabel('Taux de succès')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    # Graphiques par variable spécifiée
+    for var in df_long['type'].unique():
+        if var != 'Global':
+            df_var = df_long[df_long['type'] == var]
+            
+            plt.figure(figsize=(12, 6))
+            for sous_type in df_var['sous-type'].unique():
+                df_subset = df_var[(df_var['sous-type'] == sous_type) & (df_var['stat'] == 'Nb_prel')]
+                if df_subset['value'].sum() >= seuil:
+                    sns.lineplot(data=df_subset, x='year_month', y=moyenne_mobile(df_subset['value'], window), label=sous_type, marker='o')
+            plt.title(f'Nombre de prélèvements par mois et par {var} (Lissé)')
+            plt.xlabel('Mois')
+            plt.ylabel('Nombre de prélèvements')
+            plt.xticks(rotation=45)
+            plt.legend(title=var)
+            plt.tight_layout()
+            plt.show()
+            
+            plt.figure(figsize=(12, 6))
+            for sous_type in df_var['sous-type'].unique():
+                df_subset = df_var[(df_var['sous-type'] == sous_type) & (df_var['stat'] == 'Succès_rate')]
+                if df_subset['value'].sum() >= seuil:
+                    sns.lineplot(data=df_subset, x='year_month', y=moyenne_mobile(df_subset['value'], window), label=sous_type, marker='o')
+            plt.title(f'Taux de succès par mois et par {var} (Lissé)')
+            plt.xlabel('Mois')
+            plt.ylabel('Taux de succès')
+            plt.xticks(rotation=45)
+            plt.legend(title=var)
+            plt.tight_layout()
+            plt.show()
+
+# Exemple d'utilisation
+# df_long = preparer_df_pour_graphiques(resultat)
+# creer_graphiques_ameliores(df_long)
+Explication du code
+Moyenne Mobile :
+
+La fonction moyenne_mobile calcule la moyenne mobile pour lisser les données. Vous pouvez ajuster la fenêtre de la moyenne mobile (window) en fonction de la quantité de lissage souhaitée.
+Filtrage par seuil :
+
+Dans les graphiques, nous filtrons les sous-types qui ont un nombre total d'individus inférieur à un seuil (seuil). Cela aide à éviter les graphiques surchargés avec des taux de succès extrêmes.
+Graphiques avec lissage :
+
+Nous appliquons la moyenne mobile aux valeurs des graphiques pour chaque sous-type, ce qui aide à atténuer les fluctuations dues aux petits échantillons.
+En utilisant ces techniques, vous pouvez obtenir des graphiques plus lisibles et informatifs, même lorsque certains sous-types ont des échantillons de petite taille. Vous pouvez ajuster les paramètres comme seuil et window pour trouver le meilleur équilibre entre lisibilité et précision.
