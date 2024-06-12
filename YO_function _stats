@@ -1,0 +1,84 @@
+import pandas as pd
+import numpy as np
+
+# Création de données factices pour df_event
+data_event = {
+    'CONTRACT': np.random.choice(['A', 'B', 'C', 'D'], 100),
+    'RAV': np.random.choice(['RAV OK', 'RAV KO', 'AUTRE'], 100),
+    'event_date': pd.date_range(start='2023-01-01', periods=100, freq='D'),
+    'market': np.random.choice(['Market1', 'Market2'], 100),
+    'financed_amount': np.random.uniform(1000, 5000, 100),
+    'flags': np.random.choice([0, 1], 100)
+}
+df_event = pd.DataFrame(data_event)
+
+# Création de données factices pour df_ech
+data_ech = {
+    'CONTRACT': np.random.choice(['A', 'B', 'C', 'D'], 50),
+    'ech_date': pd.date_range(start='2023-01-01', periods=50, freq='7D')
+}
+df_ech = pd.DataFrame(data_ech)
+
+def calculer_stats_par_mois(df_event, df_ech, colonnes_analyse):
+    # Convertir les dates en datetime
+    df_event['event_date'] = pd.to_datetime(df_event['event_date'])
+    df_ech['ech_date'] = pd.to_datetime(df_ech['ech_date'])
+
+    # Extraire l'année et le mois des dates
+    df_event['year_month'] = df_event['event_date'].dt.to_period('M')
+    df_ech['year_month'] = df_ech['ech_date'].dt.to_period('M')
+
+    # Calculer les statistiques globales
+    stats_globales = df_event.groupby('year_month').agg(
+        Nb_prel=('CONTRACT', 'count'),
+        Nb_RAV=('RAV', lambda x: x.isin(['RAV OK', 'RAV KO']).sum()),
+        Nb_RAV_OK=('RAV', lambda x: (x == 'RAV OK').sum())
+    )
+    stats_globales['Succès_rate'] = stats_globales['Nb_RAV_OK'] / stats_globales['Nb_RAV']
+    
+    # Réorganiser les statistiques globales
+    stats_globales = stats_globales.T
+    stats_globales['type'] = 'Global'
+    stats_globales['sous-type'] = '-'
+    stats_globales = stats_globales.reset_index().rename(columns={'index': 'stat'})
+    stats_globales = stats_globales[['type', 'sous-type', 'stat'] + list(stats_globales.columns[3:])]
+
+    # Initialiser le dataframe de résultats avec les statistiques globales
+    resultat = stats_globales
+
+    # Calculer les statistiques par les colonnes spécifiées
+    for colonne in colonnes_analyse:
+        stats_par_colonne = df_event.groupby(['year_month', colonne]).agg(
+            Nb_prel=('CONTRACT', 'count'),
+            Nb_RAV=('RAV', lambda x: x.isin(['RAV OK', 'RAV KO']).sum()),
+            Nb_RAV_OK=('RAV', lambda x: (x == 'RAV OK').sum())
+        )
+        stats_par_colonne['Succès_rate'] = stats_par_colonne['Nb_RAV_OK'] / stats_par_colonne['Nb_RAV']
+        
+        # Réinitialiser l'index pour que les colonnes year_month et colonne soient des colonnes normales
+        stats_par_colonne = stats_par_colonne.reset_index()
+
+        # Réorganiser les statistiques par colonne
+        stats_par_colonne = stats_par_colonne.pivot(index=colonne, columns='year_month').T
+        stats_par_colonne.columns = [f'{colonne}_{val}' for val in stats_par_colonne.columns]
+        
+        # Transposer les statistiques pour avoir les mois en colonnes
+        stats_par_colonne = stats_par_colonne.T
+        stats_par_colonne['type'] = colonne
+        stats_par_colonne['sous-type'] = stats_par_colonne.index
+        stats_par_colonne = stats_par_colonne.reset_index(drop=True).melt(id_vars=['type', 'sous-type'], var_name='stat', value_name='value')
+        stats_par_colonne = stats_par_colonne.pivot_table(index=['type', 'sous-type', 'stat'], columns='year_month', values='value').reset_index()
+        
+        # Ajouter ces statistiques au dataframe de résultats
+        resultat = pd.concat([resultat, stats_par_colonne], axis=0, ignore_index=True)
+
+    return resultat
+
+# Test de la fonction avec des données factices
+colonnes_analyse = ['market', 'flags']
+resultat = calculer_stats_par_mois(df_event, df_ech, colonnes_analyse)
+
+# Affichage du résultat
+import ace_tools as tools; tools.display_dataframe_to_user(name="Résultat des Statistiques par Mois", dataframe=resultat)
+
+resultat.head()
