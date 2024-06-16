@@ -1,0 +1,62 @@
+import pandas as pd
+
+def construct_stats_df(df_event, threshold=5):
+    # Convertir les colonnes de date en datetime
+    df_event['event_date'] = pd.to_datetime(df_event['event_date'])
+    
+    # Extraire les mois et années
+    df_event['month_year'] = df_event['event_date'].dt.to_period('M')
+
+    # Calculer les statistiques par mois-année
+    stats_df = df_event.groupby('month_year').agg(
+        nb_de_RAV=('RAV', 'size'),
+        nb_RAV_ok=('RAV', lambda x: (x == 'RAV OK').sum())
+    ).reset_index()
+
+    # Calculer le taux de succès
+    stats_df['success_rate'] = stats_df['nb_RAV_ok'] / stats_df['nb_de_RAV']
+
+    # Ajouter une colonne pour taguer les mois avec moins de 5 individus
+    stats_df['below_threshold'] = stats_df['nb_de_RAV'] < threshold
+
+    return stats_df
+
+# Exemple d'utilisation
+# stats_df = construct_stats_df(df_event)
+# print(stats_df.head())
+
+  __________________
+
+  import matplotlib.pyplot as plt
+
+def plot_nb_de_RAV(stats_df):
+    # Filtrer les données pour exclure les mois en dessous du seuil
+    filtered_df = stats_df[~stats_df['below_threshold']]
+
+    # Tracer le graphique
+    plt.figure(figsize=(14, 7))
+    plt.plot(filtered_df['month_year'].astype(str), filtered_df['nb_de_RAV'], marker='o', linestyle='-', color='b')
+    plt.xticks(rotation=90)
+    plt.xlabel('Mois-Année')
+    plt.ylabel('Nombre de RAV')
+    plt.title('Nombre de RAV par Mois-Année')
+    plt.grid(True)
+    plt.show()
+
+def plot_success_rate(stats_df):
+    # Filtrer les données pour exclure les mois en dessous du seuil
+    filtered_df = stats_df[~stats_df['below_threshold']]
+
+    # Tracer le graphique
+    plt.figure(figsize=(14, 7))
+    plt.plot(filtered_df['month_year'].astype(str), filtered_df['success_rate'], marker='o', linestyle='-', color='g')
+    plt.xticks(rotation=90)
+    plt.xlabel('Mois-Année')
+    plt.ylabel('Taux de Succès')
+    plt.title('Taux de Succès des RAV par Mois-Année')
+    plt.grid(True)
+    plt.show()
+
+# Exemple d'utilisation
+# plot_nb_de_RAV(stats_df)
+# plot_success_rate(stats_df)
