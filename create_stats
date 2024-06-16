@@ -1,0 +1,86 @@
+import pandas as pd
+
+def create_global_stats(df_event, df_ech):
+    # Convertir les dates en datetime
+    df_event['event_date'] = pd.to_datetime(df_event['event_date'])
+    df_ech['date_loyer'] = pd.to_datetime(df_ech['date_loyer'])
+
+    # Créer des colonnes 'month_year' pour les groupements
+    df_event['month_year'] = df_event['event_date'].dt.to_period('M')
+    df_ech['month_year'] = df_ech['date_loyer'].dt.to_period('M')
+
+    # Calcul du nombre de prélèvements par mois-année
+    nb_prelevement = df_ech.groupby('month_year').size().rename('nb_prelevement')
+
+    # Calcul du nombre de RAV et de RAV OK par mois-année
+    nb_de_RAV = df_event.groupby('month_year').size().rename('nb_de_RAV')
+    nb_RAV_ok = df_event[df_event['RAV'] == 'RAV OK'].groupby('month_year').size().rename('nb_RAV_ok')
+
+    # Concaténer les résultats en un seul dataframe
+    global_stats = pd.concat([nb_prelevement, nb_de_RAV, nb_RAV_ok], axis=1).fillna(0)
+
+    # Calcul du taux de succès
+    global_stats['success_rate'] = global_stats['nb_RAV_ok'] / global_stats['nb_de_RAV']
+
+    # Réinitialiser l'index et renommer la colonne 'month_year'
+    global_stats = global_stats.reset_index()
+    global_stats['month_year'] = global_stats['month_year'].astype(str)
+
+    return global_stats
+
+# Exemple d'utilisation
+# df_global_stats = create_global_stats(df_event, df_ech)
+# print(df_global_stats)
+
+                                                __________________________________________
+
+
+def create_variable_stats(df_event):
+    # Convertir la date en datetime
+    df_event['event_date'] = pd.to_datetime(df_event['event_date'])
+    
+    # Créer des colonnes 'month_year' pour les groupements
+    df_event['month_year'] = df_event['event_date'].dt.to_period('M')
+    
+    # Liste des variables à analyser
+    variables = ['produit_contracte', 'marché', 'ibl', 'equipe_gestion']
+    
+    # DataFrame pour stocker les résultats
+    all_stats = []
+
+    for var in variables:
+        # Calcul du nombre de RAV et de RAV OK par variable et par mois-année
+        grouped = df_event.groupby([var, 'month_year'])
+        nb_de_RAV = grouped.size().rename('nb_de_RAV')
+        nb_RAV_ok = grouped.apply(lambda x: (x['RAV'] == 'RAV OK').sum()).rename('nb_RAV_ok')
+        
+        # Concaténer les résultats en un seul dataframe
+        stats = pd.concat([nb_de_RAV, nb_RAV_ok], axis=1).fillna(0)
+        
+        # Calcul du taux de succès
+        stats['success_rate'] = stats['nb_RAV_ok'] / stats['nb_de_RAV']
+        
+        # Ajouter la variable et sa valeur dans le dataframe
+        stats = stats.reset_index()
+        stats['variable'] = var
+        stats = stats.rename(columns={var: 'valeur_variable'})
+        
+        # Ajouter au dataframe final
+        all_stats.append(stats)
+
+    # Concaténer tous les résultats
+    variable_stats = pd.concat(all_stats, ignore_index=True)
+    
+    # Réarranger les colonnes pour avoir 'variable', 'valeur_variable', 'Stats' en premier
+    variable_stats = variable_stats.melt(id_vars=['variable', 'valeur_variable', 'month_year'],
+                                         value_vars=['nb_de_RAV', 'nb_RAV_ok', 'success_rate'],
+                                         var_name='Stats', value_name='Value')
+    
+    # Convertir month_year en chaîne de caractères
+    variable_stats['month_year'] = variable_stats['month_year'].astype(str)
+
+    return variable_stats
+
+# Exemple d'utilisation
+# df_variable_stats = create_variable_stats(df_event)
+# print(df_variable_stats)
