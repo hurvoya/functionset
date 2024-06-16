@@ -7,9 +7,21 @@ def plot_stats(df_stats, threshold):
         for stat in ['nb_de_RAV', 'success_rate']:
             plt.figure(figsize=(12, 6))
             data = df_stats[(df_stats['variable'] == var) & (df_stats['Stats'] == stat) & (df_stats['below_threshold'] == 0)]
-            sns.lineplot(data=data, x='annee_mois', y='valeur', hue='valeur_variable')
+            
+            # Convert 'annee_mois' to datetime for better plotting
+            data['annee_mois'] = pd.to_datetime(data['annee_mois'])
+            
+            sns.lineplot(data=data, x='annee_mois', y='valeur', hue='valeur_variable', marker='o')
             plt.title(f'{stat} over time for variable {var}')
+            plt.xlabel('Mois-Annee')
+            plt.ylabel(stat)
             plt.xticks(rotation=45)
+            
+            # Format x-axis to show month and year properly
+            plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
+            plt.gca().xaxis.set_major_locator(plt.matplotlib.dates.MonthLocator(interval=1))
+            plt.gca().xaxis.set_minor_locator(plt.matplotlib.dates.MonthLocator())
+            
             plt.tight_layout()
             plt.show()
 
