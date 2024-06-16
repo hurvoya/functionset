@@ -22,9 +22,12 @@ def create_global_stats(df_event, df_ech):
     # Calcul du taux de succès
     global_stats['success_rate'] = global_stats['nb_RAV_ok'] / global_stats['nb_de_RAV']
 
-    # Réinitialiser l'index et renommer la colonne 'month_year'
+    # Réinitialiser l'index
     global_stats = global_stats.reset_index()
-    global_stats['month_year'] = global_stats['month_year'].astype(str)
+
+    # Réorganiser le dataframe pour avoir les mois-année en colonnes
+    global_stats = global_stats.melt(id_vars='month_year', var_name='Stats', value_name='Value')
+    global_stats = global_stats.pivot(index='Stats', columns='month_year', values='Value').reset_index().fillna(0)
 
     return global_stats
 
@@ -32,8 +35,8 @@ def create_global_stats(df_event, df_ech):
 # df_global_stats = create_global_stats(df_event, df_ech)
 # print(df_global_stats)
 
-                                                __________________________________________
 
+____________________________
 
 def create_variable_stats(df_event):
     # Convertir la date en datetime
@@ -76,9 +79,11 @@ def create_variable_stats(df_event):
                                          value_vars=['nb_de_RAV', 'nb_RAV_ok', 'success_rate'],
                                          var_name='Stats', value_name='Value')
     
-    # Convertir month_year en chaîne de caractères
-    variable_stats['month_year'] = variable_stats['month_year'].astype(str)
-
+    # Réorganiser le dataframe pour avoir les mois-année en colonnes
+    variable_stats = variable_stats.pivot_table(index=['variable', 'valeur_variable', 'Stats'],
+                                                columns='month_year',
+                                                values='Value').reset_index().fillna(0)
+    
     return variable_stats
 
 # Exemple d'utilisation
