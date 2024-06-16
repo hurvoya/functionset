@@ -19,8 +19,13 @@ def create_global_stats(df_event, df_ech):
     # Concaténer les résultats en un seul dataframe
     global_stats = pd.concat([nb_prelevement, nb_de_RAV, nb_RAV_ok], axis=1).fillna(0)
 
+    # Convertir les valeurs en entiers
+    global_stats['nb_de_RAV'] = global_stats['nb_de_RAV'].astype(int)
+    global_stats['nb_RAV_ok'] = global_stats['nb_RAV_ok'].astype(int)
+
     # Calcul du taux de succès
-    global_stats['success_rate'] = global_stats['nb_RAV_ok'] / global_stats['nb_de_RAV']
+    global_stats['success_rate'] = (global_stats['nb_RAV_ok'] / global_stats['nb_de_RAV']).round(2)
+    global_stats['success_rate'] = global_stats['success_rate'].replace([float('inf'), -float('inf')], 0).fillna(0)
 
     # Réinitialiser l'index
     global_stats = global_stats.reset_index()
@@ -35,8 +40,7 @@ def create_global_stats(df_event, df_ech):
 # df_global_stats = create_global_stats(df_event, df_ech)
 # print(df_global_stats)
 
-
-____________________________
+__________________________________
 
 def create_variable_stats(df_event):
     # Convertir la date en datetime
@@ -60,8 +64,13 @@ def create_variable_stats(df_event):
         # Concaténer les résultats en un seul dataframe
         stats = pd.concat([nb_de_RAV, nb_RAV_ok], axis=1).fillna(0)
         
+        # Convertir les valeurs en entiers
+        stats['nb_de_RAV'] = stats['nb_de_RAV'].astype(int)
+        stats['nb_RAV_ok'] = stats['nb_RAV_ok'].astype(int)
+
         # Calcul du taux de succès
-        stats['success_rate'] = stats['nb_RAV_ok'] / stats['nb_de_RAV']
+        stats['success_rate'] = (stats['nb_RAV_ok'] / stats['nb_de_RAV']).round(2)
+        stats['success_rate'] = stats['success_rate'].replace([float('inf'), -float('inf')], 0).fillna(0)
         
         # Ajouter la variable et sa valeur dans le dataframe
         stats = stats.reset_index()
@@ -84,7 +93,28 @@ def create_variable_stats(df_event):
                                                 columns='month_year',
                                                 values='Value').reset_index().fillna(0)
     
-    return variable_stats
+    # Filtrer les valeurs aberrantes
+    variable_stats_filtered = variable_stats.copy()
+
+    # Calculer le nombre de mois
+    num_months = len(df_event['month_year'].unique())
+
+    for var in variables:
+        for stat in ['nb_de_RAV', 'success_rate']:
+            mask = (variable_stats_filtered['variable'] == var) & (variable_stats_filtered['Stats'] == stat)
+            df_stat = variable_stats_filtered[mask]
+
+            # Si le nombre de valeurs de nb_de_RAV est inférieur à 5 fois le nombre de mois, supprimer la valeur_variable
+            if df_stat[df_stat.columns[3:]].sum().sum() < 5 * num_months:
+                variable_stats_filtered = variable_stats_filtered[~mask]
+
+            # Si nb_de_RAV est inférieur à 5, mettre success_rate à NaN
+            if stat == 'success_rate':
+                for col in df_stat.columns[3:]:
+                    if df_stat[col].sum() < 5:
+                        variable_stats_filtered.loc[mask, col] = float('nan')
+
+    return variable_stats_filtered
 
 # Exemple d'utilisation
 # df_variable_stats = create_variable_stats(df_event)
