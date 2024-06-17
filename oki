@@ -1,28 +1,67 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd
+import numpy as np
 
-def plot_stats(df_stats, threshold):
-    variables = df_stats['variable'].unique()
-    for var in variables:
-        for stat in ['nb_de_RAV', 'success_rate']:
-            plt.figure(figsize=(12, 6))
-            data = df_stats[(df_stats['variable'] == var) & (df_stats['Stats'] == stat) & (df_stats['below_threshold'] == 0)]
-            
-            # Convert 'annee_mois' to datetime for better plotting
-            data['annee_mois'] = pd.to_datetime(data['annee_mois'])
-            
-            sns.lineplot(data=data, x='annee_mois', y='valeur', hue='valeur_variable', marker='o')
-            plt.title(f'{stat} over time for variable {var}')
-            plt.xlabel('Mois-Annee')
-            plt.ylabel(stat)
-            plt.xticks(rotation=45)
-            
-            # Format x-axis to show month and year properly
-            plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m'))
-            plt.gca().xaxis.set_major_locator(plt.matplotlib.dates.MonthLocator(interval=1))
-            plt.gca().xaxis.set_minor_locator(plt.matplotlib.dates.MonthLocator())
-            
-            plt.tight_layout()
-            plt.show()
+# Sample DataFrame
+data = {
+    'contrat_lot': ['A1A6358_1', 'A1A6358_2', 'B1B6358_1', 'B1B6358_2', 'C1C6358_1'],
+    'event_order': [1, 2, 1, 2, 1],
+    'event_date': pd.to_datetime(['2023-01-15', '2023-02-15', '2023-01-20', '2023-02-20', '2023-03-15']),
+    'date_prelevement': pd.to_datetime(['2023-01-01', '2023-02-01', '2023-01-05', '2023-02-05', '2023-03-01']),
+    'code': [20, 20, 30, 20, 40],
+    'RAV': ['RAV OK', 'RAV KO', 'RAV OK', 'RAV KO', 'RAV OK'],
+    'produit_contracte': ['CB Mobilier', 'CB Mobilier', 'CB Immobilier', 'CB Immobilier', 'CB Mobilier'],
+    'marche': ['PUBLIC CONSTRUCTION', 'PUBLIC CONSTRUCTION', 'PRIVATE CONSTRUCTION', 'PRIVATE CONSTRUCTION', 'PUBLIC CONSTRUCTION'],
+    'montant': [350233.03, 450000.00, 250000.00, 300000.00, 150000.00],
+    'ibl': ['ELS', 'ELS', 'ELS', 'ELS', 'ELS'],
+    'loyer': [249.17, 300.00, 200.00, 350.00, 150.00],
+    'recurrence': ['Mensuelle', 'Mensuelle', 'Mensuelle', 'Mensuelle', 'Mensuelle'],
+    'equipe_gestion': ['GEPNE', 'GEPNE', 'GEPNE', 'GEPNE', 'GEPNE']
+}
 
-plot_stats(df_stats, threshold)
+df_event = pd.DataFrame(data)
+
+# Extract month-year from event_date
+df_event['annee_mois'] = df_event['event_date'].dt.to_period('M').astype(str)
+
+# Define variables for statistics
+variables = ['produit_contracte', 'marche', 'ibl', 'recurrence', 'equipe_gestion']
+
+# Initialize an empty DataFrame for statistics
+stats_list = []
+
+# Define a threshold parameter
+threshold = 5
+
+# Calculate statistics
+for var in variables:
+    group = df_event.groupby(['annee_mois', var])
+    nb_de_RAV = group.size().reset_index(name='nb_de_RAV')
+    nb_RAV_ok = group.apply(lambda x: (x['RAV'] == 'RAV OK').sum()).reset_index(name='nb_RAV_ok')
+    stats_df = pd.merge(nb_de_RAV, nb_RAV_ok, on=['annee_mois', var])
+    stats_df['success_rate'] = stats_df['nb_RAV_ok'] / stats_df['nb_de_RAV']
+    
+    # Add below_threshold column
+    stats_df['below_threshold'] = stats_df['nb_de_RAV'] < threshold
+    
+    # Check the new threshold criteria
+    total_months = df_event['annee_mois'].nunique()
+    variable_sum = stats_df.groupby(var)['nb_de_RAV'].transform('sum')
+    stats_df['below_threshold'] |= variable_sum < (threshold * total_months)
+    
+    # Melt the DataFrame
+    melted = stats_df.melt(id_vars=['annee_mois', var, 'below_threshold'], value_vars=['nb_de_RAV', 'nb_RAV_ok', 'success_rate'],
+                           var_name='Stats', value_name='valeur')
+    melted['variable'] = var
+    melted = melted.rename(columns={var: 'valeur_variable'})
+    
+    # Ensure that below_threshold is applied to success_rate as well
+    melted.loc[melted['Stats'] == 'success_rate', 'below_threshold'] = \
+        melted.loc[melted['Stats'] == 'nb_de_RAV', 'below_threshold'].values
+    
+    # Append to the list
+    stats_list.append(melted)
+
+# Concatenate all statistics
+df_stats = pd.concat(stats_list)
+
+import ace_tools as tools; tools.display_dataframe_to_user(name="Statistiques des tentatives de reprélèvement", dataframe=df_stats)
