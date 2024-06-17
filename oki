@@ -8,10 +8,10 @@ def plot_stats(df_stats, threshold):
             plt.figure(figsize=(12, 6))
             data = df_stats[(df_stats['variable'] == var) & (df_stats['Stats'] == stat) & (df_stats['below_threshold'] == 0)]
             
-            # Sort 'valeur_variable' alphabetically
-            data = data.sort_values('valeur_variable')
+            # Determine the unique sorted values for 'valeur_variable'
+            sorted_hue_values = sorted(data['valeur_variable'].unique())
             
-            sns.lineplot(data=data, x='annee_mois', y='valeur', hue='valeur_variable', marker='o')
+            sns.lineplot(data=data, x='annee_mois', y='valeur', hue='valeur_variable', hue_order=sorted_hue_values, marker='o')
             plt.title(f'{stat} over time for variable {var}')
             plt.xlabel('Mois-Annee')
             plt.ylabel(stat)
