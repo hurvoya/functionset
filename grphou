@@ -1,0 +1,11 @@
+# Créer un graphique séparé pour chaque pays
+countries = df_ep_grouped['country'].unique()
+
+for country in countries:
+    df_country = df_ep_grouped[df_ep_grouped['country'] == country]
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=df_country, x='code', y='count')
+    plt.title(f"Répartition totale d'événements tagués EP à 1 par motifs - {country}")
+    plt.xlabel("Motif de rejet")
+    plt.ylabel("Nombre d'événements")
+    plt.show()
