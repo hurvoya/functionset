@@ -1,0 +1,38 @@
+import pandas as pd
+
+# Exemple de dataframe
+data = {
+    "event_date": ["2024-01-01", "2024-01-10", "2024-02-01", "2024-01-20", "2024-02-15"],
+    "NDD": [0, 1, 0, 1, 1],
+    "contrat_lot": [1, 1, 1, 2, 2],
+    "event_order": [1, 2, 3, 1, 2],
+    "piece": ["RPU", "NDD", "RPG", "NDD", "NDD"]
+}
+
+df_event = pd.DataFrame(data)
+df_event['event_date'] = pd.to_datetime(df_event['event_date'])
+
+# Ajouter une colonne NDD_KO initialisée à 0
+df_event['NDD_KO'] = 0
+
+# Filtrer les événements de type "RPU" et "RPG"
+df_rpu_rpg = df_event[df_event['piece'].isin(["RPU", "RPG"])]
+
+# Filtrer les événements de type "NDD"
+df_ndd = df_event[df_event['NDD'] == 1]
+
+# Vérifier les conditions pour chaque événement NDD
+for idx, ndd_row in df_ndd.iterrows():
+    contrat_lot = ndd_row['contrat_lot']
+    event_date = ndd_row['event_date']
+
+    # Filtrer les événements RPU/RPG pour le même contrat
+    mask = (df_rpu_rpg['contrat_lot'] == contrat_lot) & \
+           (df_rpu_rpg['event_date'] >= event_date - pd.Timedelta(days=30)) & \
+           (df_rpu_rpg['event_date'] <= event_date)
+    
+    if df_rpu_rpg[mask].shape[0] > 0:
+        df_event.at[idx, 'NDD_KO'] = 1
+
+# Afficher le résultat
+print(df_event)
