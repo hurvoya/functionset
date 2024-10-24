@@ -1,0 +1,29 @@
+import pandas as pd
+import numpy as np
+from pmdarima import auto_arima
+import matplotlib.pyplot as plt
+
+# Créer un petit DataFrame avec une série temporelle simple
+data = {'date': pd.date_range(start='2023-01-01', periods=30, freq='D'),
+        'value': np.random.randn(30).cumsum()}  # Une série aléatoire cumulée
+
+df = pd.DataFrame(data)
+df.set_index('date', inplace=True)
+
+# Afficher le DataFrame
+print(df)
+
+# Utiliser la fonction auto_arima pour ajuster un modèle ARIMA
+model = auto_arima(df['value'], seasonal=False, trace=True)
+
+# Faire des prédictions sur les 5 prochains jours
+forecast = model.predict(n_periods=5)
+
+# Afficher les prédictions
+print("Prédictions pour les 5 prochains jours :", forecast)
+
+# Afficher le graphique de la série temporelle et des prédictions
+plt.plot(df.index, df['value'], label='Données')
+plt.plot(pd.date_range(start=df.index[-1], periods=6, freq='D')[1:], forecast, label='Prédictions', linestyle='--')
+plt.legend()
+plt.show()
