@@ -1,0 +1,25 @@
+import pandas as pd
+
+def compute_statistics(df_event, var_list):
+    # Group by all combinations of the variables in var_list
+    grouped = df_event.groupby(var_list)
+    
+    # Compute the statistics
+    df_stats = grouped.agg(
+        nb_DD_KO=('pièce', lambda x: sum(x.isin(["EPU", "EPG"]))),
+        nb_NDD=('NDD', lambda x: (x == 1).sum()),
+        nb_NDD_KO=('NDD_KO', lambda x: (x == 1).sum())
+    ).reset_index()
+    
+    # Compute the success_rate column
+    df_stats['success_rate'] = 1 - (df_stats['nb_NDD_KO'] / df_stats['nb_NDD']).fillna(0)
+    
+    return df_stats
+
+# Exemple d'utilisation
+# Supposons que df_event est déjà chargé et var_list est défini
+var_list = ['var1', 'var2', 'varn']  # Remplacez par vos variables réelles
+df_stats = compute_statistics(df_event, var_list)
+
+# Afficher le DataFrame résultant
+print(df_stats)
