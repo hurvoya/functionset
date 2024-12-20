@@ -1,0 +1,28 @@
+import pandas as pd
+
+# Exemple de données
+data = pd.DataFrame({
+    "Third Party nb": [1, 2, 3, 4],
+    "Creation date": ["2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01"]
+})
+
+it = pd.DataFrame({
+    "Third Party nb": [3, 4, 5, 6],
+    "Creation date": ["2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01"]
+})
+
+# Trouver les utilisateurs présents dans data mais pas dans it
+not_in_it = data[~data["Third Party nb"].isin(it["Third Party nb"])]
+
+# Trouver les utilisateurs présents dans it mais pas dans data
+not_in_data = it[~it["Third Party nb"].isin(data["Third Party nb"])]
+
+# Ajouter une colonne pour indiquer la source
+not_in_it["Source"] = "Missing in IT"
+not_in_data["Source"] = "Missing in Data"
+
+# Combiner les deux listes
+missing_users = pd.concat([not_in_it, not_in_data], ignore_index=True)
+
+# Résultat
+missing_users
