@@ -1,3 +1,20 @@
+Hi Matteo,
+
+As discussed on Teams, starting from the upcoming months, we will apply a filter to exclude users from the current month.
+
+Regarding the difference between our extraction and yours, it is most likely due to the extraction date (as discussed, there may have been users who revoked their access between the two extractions).
+
+You can find on our SharePoint the file containing the list of 13 different users.
+
+Feel free to let me know if you need any additional information.
+
+Have a great day!
+
+Best regards,
+
+
+
+
 import pandas as pd
 
 # Exemple de données
