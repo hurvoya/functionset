@@ -1,2 +1,27 @@
-# Filtrer les lignes où HORUS Tab Technique n'est pas "Pas de valeur" et compter les tables DECA uniques
-deca_with_horus = df[df['HORUS Tab Technique'] != 'Pas de valeur']['Non Technique DECA'].nunique()
+results = {}
+
+# Itérer à travers chaque dashboard
+for dashboard in pivot_df.columns[5:]:  # Ignorer les premières colonnes jusqu'aux dashboards
+    df_dash = pivot_df[pivot_df[dashboard] == 1]
+
+    # 1. Nombre total de combinaisons uniques
+    total_combinations = df_dash.shape[
+    # 2. Nombre de Non Technique DECA non "Pas de valeur" avec des HORUS Tab Technique
+    non_valeur_with_horus_tab = df_dash[df_dash['Non Technique DECA'] != 'Pas de valeur']['Non Technique DECA'].nunique()
+
+    # 3. Nombre de HORUS Champ Technique pour les HORUS Tab Technique trouvées
+    horus_champ_count = df_dash[df_dash['HORUS Tab Technique'] != 'Pas de valeur']['HORUS Champ Technique'].nunique()
+
+    # 4. Répartition par catégorie
+    category_distribution = df_dash['CATEGORIE'].value_counts().to_dict()
+
+    # Stocker les résultats
+    results[dashboard] = {
+        'Total Combinations': total_combinations,
+        'Non Valeur with HORUS Tab': non_valeur_with_horus_tab,
+        'HORUS Champ Count': horus_champ_count,
+        'Category Distribution': category_distribution
+    }
+
+# Convertir les résultats en DataFrame (facultatif)
+results_df = pd.DataFrame.from_dict(results, orient='index')
