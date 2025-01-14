@@ -2,9 +2,9 @@ import pandas as pd
 
 # Exemple de DataFrame initial
 data = {
-    'HORUS Tab Technique': ['Table1', 'Table2', 'Table3'],
-    'HORUS Champ Technique': ['Champ1', 'Champ2', 'Champ3'],
-    'Non Fonctionnel DECA': ['NonFonction1', 'NonFonction2', 'NonFonction3'],
+    'HORUS Tab Technique': ['Table1', 'Table2', 'Table1'],
+    'HORUS Champ Technique': ['Champ1', 'Champ2', 'Champ1'],
+    'Non Fonctionnel DECA': ['NonFonction1', 'NonFonction2', 'NonFonction1'],
     'DASHBOARD': ['D1', 'D2', 'D1']
 }
 df = pd.DataFrame(data)
@@ -15,8 +15,13 @@ unique_fields = df[['HORUS Tab Technique', 'HORUS Champ Technique', 'Non Fonctio
 # Créer un DataFrame pivot avec les champs uniques
 pivot_df = unique_fields.copy()
 
-# Créer des colonnes pour chaque dashboard et remplir avec des indicateurs
+# Créer des colonnes pour chaque dashboard et remplir avec des indicateurs basés sur la combinaison des trois champs
 for dashboard in df['DASHBOARD'].unique():
-    pivot_df[dashboard] = pivot_df.apply(lambda row: 
-        1 if any((df['HORUS Tab Technique'] == row['HORUS Tab Technique']) & (df['DASHBOARD'] == dashboard)) 
-        else 0, axis=1)
+    pivot_df[dashboard] = pivot_df.apply(
+        lambda row: 1 if any(
+            (df['HORUS Tab Technique'] == row['HORUS Tab Technique']) & 
+            (df['HORUS Champ Technique'] == row['HORUS Champ Technique']) & 
+            (df['Non Fonctionnel DECA'] == row['Non Fonctionnel DECA']) &
+            (df['DASHBOARD'] == dashboard)
+        ) else 0, axis=1
+    )
