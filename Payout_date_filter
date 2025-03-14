@@ -1,0 +1,51 @@
+1. Modification de la variable FR-STV de base :
+- Tu as une erreur dans la syntaxe de ta variable Power BI (DAX). Voici une correction et une explication :
+Variable = 
+CALCULATE(
+    SUM(MEL[COUNT_of_ID_CONTRACT]),
+    OR(
+        MEL[PARTNER_CODE] IN {"005", "009", "150"},
+        MEL[COD_CHANNEL] = "1002"
+    )
+)
+- Explication des corrections :
+  Utilisation de IN :
+
+  Plutôt que d'imbriquer plusieurs OR(), il est préférable d'utiliser IN {} pour vérifier plusieurs valeurs en une seule fois.
+  MEL[PARTNER_CODE] IN {"005", "009", "150"} est équivalent à OR(OR(MEL[PARTNER_CODE]="005", MEL[PARTNER_CODE]="009"), MEL[PARTNER_CODE]="150").
+  Correction de la syntaxe OR() :
+
+  Tu utilisais OR(OR(OR(...))), ce qui peut devenir illisible. En simplifiant avec IN, on garde un code plus propre.
+  Clarification de CALCULATE :
+
+  CALCULATE applique un filtre à l'expression SUM(MEL[COUNT_of_ID_CONTRACT]).
+  Le filtre ici signifie "inclure uniquement les lignes où PARTNER_CODE est dans {005, 009, 150} OU où COD_CHANNEL est égal à 1002".
+
+===========================================================================================================================================
+2. Nouvelle variable avec prise en compte du mois dans le calcul (exemple)
+- Variable :
+VariableParMois =
+CALCULATE(
+    SUM(MEL[COUNT_of_ID_CONTRACT]),
+    FILTER(
+        MEL,
+        MEL[month] < DATE(2025,1,1) && MEL[PARTNER_CODE] IN {"005", "009", "150"} ||
+        MEL[month] >= DATE(2025,1,1) && MEL[PARTNER_CODE] IN {"009", "150"} ||
+        MEL[COD_CHANNEL] = "1002"
+    )
+)
+
+- 🛠 Explication
+  Utilisation de FILTER() :
+  Cela permet de filtrer ligne par ligne en fonction de la colonne month.
+  Conditions dynamiques :
+  Avant janvier 2025 → Inclut "005", "009", "150".
+  À partir de janvier 2025 → Exclut "005", ne garde que "009" et "150".
+  Toujours → Inclut COD_CHANNEL = "1002" (peu importe la date).
+
+- Pourquoi ça fonctionne mieux ?
+  Contrairement à MAX(MEL[month]), qui prend la date du visuel, ici chaque ligne du dataset est filtrée avec FILTER(), garantissant que la règle s’applique correctement par mois.
+
+-  Test et validation
+  Créer un tableau avec month et VariableParMois.
+  Vérifier les valeurs avant et après janvier 2025.
