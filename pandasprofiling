@@ -1,0 +1,15 @@
+from ydata_profiling import ProfileReport
+import pandas as pd
+
+df = pd.read_csv("ton_fichier.csv")
+profile = ProfileReport(df, title="Profiling Report", explorative=True)
+
+
+
+description = profile.get_description()
+
+
+
+# On prend les infos des variables
+variables = description["variables"]
+df_variables = pd.DataFrame(variables).T  # Transpose pour avoir une ligne par variable
