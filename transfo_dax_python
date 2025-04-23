@@ -1,42 +1,33 @@
 import pandas as pd
 
-# Chargement initial de tes données (à adapter avec le vrai fichier)
+# Chargement des données (à remplacer par le bon fichier si besoin)
 df = pd.read_csv("ton_fichier.csv")
 
-# Étape 1 : Filtrer les lignes où DCHANNEL est "FMD", "FMP" ou "SDS"
-df_filtered = df[df['DCHANNEL'].isin(['FMD', 'FMP', 'SDS'])].copy()
+# Étape 1 : Création de la colonne "RequestId"
+df["RequestId"] = df.apply(
+    lambda row: row["N° de la demande"] if pd.isna(row["N° du Contrat"]) else row["N° du Contrat"],
+    axis=1
+)
 
-# Étape 2 : Extraire la date avant l'espace dans la colonne DCDREATE
-df_filtered['Date'] = df_filtered['DCDREATE'].astype(str).str.split().str[0]
+# Étape 2 : Garder uniquement les colonnes Pays et RequestId
+df_selected = df[["Pays", "RequestId"]].copy()
 
-# Étape 3 : Supprimer les colonnes inutiles
-cols_to_remove = [
-    "Source.Name", "DCDREATE", "DCHANNEL_LABEL", "DSUBTYPE_DOC",
-    "DENSEIGNE_NAME", "DORGANISME_CODE", "DCOMPANY_CODE", "DENSEIGNE_CODE"
-]
-df_filtered.drop(columns=cols_to_remove, inplace=True)
+# Étape 3 : Supprimer les doublons
+df_selected.drop_duplicates(inplace=True)
 
-# Étape 4 : Ajouter les colonnes indicateurs FMP et FMD/SDS
-df_filtered['FMP'] = df_filtered['DCHANNEL'].apply(lambda x: 1 if x == 'FMP' else 0)
-df_filtered['FMD'] = df_filtered['DCHANNEL'].apply(lambda x: 1 if x == 'FMD' else 0)
-df_filtered['SDS'] = df_filtered['DCHANNEL'].apply(lambda x: 1 if x == 'SDS' else 0)
-
-# Étape 5 : Grouper par pays et contrat, et prendre les valeurs max
-grouped = df_filtered.groupby(['DCOUNTRY_CODE', 'DCONTRACT_ID']).agg({
-    'Date': 'max',
-    'FMP': 'max',
-    'FMD': 'max',
-    'SDS': 'max'
-}).reset_index()
-
-# Étape 6 : Renommer les colonnes
-grouped.rename(columns={
-    'DCOUNTRY_CODE': 'CountryId',
-    'DCONTRACT_ID': 'RequestId'
-}, inplace=True)
+# Étape 4 : Remplacer les codes pays longs par des codes à 2 lettres
+replace_dict = {
+    "ESP": "ES",
+    "BEL": "BE",
+    "FRA": "FR",
+    "NLD": "NL",
+    "DEU": "DE",
+    "GBR": "UK"
+}
+df_selected["Pays"] = df_selected["Pays"].replace(replace_dict)
 
 # Résultat final
-T_EDM = grouped
+Payout_Case = df_selected
 
-# Affichage d'exemple
-print(T_EDM.head())
+# Exemple d'affichage
+print(Payout_Case.head())
