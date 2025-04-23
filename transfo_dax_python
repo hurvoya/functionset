@@ -1,0 +1,42 @@
+import pandas as pd
+
+# Chargement initial de tes données (à adapter avec le vrai fichier)
+df = pd.read_csv("ton_fichier.csv")
+
+# Étape 1 : Filtrer les lignes où DCHANNEL est "FMD", "FMP" ou "SDS"
+df_filtered = df[df['DCHANNEL'].isin(['FMD', 'FMP', 'SDS'])].copy()
+
+# Étape 2 : Extraire la date avant l'espace dans la colonne DCDREATE
+df_filtered['Date'] = df_filtered['DCDREATE'].astype(str).str.split().str[0]
+
+# Étape 3 : Supprimer les colonnes inutiles
+cols_to_remove = [
+    "Source.Name", "DCDREATE", "DCHANNEL_LABEL", "DSUBTYPE_DOC",
+    "DENSEIGNE_NAME", "DORGANISME_CODE", "DCOMPANY_CODE", "DENSEIGNE_CODE"
+]
+df_filtered.drop(columns=cols_to_remove, inplace=True)
+
+# Étape 4 : Ajouter les colonnes indicateurs FMP et FMD/SDS
+df_filtered['FMP'] = df_filtered['DCHANNEL'].apply(lambda x: 1 if x == 'FMP' else 0)
+df_filtered['FMD'] = df_filtered['DCHANNEL'].apply(lambda x: 1 if x == 'FMD' else 0)
+df_filtered['SDS'] = df_filtered['DCHANNEL'].apply(lambda x: 1 if x == 'SDS' else 0)
+
+# Étape 5 : Grouper par pays et contrat, et prendre les valeurs max
+grouped = df_filtered.groupby(['DCOUNTRY_CODE', 'DCONTRACT_ID']).agg({
+    'Date': 'max',
+    'FMP': 'max',
+    'FMD': 'max',
+    'SDS': 'max'
+}).reset_index()
+
+# Étape 6 : Renommer les colonnes
+grouped.rename(columns={
+    'DCOUNTRY_CODE': 'CountryId',
+    'DCONTRACT_ID': 'RequestId'
+}, inplace=True)
+
+# Résultat final
+T_EDM = grouped
+
+# Affichage d'exemple
+print(T_EDM.head())
