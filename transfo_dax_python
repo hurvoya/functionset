@@ -1,33 +1,57 @@
 import pandas as pd
 
-# Chargement des données (à remplacer par le bon fichier si besoin)
+# Chargement de la table source (remplacer par le fichier correct)
 df = pd.read_csv("ton_fichier.csv")
 
-# Étape 1 : Création de la colonne "RequestId"
-df["RequestId"] = df.apply(
-    lambda row: row["N° de la demande"] if pd.isna(row["N° du Contrat"]) else row["N° du Contrat"],
-    axis=1
-)
+# Étape 1 : Remplacer les valeurs nulles dans "Code Accord" si nécessaire
+# (À faire si précisé, ici juste mentionné)
 
-# Étape 2 : Garder uniquement les colonnes Pays et RequestId
-df_selected = df[["Pays", "RequestId"]].copy()
+# Étape 2 : Groupby avec agrégations
+grouped = df.groupby(
+    ['CountryId', 'IBL', 'PartnerId', 'CompanyId', 'RequestId',
+     'Code Accord', 'Access Mode', 'Sub', 'Channel']
+).agg({
+    'Date MEL': 'max',
+    'BrandingId': 'max',
+    'FinancialProductId': 'max'
+}).reset_index()
 
-# Étape 3 : Supprimer les doublons
-df_selected.drop_duplicates(inplace=True)
+# Étape 3 : Ajouter colonne "Substitution"
+grouped['Substitution'] = grouped['Sub'].apply(lambda x: 1 if x == 'P' else 0)
 
-# Étape 4 : Remplacer les codes pays longs par des codes à 2 lettres
-replace_dict = {
-    "ESP": "ES",
-    "BEL": "BE",
-    "FRA": "FR",
-    "NLD": "NL",
-    "DEU": "DE",
-    "GBR": "UK"
-}
-df_selected["Pays"] = df_selected["Pays"].replace(replace_dict)
+# Étape 4 : Ajouter colonne "InputMethod"
+def calc_input_method(row):
+    if row['Channel'] == 'EXU' and row['Substitution'] == 0:
+        return 'External Entry'
+    elif row['Channel'] == 'EXU' and row['Substitution'] == 1:
+        return 'Internal Entry by Substitution'
+    else:
+        return 'Internal Entry'
 
-# Résultat final
-Payout_Case = df_selected
+grouped['InputMethod'] = grouped.apply(calc_input_method, axis=1)
 
-# Exemple d'affichage
-print(Payout_Case.head())
+# Étape 5 : Supprimer les colonnes inutiles
+grouped.drop(columns=['Sub', 'Channel', 'Substitution'], inplace=True)
+
+# Étape 6 : Jointure externe avec T_EDM (contenant CountryId, RequestId, FMP, FMD, SDS)
+# Supposons que T_EDM est déjà préparé à partir des étapes précédentes
+T_EDM = pd.read_csv("T_EDM.csv")  # À adapter selon ton contexte réel
+
+merged = pd.merge(grouped, T_EDM, on=['CountryId', 'RequestId'], how='left')
+
+# Étape 7 : Ajouter colonne "So Easy"
+merged['So Easy'] = merged['FMP'].apply(lambda x: 1 if x == 1 else 0)
+
+# Résultat intermédiaire disponible dans "merged"
+
+# Étape 8 : Nouveau groupby final
+final_grouped = merged.groupby([
+    'CountryId', 'IBL', 'PartnerId', 'CompanyId', 'RequestId',
+    'Code Accord', 'Access Mode', 'InputMethod', 'Date MEL', 'BrandingId',
+    'FinancialProductId'
+]).agg({
+    'So Easy': 'max',
+    'FMP': 'max',
+    'FMD': 'max',
+    'SDS': 'max'
+}).reset_index()
