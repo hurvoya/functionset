@@ -1,57 +1,23 @@
-import pandas as pd
+1. Trouver les groupes dupliqués
+# Groupe sur les colonnes supposées uniques
+group_cols = ['RequestId', 'CountryId']
 
-# Chargement de la table source (remplacer par le fichier correct)
-df = pd.read_csv("ton_fichier.csv")
+# Filtrer les lignes dupliquées sur ce groupe
+dups = df[df.duplicated(subset=group_cols, keep=False)].copy()
 
-# Étape 1 : Remplacer les valeurs nulles dans "Code Accord" si nécessaire
-# (À faire si précisé, ici juste mentionné)
 
-# Étape 2 : Groupby avec agrégations
-grouped = df.groupby(
-    ['CountryId', 'IBL', 'PartnerId', 'CompanyId', 'RequestId',
-     'Code Accord', 'Access Mode', 'Sub', 'Channel']
-).agg({
-    'Date MEL': 'max',
-    'BrandingId': 'max',
-    'FinancialProductId': 'max'
-}).reset_index()
 
-# Étape 3 : Ajouter colonne "Substitution"
-grouped['Substitution'] = grouped['Sub'].apply(lambda x: 1 if x == 'P' else 0)
+2. Voir les variations ligne par ligne dans les doublons
+# Regrouper par le duo et afficher les différences
+diffs = dups.groupby(group_cols).nunique(dropna=False)
 
-# Étape 4 : Ajouter colonne "InputMethod"
-def calc_input_method(row):
-    if row['Channel'] == 'EXU' and row['Substitution'] == 0:
-        return 'External Entry'
-    elif row['Channel'] == 'EXU' and row['Substitution'] == 1:
-        return 'Internal Entry by Substitution'
-    else:
-        return 'Internal Entry'
+# Garder uniquement les colonnes où il y a plus d'une valeur (donc variation)
+columns_with_variation = diffs.loc[:, diffs.gt(1).any()].columns.tolist()
+print("🔍 Colonnes qui varient dans les doublons :", columns_with_variation)
 
-grouped['InputMethod'] = grouped.apply(calc_input_method, axis=1)
 
-# Étape 5 : Supprimer les colonnes inutiles
-grouped.drop(columns=['Sub', 'Channel', 'Substitution'], inplace=True)
 
-# Étape 6 : Jointure externe avec T_EDM (contenant CountryId, RequestId, FMP, FMD, SDS)
-# Supposons que T_EDM est déjà préparé à partir des étapes précédentes
-T_EDM = pd.read_csv("T_EDM.csv")  # À adapter selon ton contexte réel
-
-merged = pd.merge(grouped, T_EDM, on=['CountryId', 'RequestId'], how='left')
-
-# Étape 7 : Ajouter colonne "So Easy"
-merged['So Easy'] = merged['FMP'].apply(lambda x: 1 if x == 1 else 0)
-
-# Résultat intermédiaire disponible dans "merged"
-
-# Étape 8 : Nouveau groupby final
-final_grouped = merged.groupby([
-    'CountryId', 'IBL', 'PartnerId', 'CompanyId', 'RequestId',
-    'Code Accord', 'Access Mode', 'InputMethod', 'Date MEL', 'BrandingId',
-    'FinancialProductId'
-]).agg({
-    'So Easy': 'max',
-    'FMP': 'max',
-    'FMD': 'max',
-    'SDS': 'max'
-}).reset_index()
+3. Afficher quelques exemples des doublons avec ces colonnes
+# Affichage d'exemples de lignes problématiques
+example_dups = dups[group_cols + columns_with_variation].sort_values(group_cols)
+print(example_dups.head(10))
