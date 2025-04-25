@@ -1,23 +1,26 @@
-1. Trouver les groupes dupliqués
-# Groupe sur les colonnes supposées uniques
-group_cols = ['RequestId', 'CountryId']
-
-# Filtrer les lignes dupliquées sur ce groupe
-dups = df[df.duplicated(subset=group_cols, keep=False)].copy()
+1. Jointure (Left Join) entre df et X_Partner
+df = df.merge(X_Partner[['CountryId', 'CompanyId', 'BrandingId', 'S_Partner']], 
+              on=['CountryId', 'CompanyId', 'BrandingId'], 
+              how='left')
 
 
-
-2. Voir les variations ligne par ligne dans les doublons
-# Regrouper par le duo et afficher les différences
-diffs = dups.groupby(group_cols).nunique(dropna=False)
-
-# Garder uniquement les colonnes où il y a plus d'une valeur (donc variation)
-columns_with_variation = diffs.loc[:, diffs.gt(1).any()].columns.tolist()
-print("🔍 Colonnes qui varient dans les doublons :", columns_with_variation)
+2. Création de la colonne PartnerGRP
+df['PartnerGRP'] = df.apply(
+    lambda row: row['CompanyId'] if pd.isna(row['S_Partner']) else row['S_Partner'], axis=1
+)
 
 
 
-3. Afficher quelques exemples des doublons avec ces colonnes
-# Affichage d'exemples de lignes problématiques
-example_dups = dups[group_cols + columns_with_variation].sort_values(group_cols)
-print(example_dups.head(10))
+3. Suppression de la colonne S_Partner
+df.drop(columns=['S_Partner'], inplace=True)
+
+
+
+5. Création colonne Payout : 1 si RequestId_Payout non nul
+df['Payout'] = df['RequestId'].isin(Payout_Case['RequestId']).astype(int)
+
+
+
+Dernière étape : remplacer les NaN par 0 dans certaines colonnes
+df['SoEasy'] = df['SoEasy'].fillna(0)
+df['SDS'] = df['SDS'].fillna(0)
