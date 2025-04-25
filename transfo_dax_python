@@ -24,3 +24,8 @@ df['Payout'] = df['RequestId'].isin(Payout_Case['RequestId']).astype(int)
 Dernière étape : remplacer les NaN par 0 dans certaines colonnes
 df['SoEasy'] = df['SoEasy'].fillna(0)
 df['SDS'] = df['SDS'].fillna(0)
+
+
+df['Payout'] = df[['CountryId', 'RequestId']].apply(tuple, axis=1).isin(
+    Payout_Case[['CountryId', 'RequestId']].apply(tuple, axis=1)
+).astype(int)
