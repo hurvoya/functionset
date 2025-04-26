@@ -1,15 +1,54 @@
-# Pivot : chaque colonne sera un pays
-pivot = df.pivot_table(index='Code', 
-                       columns='Country', 
-                       values='Label', 
-                       aggfunc='first')  # On prend un Label s'il y a plusieurs
+import pandas as pd
 
-# Renommer les colonnes pour plus de clarté
-pivot = pivot.rename(columns={
-    'UK': 'Label_UK',
-    'FR': 'Label_FR',
-    'ES': 'Label_ES',
-    'BE': 'Label_BE',
-    'IT': 'Label_IT',
-    'DE': 'Label_DE'
-})
+def build_pivot_mapping(df, code_label_pairs):
+    """
+    Construit un tableau de correspondance à partir d'une liste de paires (code, label),
+    en créant un pivot où chaque variable est regroupée par pays.
+
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+        Le DataFrame source contenant les colonnes de code, libellé et pays.
+    code_label_pairs : list of tuples
+        Liste des couples (colonne_code, colonne_label) à traiter.
+
+    Retourne
+    --------
+    pandas.DataFrame
+        Un DataFrame concaténé avec les colonnes :
+        - Variable (suffixe extrait de 'CODE_')
+        - Code
+        - Libellé par pays (FR, UK, ES, BE, IT, DE, etc.)
+    """
+
+    all_pivots = []  # Liste pour stocker les différents petits pivots
+
+    for code_col, label_col in code_label_pairs:
+        # Vérifie que les deux colonnes existent dans le DataFrame
+        if code_col in df.columns and label_col in df.columns:
+            suffix = code_col[len('CODE_'):]  # Extrait ce qu'il y a après 'CODE_'
+
+            # Crée un DataFrame temporaire uniquement avec les colonnes nécessaires
+            temp = df[[code_col, label_col, 'COUNTRY']].copy()
+            temp = temp.rename(columns={
+                code_col: 'Code',
+                label_col: 'Label',
+                'COUNTRY': 'Country'
+            })
+            temp['Variable'] = suffix  # Ajoute la variable (ex: PRODUIT, MARCHE...)
+
+            # Crée un pivot : lignes = (Variable, Code), colonnes = pays, valeurs = Label
+            pivot = temp.pivot_table(
+                index=['Variable', 'Code'],
+                columns='Country',
+                values='Label',
+                aggfunc='first'
+            ).reset_index()
+
+            # Ajoute ce pivot à la liste
+            all_pivots.append(pivot)
+
+    # Concatène tous les petits pivots en un seul
+    final_pivot = pd.concat(all_pivots, ignore_index=True)
+
+    return final_pivot
