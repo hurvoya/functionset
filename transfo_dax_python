@@ -1,11 +1,30 @@
-# Ta liste de tuples
-code_label_pairs = [
-    ('CODE_PRODUIT', 'LIB_PRODUIT'),
-    ('CODE_MARCHE', 'LIB_MARCHE'),
-    ('CODE_CLIENT', 'LIB_CLIENT')
-]
+import numpy as np
+import pandas as pd
 
-# Utilisation
-pivot_mapping = build_pivot_mapping(df, code_label_pairs)
+def clean_nans(df):
+    """
+    Nettoie toutes les valeurs manquantes dans un DataFrame :
+    - Remplace les vrais NaN pandas par 'Not defined'
+    - Remplace les chaînes de caractères égales à 'nan' ou 'nan (nan)' par 'Not defined'
+    - Ne modifie pas les autres chaînes contenant 'nan' dans le mot.
 
-pivot_mapping.head()
+    Paramètres
+    ----------
+    df : pandas.DataFrame
+        Le DataFrame à nettoyer.
+
+    Retourne
+    --------
+    pandas.DataFrame
+        Le DataFrame nettoyé.
+    """
+
+    # Remplace les vrais NaN par "Not defined"
+    df_cleaned = df.fillna("Not defined")
+
+    # Remplace les textes qui sont exactement "nan" ou "nan (nan)"
+    df_cleaned = df_cleaned.applymap(
+        lambda x: "Not defined" if isinstance(x, str) and x.strip().lower() in ["nan", "nan (nan)"] else x
+    )
+
+    return df_cleaned
