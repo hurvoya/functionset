@@ -1,11 +1,4 @@
-def determine_esignature_type(row):
-    if row['SDS'] == 0:
-        return "Manual E-signature"
-    elif row['esignature_substitution'] == 1:
-        return "Internal E-signature"
-    elif row['SDS'] == 1:
-        return "Dealer E-signature"
-    else:
-        return None
-
-df['esignature_type'] = df.apply(determine_esignature_type, axis=1)
+your_date_column BETWEEN
+        TRUNC(ADD_MONTHS(SYSDATE, -13), 'MM')  -- Début : mois -13, premier jour du mois
+        AND
+        LAST_DAY(ADD_MONTHS(SYSDATE, -1))      -- Fin : dernier jour du mois précédent
