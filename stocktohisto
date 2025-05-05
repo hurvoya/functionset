@@ -14,42 +14,11 @@ On exclut les NaT en date_fin (ils ne sont pas traités).
 
 
 
-import pandas as pd
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+# Groupement par id_client pour compter le nombre de contrats
+df_doublons = df.groupby("id_client")["id_contrat"].nunique()
 
-# Simule une base de contrats
-# Remplace ceci par le chargement de ton vrai fichier
-df = pd.read_csv("contrats.csv", parse_dates=["date_debut", "date_fin"])
+# On garde ceux qui ont plus d’un contrat
+df_doublons = df_doublons[df_doublons > 1].reset_index()
+df_doublons.columns = ["id_client", "nb_contrats"]
 
-# Supprimer les contrats sans date de fin
-df = df.dropna(subset=["date_fin"])
-
-# Date du jour
-today = pd.Timestamp.today().normalize()
-
-# Récupérer les 13 mois de stock (de M-13 à M-1)
-mois_stock = pd.date_range(end=today - pd.offsets.MonthBegin(1), periods=13, freq="MS")
-
-# Initialisation de la liste pour stocker les résultats
-resultats = []
-
-for mois in mois_stock:
-    mois_suivant = mois + pd.offsets.MonthBegin(1)
-
-    df_filtre = df[
-        (df["date_debut"] < mois) &
-        (df["date_fin"] >= mois_suivant)
-    ].copy()
-
-    df_filtre["mois_stock"] = mois
-    resultats.append(df_filtre[["id_contrat", "mois_stock"]])  # Ajoute seulement l'essentiel
-
-# Concaténation finale
-df_stock_final = pd.concat(resultats).sort_values(["mois_stock", "id_contrat"])
-
-# Résultat final
-print(df_stock_final)
-
-# Optionnel : export CSV
-# df_stock_final.to_csv("stock_13_mois_glissants.csv", index=False)
+df_contrats_doublons = df[df["id_client"].isin(df_doublons["id_client"])]
