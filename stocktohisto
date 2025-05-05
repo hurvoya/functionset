@@ -1,22 +1,19 @@
-Un contrat est en vie pour un mois de stock M si et seulement si :
+import pandas as pd
 
-date_debut < 1er jour du mois M
+# Exemple: ton DataFrame s'appelle `df`
+# On suppose que "not defined" est la valeur manquante
 
-date_fin ≥ 1er jour du mois M + 1 mois
+# Liste des colonnes à tester, on exclut COUNTRY et IBL
+cols_to_test = [col for col in df.columns if col not in ['COUNTRY', 'IBL']]
 
-💡 filtre date :
+# Fonction pour calculer le taux de remplissage d'une ligne
+def taux_remplissage(groupe):
+    result = {}
+    total = len(groupe)
+    for col in cols_to_test:
+        count_defined = (groupe[col] != 'not defined').sum()
+        result[col] = count_defined / total if total > 0 else 0
+    return pd.Series(result)
 
-Il faut que le contrat ait commencé avant le mois, pas pendant.
-
-Et qu’il soit encore actif après la fin du mois, donc fin ≥ 1er du mois suivant.
-
-On exclut les NaT en date_fin (ils ne sont pas traités).
-
-
-
-Points clés :
-Une ligne par client et par mois, peu importe combien de contrats un client a pour ce mois-là.
-
-Données les plus récentes par rapport à date_mel pour chaque client.
-
-Tu peux ajouter autant de variables que tu veux dans le DataFrame, elles seront considérées lors du tri (par exemple Partenaire, IBL, etc.).
+# Regroupement par COUNTRY et IBL
+df_remplissage = df.groupby(['COUNTRY', 'IBL']).apply(taux_remplissage).reset_index()
