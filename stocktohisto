@@ -16,42 +16,40 @@ On exclut les NaT en date_fin (ils ne sont pas traités).
 
 import pandas as pd
 from datetime import datetime
-import numpy as np
+from dateutil.relativedelta import relativedelta
 
-# Exemple de base historique
-df = pd.DataFrame({
-    'id_contrat': [1, 2, 3, 4],
-    'date_debut': [pd.Timestamp('2022-01-23'), pd.Timestamp('2023-06-01'),
-                   pd.Timestamp('2024-03-15'), pd.Timestamp('2023-01-15')],
-    'date_fin': [pd.Timestamp('2027-01-23'), pd.Timestamp('2024-10-01'),
-                 pd.NaT, pd.Timestamp('2023-01-14')]
-})
+# Simule une base de contrats
+# Remplace ceci par le chargement de ton vrai fichier
+df = pd.read_csv("contrats.csv", parse_dates=["date_debut", "date_fin"])
 
-# Supprimer les contrats sans date_fin
-df = df.dropna(subset=['date_fin'])
+# Supprimer les contrats sans date de fin
+df = df.dropna(subset=["date_fin"])
 
-# Date de référence : avril 2025
-today = pd.Timestamp('2025-04-01')
+# Date du jour
+today = pd.Timestamp.today().normalize()
 
-# Générer les 13 mois glissants de mars 2024 à mars 2025
-mois_stock = pd.date_range(end=today - pd.offsets.MonthBegin(1), periods=13, freq='MS')
+# Récupérer les 13 mois de stock (de M-13 à M-1)
+mois_stock = pd.date_range(end=today - pd.offsets.MonthBegin(1), periods=13, freq="MS")
 
-# Création de toutes les combinaisons contrat x mois
-df_cross = df.assign(key=1).merge(
-    pd.DataFrame({'mois': mois_stock, 'key': 1}),
-    on='key'
-).drop(columns='key')
+# Initialisation de la liste pour stocker les résultats
+resultats = []
 
-# Calcul du 1er jour du mois suivant pour chaque mois M
-df_cross['debut_mois'] = df_cross['mois']
-df_cross['debut_mois_suivant'] = df_cross['mois'] + pd.offsets.MonthBegin(1)
+for mois in mois_stock:
+    mois_suivant = mois + pd.offsets.MonthBegin(1)
 
-# Application de la condition stricte :
-# date_debut < 1er M ET date_fin ≥ 1er M+1
-df_stock = df_cross[
-    (df_cross['date_debut'] < df_cross['debut_mois']) &
-    (df_cross['date_fin'] >= df_cross['debut_mois_suivant'])
-][['mois', 'id_contrat']].sort_values(['mois', 'id_contrat'])
+    df_filtre = df[
+        (df["date_debut"] < mois) &
+        (df["date_fin"] >= mois_suivant)
+    ].copy()
 
-# Affichage final
-print(df_stock)
+    df_filtre["mois_stock"] = mois
+    resultats.append(df_filtre[["id_contrat", "mois_stock"]])  # Ajoute seulement l'essentiel
+
+# Concaténation finale
+df_stock_final = pd.concat(resultats).sort_values(["mois_stock", "id_contrat"])
+
+# Résultat final
+print(df_stock_final)
+
+# Optionnel : export CSV
+# df_stock_final.to_csv("stock_13_mois_glissants.csv", index=False)
