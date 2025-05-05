@@ -4,7 +4,7 @@ date_debut < 1er jour du mois M
 
 date_fin ≥ 1er jour du mois M + 1 mois
 
-💡 Donc :
+💡 filtre date :
 
 Il faut que le contrat ait commencé avant le mois, pas pendant.
 
@@ -14,11 +14,9 @@ On exclut les NaT en date_fin (ils ne sont pas traités).
 
 
 
-# Groupement par id_client pour compter le nombre de contrats
-df_doublons = df.groupby("id_client")["id_contrat"].nunique()
+Points clés :
+Une ligne par client et par mois, peu importe combien de contrats un client a pour ce mois-là.
 
-# On garde ceux qui ont plus d’un contrat
-df_doublons = df_doublons[df_doublons > 1].reset_index()
-df_doublons.columns = ["id_client", "nb_contrats"]
+Données les plus récentes par rapport à date_mel pour chaque client.
 
-df_contrats_doublons = df[df["id_client"].isin(df_doublons["id_client"])]
+Tu peux ajouter autant de variables que tu veux dans le DataFrame, elles seront considérées lors du tri (par exemple Partenaire, IBL, etc.).
