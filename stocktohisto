@@ -1,19 +1,9 @@
-import pandas as pd
-
-# Exemple: ton DataFrame s'appelle `df`
-# On suppose que "not defined" est la valeur manquante
-
-# Liste des colonnes à tester, on exclut COUNTRY et IBL
-cols_to_test = [col for col in df.columns if col not in ['COUNTRY', 'IBL']]
-
-# Fonction pour calculer le taux de remplissage d'une ligne
-def taux_remplissage(groupe):
-    result = {}
-    total = len(groupe)
-    for col in cols_to_test:
-        count_defined = (groupe[col] != 'not defined').sum()
-        result[col] = count_defined / total if total > 0 else 0
-    return pd.Series(result)
-
-# Regroupement par COUNTRY et IBL
-df_remplissage = df.groupby(['COUNTRY', 'IBL']).apply(taux_remplissage).reset_index()
+Calendar = 
+ADDCOLUMNS (
+    CALENDAR (DATE(2020, 1, 1), DATE(2030, 12, 31)),
+    "Year", YEAR([Date]),
+    "Month", MONTH([Date]),
+    "MonthName", FORMAT([Date], "MMMM"),
+    "MonthYear", FORMAT([Date], "MMM yyyy"),
+    "SortMonthYear", YEAR([Date]) * 100 + MONTH([Date])
+)
