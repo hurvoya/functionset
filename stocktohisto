@@ -1,9 +1,5 @@
-Calendar = 
-ADDCOLUMNS (
-    CALENDAR (DATE(2020, 1, 1), DATE(2030, 12, 31)),
-    "Year", YEAR([Date]),
-    "Month", MONTH([Date]),
-    "MonthName", FORMAT([Date], "MMMM"),
-    "MonthYear", FORMAT([Date], "MMM yyyy"),
-    "SortMonthYear", YEAR([Date]) * 100 + MONTH([Date])
+FaitsUnifiés =
+UNION (
+    SELECTCOLUMNS(Source1, "Date", Source1[Date], "TypeContrat", Source1[TypeContrat], ...),
+    SELECTCOLUMNS(Source2, "Date", Source2[Date], "TypeContrat", Source2[TypeContrat], ...)
 )
