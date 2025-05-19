@@ -3,3 +3,16 @@ UNION (
     SELECTCOLUMNS(Source1, "Date", Source1[Date], "TypeContrat", Source1[TypeContrat], ...),
     SELECTCOLUMNS(Source2, "Date", Source2[Date], "TypeContrat", Source2[TypeContrat], ...)
 )
+
+
+NbContratsFiltres :=
+CALCULATE(
+    COUNTROWS(Contrats),
+    TREATAS(VALUES(FiltresTous[Pays]), Contrats[Pays]),
+    TREATAS(VALUES(FiltresTous[IBL]), Contrats[IBL]),
+    TREATAS(VALUES(FiltresTous[TypeContrat]), Contrats[TypeContrat]),
+    TREATAS(VALUES(FiltresTous[Canal]), Contrats[Canal]),
+    TREATAS(VALUES(FiltresTous[Segment]), Contrats[Segment]),
+    TREATAS(VALUES(FiltresTous[Date]), Contrats[Date]),
+    ...
+)
