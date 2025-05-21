@@ -1,18 +1,64 @@
-FaitsUnifiés =
+FiltresTous =
 UNION (
-    SELECTCOLUMNS(Source1, "Date", Source1[Date], "TypeContrat", Source1[TypeContrat], ...),
-    SELECTCOLUMNS(Source2, "Date", Source2[Date], "TypeContrat", Source2[TypeContrat], ...)
+    SELECTCOLUMNS(
+        Contract_MEL,
+        "Country", Contract_MEL[Country],
+        "IBL", Contract_MEL[IBL],
+        "Organisme", Contract_MEL[Organisme],
+        "Partner", Contract_MEL[Partner],
+        "Financial Product", Contract_MEL[Financial Product],
+        "Commercial Product", Contract_MEL[Commercial Product],
+        "Market", Contract_MEL[Market],
+        "Apporteur", Contract_MEL[Apporteur],
+        "Agence", Contract_MEL[Agence],
+        "Commercial", Contract_MEL[Commercial]
+    ),
+    SELECTCOLUMNS(
+        Request,
+        "Country", Request[Country],
+        "IBL", Request[IBL],
+        "Organisme", Request[Organisme],
+        "Partner", Request[Partner],
+        "Financial Product", Request[Financial Product],
+        "Commercial Product", Request[Commercial Product],
+        "Market", Request[Market],
+        "Apporteur", Request[Apporteur],
+        "Agence", Request[Agence],
+        "Commercial", Request[Commercial]
+    )
 )
+
 
 
 NbContratsFiltres :=
 CALCULATE(
-    COUNTROWS(Contrats),
-    TREATAS(VALUES(FiltresTous[Pays]), Contrats[Pays]),
-    TREATAS(VALUES(FiltresTous[IBL]), Contrats[IBL]),
-    TREATAS(VALUES(FiltresTous[TypeContrat]), Contrats[TypeContrat]),
-    TREATAS(VALUES(FiltresTous[Canal]), Contrats[Canal]),
-    TREATAS(VALUES(FiltresTous[Segment]), Contrats[Segment]),
-    TREATAS(VALUES(FiltresTous[Date]), Contrats[Date]),
-    ...
+    COUNTROWS(Contract_MEL),
+    TREATAS(VALUES(FiltresTous[Country]), Contract_MEL[Country]),
+    TREATAS(VALUES(FiltresTous[IBL]), Contract_MEL[IBL]),
+    TREATAS(VALUES(FiltresTous[Organisme]), Contract_MEL[Organisme]),
+    TREATAS(VALUES(FiltresTous[Partner]), Contract_MEL[Partner]),
+    TREATAS(VALUES(FiltresTous[Financial Product]), Contract_MEL[Financial Product]),
+    TREATAS(VALUES(FiltresTous[Commercial Product]), Contract_MEL[Commercial Product]),
+    TREATAS(VALUES(FiltresTous[Market]), Contract_MEL[Market]),
+    TREATAS(VALUES(FiltresTous[Apporteur]), Contract_MEL[Apporteur]),
+    TREATAS(VALUES(FiltresTous[Agence]), Contract_MEL[Agence]),
+    TREATAS(VALUES(FiltresTous[Commercial]), Contract_MEL[Commercial])
 )
+
+
+
+NbRequestsFiltres :=
+CALCULATE(
+    COUNTROWS(Request),
+    TREATAS(VALUES(FiltresTous[Country]), Request[Country]),
+    TREATAS(VALUES(FiltresTous[IBL]), Request[IBL]),
+    TREATAS(VALUES(FiltresTous[Organisme]), Request[Organisme]),
+    TREATAS(VALUES(FiltresTous[Partner]), Request[Partner]),
+    TREATAS(VALUES(FiltresTous[Financial Product]), Request[Financial Product]),
+    TREATAS(VALUES(FiltresTous[Commercial Product]), Request[Commercial Product]),
+    TREATAS(VALUES(FiltresTous[Market]), Request[Market]),
+    TREATAS(VALUES(FiltresTous[Apporteur]), Request[Apporteur]),
+    TREATAS(VALUES(FiltresTous[Agence]), Request[Agence]),
+    TREATAS(VALUES(FiltresTous[Commercial]), Request[Commercial])
+)
+
