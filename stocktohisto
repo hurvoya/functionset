@@ -62,3 +62,26 @@ CALCULATE(
     TREATAS(VALUES(FiltresTous[Commercial]), Request[Commercial])
 )
 
+NbContratsFiltres :=
+CALCULATE(
+    COUNTROWS(Contract_MEL),
+
+    // On filtre tous les champs depuis FiltresTous avec TREATAS
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[IBL]), Contract_MEL[IBL])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Organisme]), Contract_MEL[Organisme])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Partner]), Contract_MEL[Partner])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Financial Product]), Contract_MEL[Financial Product])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Commercial Product]), Contract_MEL[Commercial Product])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Market]), Contract_MEL[Market])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Apporteur]), Contract_MEL[Apporteur])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Agence]), Contract_MEL[Agence])),
+    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Commercial]), Contract_MEL[Commercial])),
+
+    // Ici on ajoute manuellement le filtre Country du slicer, mais seulement s’il existe
+    KEEPFILTERS(
+        FILTER(
+            VALUES(Contract_MEL[Country]),
+            Contract_MEL[Country] IN VALUES(FiltresTous[Country])
+        )
+    )
+)
