@@ -13,7 +13,7 @@ df_merged = pd.merge(
     suffixes=('_contrat', '_request')
 )
 
-# Étape 3 : Flags de présence
+# Étape 3 : Flags de présence (créés à partir des colonnes suffixées)
 df_merged['FLG_contrat'] = df_merged['Country_contrat'].notna().astype(int)
 df_merged['FLG_request'] = df_merged['Country_request'].notna().astype(int)
 
@@ -27,9 +27,12 @@ colonnes_communes = [
 for col in colonnes_communes:
     df_merged[col] = df_merged[f'{col}_contrat'].combine_first(df_merged[f'{col}_request'])
 
-# Étape 5 : Nettoyage des colonnes dupliquées
-colonnes_a_supprimer = [col for col in df_merged.columns if col.endswith('_contrat') or col.endswith('_request')]
+# Étape 5 : Nettoyage - ne supprimer que les colonnes suffixées sans toucher aux autres
+colonnes_a_supprimer = [
+    col for col in df_merged.columns
+    if any(col.startswith(f'{base}_') for base in colonnes_communes)
+]
 df_final = df_merged.drop(columns=colonnes_a_supprimer)
 
-# Résultat
+# Étape 6 : Résultat
 print(df_final.head())
