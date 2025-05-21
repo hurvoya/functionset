@@ -1,87 +1,35 @@
-FiltresTous =
-UNION (
-    SELECTCOLUMNS(
-        Contract_MEL,
-        "Country", Contract_MEL[Country],
-        "IBL", Contract_MEL[IBL],
-        "Organisme", Contract_MEL[Organisme],
-        "Partner", Contract_MEL[Partner],
-        "Financial Product", Contract_MEL[Financial Product],
-        "Commercial Product", Contract_MEL[Commercial Product],
-        "Market", Contract_MEL[Market],
-        "Apporteur", Contract_MEL[Apporteur],
-        "Agence", Contract_MEL[Agence],
-        "Commercial", Contract_MEL[Commercial]
-    ),
-    SELECTCOLUMNS(
-        Request,
-        "Country", Request[Country],
-        "IBL", Request[IBL],
-        "Organisme", Request[Organisme],
-        "Partner", Request[Partner],
-        "Financial Product", Request[Financial Product],
-        "Commercial Product", Request[Commercial Product],
-        "Market", Request[Market],
-        "Apporteur", Request[Apporteur],
-        "Agence", Request[Agence],
-        "Commercial", Request[Commercial]
-    )
+import pandas as pd
+
+# Étape 1 : Renommer les clés pour préparer la fusion
+df_contract_MEL = df_contract_MEL.rename(columns={'Contract Id': 'ID_COMMUN'})
+df_request = df_request.rename(columns={'Request Id': 'ID_COMMUN'})
+
+# Étape 2 : Merge full outer join
+df_merged = pd.merge(
+    df_contract_MEL,
+    df_request,
+    on='ID_COMMUN',
+    how='outer',
+    suffixes=('_contrat', '_request')
 )
 
+# Étape 3 : Flags de présence
+df_merged['FLG_contrat'] = df_merged['Country_contrat'].notna().astype(int)
+df_merged['FLG_request'] = df_merged['Country_request'].notna().astype(int)
 
+# Étape 4 : Fusion des colonnes communes avec priorité Contrat > Request
+colonnes_communes = [
+    'Country', 'IBL', 'Organisme', 'Partner',
+    'Financial Product', 'Commercial Product',
+    'Market', 'Apporteur', 'Agence', 'Commercial'
+]
 
-NbContratsFiltres :=
-CALCULATE(
-    COUNTROWS(Contract_MEL),
-    TREATAS(VALUES(FiltresTous[Country]), Contract_MEL[Country]),
-    TREATAS(VALUES(FiltresTous[IBL]), Contract_MEL[IBL]),
-    TREATAS(VALUES(FiltresTous[Organisme]), Contract_MEL[Organisme]),
-    TREATAS(VALUES(FiltresTous[Partner]), Contract_MEL[Partner]),
-    TREATAS(VALUES(FiltresTous[Financial Product]), Contract_MEL[Financial Product]),
-    TREATAS(VALUES(FiltresTous[Commercial Product]), Contract_MEL[Commercial Product]),
-    TREATAS(VALUES(FiltresTous[Market]), Contract_MEL[Market]),
-    TREATAS(VALUES(FiltresTous[Apporteur]), Contract_MEL[Apporteur]),
-    TREATAS(VALUES(FiltresTous[Agence]), Contract_MEL[Agence]),
-    TREATAS(VALUES(FiltresTous[Commercial]), Contract_MEL[Commercial])
-)
+for col in colonnes_communes:
+    df_merged[col] = df_merged[f'{col}_contrat'].combine_first(df_merged[f'{col}_request'])
 
+# Étape 5 : Nettoyage des colonnes dupliquées
+colonnes_a_supprimer = [col for col in df_merged.columns if col.endswith('_contrat') or col.endswith('_request')]
+df_final = df_merged.drop(columns=colonnes_a_supprimer)
 
-
-NbRequestsFiltres :=
-CALCULATE(
-    COUNTROWS(Request),
-    TREATAS(VALUES(FiltresTous[Country]), Request[Country]),
-    TREATAS(VALUES(FiltresTous[IBL]), Request[IBL]),
-    TREATAS(VALUES(FiltresTous[Organisme]), Request[Organisme]),
-    TREATAS(VALUES(FiltresTous[Partner]), Request[Partner]),
-    TREATAS(VALUES(FiltresTous[Financial Product]), Request[Financial Product]),
-    TREATAS(VALUES(FiltresTous[Commercial Product]), Request[Commercial Product]),
-    TREATAS(VALUES(FiltresTous[Market]), Request[Market]),
-    TREATAS(VALUES(FiltresTous[Apporteur]), Request[Apporteur]),
-    TREATAS(VALUES(FiltresTous[Agence]), Request[Agence]),
-    TREATAS(VALUES(FiltresTous[Commercial]), Request[Commercial])
-)
-
-NbContratsFiltres :=
-CALCULATE(
-    COUNTROWS(Contract_MEL),
-
-    // On filtre tous les champs depuis FiltresTous avec TREATAS
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[IBL]), Contract_MEL[IBL])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Organisme]), Contract_MEL[Organisme])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Partner]), Contract_MEL[Partner])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Financial Product]), Contract_MEL[Financial Product])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Commercial Product]), Contract_MEL[Commercial Product])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Market]), Contract_MEL[Market])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Apporteur]), Contract_MEL[Apporteur])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Agence]), Contract_MEL[Agence])),
-    KEEPFILTERS(TREATAS(VALUES(FiltresTous[Commercial]), Contract_MEL[Commercial])),
-
-    // Ici on ajoute manuellement le filtre Country du slicer, mais seulement s’il existe
-    KEEPFILTERS(
-        FILTER(
-            VALUES(Contract_MEL[Country]),
-            Contract_MEL[Country] IN VALUES(FiltresTous[Country])
-        )
-    )
-)
+# Résultat
+print(df_final.head())
