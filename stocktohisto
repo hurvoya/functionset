@@ -1,38 +1,11 @@
-import pandas as pd
+# Extraire année et mois
+df['year_creation'] = df['Creation date'].dt.year
+df['month_creation'] = df['Creation date'].dt.month
 
-# Étape 1 : Renommer les clés pour préparer la fusion
-df_contract_MEL = df_contract_MEL.rename(columns={'Contract Id': 'ID_COMMUN'})
-df_request = df_request.rename(columns={'Request Id': 'ID_COMMUN'})
+df['year_stock'] = df['mois_stock'].dt.year
+df['month_stock'] = df['mois_stock'].dt.month
 
-# Étape 2 : Merge full outer join
-df_merged = pd.merge(
-    df_contract_MEL,
-    df_request,
-    on='ID_COMMUN',
-    how='outer',
-    suffixes=('_contrat', '_request')
-)
-
-# Étape 3 : Flags de présence (créés à partir des colonnes suffixées)
-df_merged['FLG_contrat'] = df_merged['Country_contrat'].notna().astype(int)
-df_merged['FLG_request'] = df_merged['Country_request'].notna().astype(int)
-
-# Étape 4 : Fusion des colonnes communes avec priorité Contrat > Request
-colonnes_communes = [
-    'Country', 'IBL', 'Organisme', 'Partner',
-    'Financial Product', 'Commercial Product',
-    'Market', 'Apporteur', 'Agence', 'Commercial'
-]
-
-for col in colonnes_communes:
-    df_merged[col] = df_merged[f'{col}_contrat'].combine_first(df_merged[f'{col}_request'])
-
-# Étape 5 : Nettoyage - ne supprimer que les colonnes suffixées sans toucher aux autres
-colonnes_a_supprimer = [
-    col for col in df_merged.columns
-    if any(col.startswith(f'{base}_') for base in colonnes_communes)
-]
-df_final = df_merged.drop(columns=colonnes_a_supprimer)
-
-# Étape 6 : Résultat
-print(df_final.head())
+# Comparer les (année, mois)
+df['flag'] = ((df['year_creation'] < df['year_stock']) |
+              ((df['year_creation'] == df['year_stock']) & 
+               (df['month_creation'] <= df['month_stock']))).astype(int)
