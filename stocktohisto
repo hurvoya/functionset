@@ -1,11 +1,5 @@
-# Extraire année et mois
-df['year_creation'] = df['Creation date'].dt.year
-df['month_creation'] = df['Creation date'].dt.month
+# Trier par date la plus ancienne
+df_sorted = df_ecc.sort_values('Creation date')
 
-df['year_stock'] = df['mois_stock'].dt.year
-df['month_stock'] = df['mois_stock'].dt.month
-
-# Comparer les (année, mois)
-df['flag'] = ((df['year_creation'] < df['year_stock']) |
-              ((df['year_creation'] == df['year_stock']) & 
-               (df['month_creation'] <= df['month_stock']))).astype(int)
+# Garder la première occurrence par groupe (la plus ancienne)
+df_unique_rows = df_sorted.drop_duplicates(subset=['Country', 'Third Party nb'], keep='first')
