@@ -1,42 +1,14 @@
-Fait_All =
-UNION(
-    SELECTCOLUMNS(
-        contracts,
-        "Country", contracts[Country],
-        "IBL", contracts[IBL],
-        "Partner", contracts[Partner],
-        "Organisme", contracts[Organisme],
-        "Financial Product", contracts[Financial Product],
-        "Commercial Product", contracts[Commercial Product],
-        "Market", contracts[Market],
-        "Apporteur", contracts[Apporteur],
-        "Agence", contracts[Agence],
-        "Commercial", contracts[Commercial]
-    ),
-    SELECTCOLUMNS(
-        requests,
-        "Country", requests[Country],
-        "IBL", requests[IBL],
-        "Partner", requests[Partner],
-        "Organisme", requests[Organisme],
-        "Financial Product", requests[Financial Product],
-        "Commercial Product", requests[Commercial Product],
-        "Market", requests[Market],
-        "Apporteur", requests[Apporteur],
-        "Agence", requests[Agence],
-        "Commercial", requests[Commercial]
-    ),
-    SELECTCOLUMNS(
-        clients,
-        "Country", clients[Country],
-        "IBL", clients[IBL],
-        "Partner", clients[Partner],
-        "Organisme", clients[Organisme],
-        "Financial Product", clients[Financial Product],
-        "Commercial Product", clients[Commercial Product],
-        "Market", clients[Market],
-        "Apporteur", clients[Apporteur],
-        "Agence", clients[Agence],
-        "Commercial", clients[Commercial]
-    )
+Nb_Total_Requests :=
+CALCULATE(
+    COUNTROWS(requests),
+    TREATAS(VALUES(Fait_All[Country]), requests[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), requests[IBL]),
+    TREATAS(VALUES(Fait_All[Partner]), requests[Partner]),
+    TREATAS(VALUES(Fait_All[Organisme]), requests[Organisme]),
+    TREATAS(VALUES(Fait_All[Financial Product]), requests[Financial Product]),
+    TREATAS(VALUES(Fait_All[Commercial Product]), requests[Commercial Product]),
+    TREATAS(VALUES(Fait_All[Market]), requests[Market]),
+    TREATAS(VALUES(Fait_All[Apporteur]), requests[Apporteur]),
+    TREATAS(VALUES(Fait_All[Agence]), requests[Agence]),
+    TREATAS(VALUES(Fait_All[Commercial]), requests[Commercial])
 )
