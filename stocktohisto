@@ -1,69 +1,42 @@
-Dim_Country = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Country", contract_request[Country]),
-        SELECTCOLUMNS(clients, "Country", clients[Country])
-    )
-)
-
-Dim_IBL = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "IBL", contract_request[IBL]),
-        SELECTCOLUMNS(clients, "IBL", clients[IBL])
-    )
-)
-
-Dim_Organisme = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Organisme", contract_request[Organisme]),
-        SELECTCOLUMNS(clients, "Organisme", clients[Organisme])
-    )
-)
-
-Dim_Partner = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Partner", contract_request[Partner]),
-        SELECTCOLUMNS(clients, "Partner", clients[Partner])
-    )
-)
-
-Dim_FinancialProduct = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Financial Product", contract_request[Financial Product]),
-        SELECTCOLUMNS(clients, "Financial Product", clients[Financial Product])
-    )
-)
-
-Dim_CommercialProduct = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Commercial Product", contract_request[Commercial Product]),
-        SELECTCOLUMNS(clients, "Commercial Product", clients[Commercial Product])
-    )
-)
-
-Dim_Market = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Market", contract_request[Market]),
-        SELECTCOLUMNS(clients, "Market", clients[Market])
-    )
-)
-
-Dim_Apporteur = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Apporteur", contract_request[Apporteur]),
-        SELECTCOLUMNS(clients, "Apporteur", clients[Apporteur])
-    )
-)
-
-Dim_Agence = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Agence", contract_request[Agence]),
-        SELECTCOLUMNS(clients, "Agence", clients[Agence])
-    )
-)
-
-Dim_Commercial = DISTINCT(
-    UNION(
-        SELECTCOLUMNS(contract_request, "Commercial", contract_request[Commercial]),
-        SELECTCOLUMNS(clients, "Commercial", clients[Commercial])
+Fait_All =
+UNION(
+    SELECTCOLUMNS(
+        contracts,
+        "Country", contracts[Country],
+        "IBL", contracts[IBL],
+        "Partner", contracts[Partner],
+        "Organisme", contracts[Organisme],
+        "Financial Product", contracts[Financial Product],
+        "Commercial Product", contracts[Commercial Product],
+        "Market", contracts[Market],
+        "Apporteur", contracts[Apporteur],
+        "Agence", contracts[Agence],
+        "Commercial", contracts[Commercial]
+    ),
+    SELECTCOLUMNS(
+        requests,
+        "Country", requests[Country],
+        "IBL", requests[IBL],
+        "Partner", requests[Partner],
+        "Organisme", requests[Organisme],
+        "Financial Product", requests[Financial Product],
+        "Commercial Product", requests[Commercial Product],
+        "Market", requests[Market],
+        "Apporteur", requests[Apporteur],
+        "Agence", requests[Agence],
+        "Commercial", requests[Commercial]
+    ),
+    SELECTCOLUMNS(
+        clients,
+        "Country", clients[Country],
+        "IBL", clients[IBL],
+        "Partner", clients[Partner],
+        "Organisme", clients[Organisme],
+        "Financial Product", clients[Financial Product],
+        "Commercial Product", clients[Commercial Product],
+        "Market", clients[Market],
+        "Apporteur", clients[Apporteur],
+        "Agence", clients[Agence],
+        "Commercial", clients[Commercial]
     )
 )
