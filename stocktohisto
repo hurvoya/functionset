@@ -1,5 +1,69 @@
-# Trier par date la plus ancienne
-df_sorted = df_ecc.sort_values('Creation date')
+Dim_Country = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Country", contract_request[Country]),
+        SELECTCOLUMNS(clients, "Country", clients[Country])
+    )
+)
 
-# Garder la première occurrence par groupe (la plus ancienne)
-df_unique_rows = df_sorted.drop_duplicates(subset=['Country', 'Third Party nb'], keep='first')
+Dim_IBL = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "IBL", contract_request[IBL]),
+        SELECTCOLUMNS(clients, "IBL", clients[IBL])
+    )
+)
+
+Dim_Organisme = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Organisme", contract_request[Organisme]),
+        SELECTCOLUMNS(clients, "Organisme", clients[Organisme])
+    )
+)
+
+Dim_Partner = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Partner", contract_request[Partner]),
+        SELECTCOLUMNS(clients, "Partner", clients[Partner])
+    )
+)
+
+Dim_FinancialProduct = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Financial Product", contract_request[Financial Product]),
+        SELECTCOLUMNS(clients, "Financial Product", clients[Financial Product])
+    )
+)
+
+Dim_CommercialProduct = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Commercial Product", contract_request[Commercial Product]),
+        SELECTCOLUMNS(clients, "Commercial Product", clients[Commercial Product])
+    )
+)
+
+Dim_Market = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Market", contract_request[Market]),
+        SELECTCOLUMNS(clients, "Market", clients[Market])
+    )
+)
+
+Dim_Apporteur = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Apporteur", contract_request[Apporteur]),
+        SELECTCOLUMNS(clients, "Apporteur", clients[Apporteur])
+    )
+)
+
+Dim_Agence = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Agence", contract_request[Agence]),
+        SELECTCOLUMNS(clients, "Agence", clients[Agence])
+    )
+)
+
+Dim_Commercial = DISTINCT(
+    UNION(
+        SELECTCOLUMNS(contract_request, "Commercial", contract_request[Commercial]),
+        SELECTCOLUMNS(clients, "Commercial", clients[Commercial])
+    )
+)
