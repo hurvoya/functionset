@@ -1,75 +1,20 @@
-Slide 1 – Current Context
-Dashboard Objective:
+Introduction :
+Thank you all for being here today.
+I’m going to present the Pay Out dashboard project, and more broadly, the entire dashboard overhaul that our Data Office team is implementing.
+To introduce myself, I’m Anthony Revois, a data scientist in the Operations and Transformation team within the Data Office.
+In this project, along with my colleague Aurel, I am responsible for the entire dashboard redesign.
 
-Strengthen performance management within operational teams by defining effective indicators usable across all countries to set action plans.
+Slide Global contexte :
+So, to give you an overview of the global context, we have about six dashboards that need to be redesigned.
+The goal isn’t necessarily to fully overhaul and deliver an entire dashboard all at once, but rather to proceed step by step.
+We started by prioritizing the dashboards: the FDJ and No Touch dashboards were prioritized as P1 and P2, and the Pay Out dashboard comes in as P3.
+As for the Customer Service, Data Quality, and Signatures dashboards, they will be reprioritized in June.
 
-Serve as support in discussions:
-
-Between countries and Corporate (e.g., SPOCs for Pay Out and Global Head)
-
-Locally within countries (Ops and BUs)
-
-Enable Top Management to have a clear view of Pay Out activity across countries/BUs
-
-Measure the service level while ensuring mutual commitments and satisfaction of Dealers/Clients.
-
-How:
-
-Creation of key information enabling effective performance tracking against set targets.
-E.g.: volume, right resources in the right place, operational efficiency, Dealer/client service on time, respect of lead times, productivity; risk KPIs tracking is out of scope.
-
-Take into account the specificities of each country/IBL.
-
-Slide 2 – Objectives
-"Exit" current data preparation processes in view of SAS decommissioning (Reco Audit)
-
-Retrieve data at the source, in Dataiku, and conduct data quality analysis
-
-Document and validate the different rules applied to data
-
-Optimize current dashboards to facilitate analysis, integrate organizational changes (TOM) and support decision-making
-
-Slide 3 – Evolution Lot #1
-Review the current context considering the clarifications/changes below.
-
-KPI Evolution:
-
-Evolve productivity calculations → pooling of current team data: present historical data
-
-Include volume trends → track current year volumes vs previous year
-
-Manage history when contexts change → Variable SLA with changing validity periods
-
-Dashboard Readability Evolution:
-
-Create a summary page per country and ease access to various dashboard data
-
-Split user-usage
-
-Add relevant business filters that can be easily implemented due to data availability (e.g., Market/Partners)
-
-New Scope:
-
-Integrate specific KPIs for BU BLS – excluding Real Estate → if successful, extend to BEL and Italy
-
-Data Access:
-
-Add a dedicated tab with request details + KPIs to ease extractions (implementation dependent on dashboard weight) → aim: deeper “country-level analysis”
-
-Slide 4 – Next Step
-Delivery of Lot #1 for testing: End of June 2025
-
-Prioritization and implementation of Lot #2: To be defined
-
-Extend the dashboard to other countries excluding PFE
-
-Retrieve KPIs produced autonomously by countries
-e.g.: PFE not using BPM (like ITA or ELS-DEU)
-
-Refine No Touch indicators (strong demand from countries to distinguish internal vs external touch)
-
-FTE data source (working days, FTE) → capture some data automatically
-
-For BPM lead times display, consider calculating median vs average from Spotfire, which can misrepresent reality
-
-Direct BPM access for countries to avoid manual Spotfire extractions
+To explain a bit about our overall approach within the Data team for this kind of project:
+- first, of course, we prioritize the subjects, which I’ve just outlined.
+- Next, we move on to a framing stage, where the goal is to identify the requirements, create development batches, and ensure the right filters are in place, etc.
+- Then we move on to the development phase. Here, with my colleague Aurel, we gather the data, transform it, challenge it, and integrate it into the dashboard, aiming to make it as clean, understandable, and easy to update as possible.
+- Next, in step four, we go through a testing phase, where we provide the dashboards to various stakeholders—whether in different countries or key contacts—to gather their feedback on these tests.
+- Finally, once everything is validated, we move on to deployment. After deployment, of course, we can have additional batches—lot 2, lot 3—or small impactful improvements that can be implemented.
+The goal is not to set everything in stone once it’s deployed, but rather to deliver initial versions that are usable and can evolve over time.
+That’s it for the global context.
