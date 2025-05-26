@@ -1,14 +1,75 @@
-Nb_Total_Requests :=
-CALCULATE(
-    COUNTROWS(requests),
-    TREATAS(VALUES(Fait_All[Country]), requests[Country]),
-    TREATAS(VALUES(Fait_All[IBL]), requests[IBL]),
-    TREATAS(VALUES(Fait_All[Partner]), requests[Partner]),
-    TREATAS(VALUES(Fait_All[Organisme]), requests[Organisme]),
-    TREATAS(VALUES(Fait_All[Financial Product]), requests[Financial Product]),
-    TREATAS(VALUES(Fait_All[Commercial Product]), requests[Commercial Product]),
-    TREATAS(VALUES(Fait_All[Market]), requests[Market]),
-    TREATAS(VALUES(Fait_All[Apporteur]), requests[Apporteur]),
-    TREATAS(VALUES(Fait_All[Agence]), requests[Agence]),
-    TREATAS(VALUES(Fait_All[Commercial]), requests[Commercial])
-)
+Slide 1 – Current Context
+Dashboard Objective:
+
+Strengthen performance management within operational teams by defining effective indicators usable across all countries to set action plans.
+
+Serve as support in discussions:
+
+Between countries and Corporate (e.g., SPOCs for Pay Out and Global Head)
+
+Locally within countries (Ops and BUs)
+
+Enable Top Management to have a clear view of Pay Out activity across countries/BUs
+
+Measure the service level while ensuring mutual commitments and satisfaction of Dealers/Clients.
+
+How:
+
+Creation of key information enabling effective performance tracking against set targets.
+E.g.: volume, right resources in the right place, operational efficiency, Dealer/client service on time, respect of lead times, productivity; risk KPIs tracking is out of scope.
+
+Take into account the specificities of each country/IBL.
+
+Slide 2 – Objectives
+"Exit" current data preparation processes in view of SAS decommissioning (Reco Audit)
+
+Retrieve data at the source, in Dataiku, and conduct data quality analysis
+
+Document and validate the different rules applied to data
+
+Optimize current dashboards to facilitate analysis, integrate organizational changes (TOM) and support decision-making
+
+Slide 3 – Evolution Lot #1
+Review the current context considering the clarifications/changes below.
+
+KPI Evolution:
+
+Evolve productivity calculations → pooling of current team data: present historical data
+
+Include volume trends → track current year volumes vs previous year
+
+Manage history when contexts change → Variable SLA with changing validity periods
+
+Dashboard Readability Evolution:
+
+Create a summary page per country and ease access to various dashboard data
+
+Split user-usage
+
+Add relevant business filters that can be easily implemented due to data availability (e.g., Market/Partners)
+
+New Scope:
+
+Integrate specific KPIs for BU BLS – excluding Real Estate → if successful, extend to BEL and Italy
+
+Data Access:
+
+Add a dedicated tab with request details + KPIs to ease extractions (implementation dependent on dashboard weight) → aim: deeper “country-level analysis”
+
+Slide 4 – Next Step
+Delivery of Lot #1 for testing: End of June 2025
+
+Prioritization and implementation of Lot #2: To be defined
+
+Extend the dashboard to other countries excluding PFE
+
+Retrieve KPIs produced autonomously by countries
+e.g.: PFE not using BPM (like ITA or ELS-DEU)
+
+Refine No Touch indicators (strong demand from countries to distinguish internal vs external touch)
+
+FTE data source (working days, FTE) → capture some data automatically
+
+For BPM lead times display, consider calculating median vs average from Spotfire, which can misrepresent reality
+
+Direct BPM access for countries to avoid manual Spotfire extractions
