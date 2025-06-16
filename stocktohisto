@@ -1,20 +1,10 @@
-Introduction :
-Thank you all for being here today.
-I’m going to present the Pay Out dashboard project, and more broadly, the entire dashboard overhaul that our Data Office team is implementing.
-To introduce myself, I’m Anthony Revois, a data scientist in the Operations and Transformation team within the Data Office.
-In this project, along with my colleague Aurel, I am responsible for the entire dashboard redesign.
-
-Slide Global contexte :
-So, to give you an overview of the global context, we have about six dashboards that need to be redesigned.
-The goal isn’t necessarily to fully overhaul and deliver an entire dashboard all at once, but rather to proceed step by step.
-We started by prioritizing the dashboards: the FDJ and No Touch dashboards were prioritized as P1 and P2, and the Pay Out dashboard comes in as P3.
-As for the Customer Service, Data Quality, and Signatures dashboards, they will be reprioritized in June.
-
-To explain a bit about our overall approach within the Data team for this kind of project:
-- first, of course, we prioritize the subjects, which I’ve just outlined.
-- Next, we move on to a framing stage, where the goal is to identify the requirements, create development batches, and ensure the right filters are in place, etc.
-- Then we move on to the development phase. Here, with my colleague Aurel, we gather the data, transform it, challenge it, and integrate it into the dashboard, aiming to make it as clean, understandable, and easy to update as possible.
-- Next, in step four, we go through a testing phase, where we provide the dashboards to various stakeholders—whether in different countries or key contacts—to gather their feedback on these tests.
-- Finally, once everything is validated, we move on to deployment. After deployment, of course, we can have additional batches—lot 2, lot 3—or small impactful improvements that can be implemented.
-The goal is not to set everything in stone once it’s deployed, but rather to deliver initial versions that are usable and can evolve over time.
-That’s it for the global context.
+Partner_Ratio_FMD_Contracts :=
+VAR seuilMin = SELECTEDVALUE(SeuilContrats[Value], 0)
+VAR nbTotal = [Partner_Nb_Total_Contracts]
+VAR nbFMD = [Partner_Nb_FMD_Contracts]
+RETURN
+    IF(
+        nbTotal >= seuilMin,
+        DIVIDE(nbFMD, nbTotal),
+        BLANK()
+    )
