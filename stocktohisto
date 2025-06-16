@@ -1,10 +1,13 @@
-Partner_Ratio_FMD_Contracts :=
+Rang_Ratio_FMD_Contrats :=
 VAR seuilMin = SELECTEDVALUE(SeuilContrats[Value], 0)
-VAR nbTotal = [Partner_Nb_Total_Contracts]
-VAR nbFMD = [Partner_Nb_FMD_Contracts]
 RETURN
-    IF(
-        nbTotal >= seuilMin,
-        DIVIDE(nbFMD, nbTotal),
-        BLANK()
-    )
+RANKX(
+    FILTER(
+        VALUES(contracts[Partner]),
+        [Partner_Nb_Total_Contracts] >= seuilMin
+    ),
+    [Partner_Ratio_FMD_Contracts],
+    ,
+    ASC, -- ou DESC pour un Top
+    Dense
+)
