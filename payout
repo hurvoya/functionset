@@ -1,47 +1,7 @@
-def set_flag_and_ibl(row):
-    country = row['Country']
-    ibl = row['IBL']
-    partner_code = row['Partner_Code']
-    mt_new_business = row['MT_NEW_BUSINESS']
-
-    # Initialiser le flag à 1 par défaut
-    flag = 1
-
-    # Conditions pour l'IBL ELS
-    if ibl == 'ELS':
-        # Exclusion pour BE et NL si MT_NEW_BUSINESS <= 150 000
-        if country in ['BE', 'NL'] and partner_code in ['006', '069']:
-            if mt_new_business <= 150000:
-                flag = 0
-
-        # Exclusion pour les autres pays (006 et 069)
-        elif partner_code in ['006', '069']:
-            flag = 0
-
-        # Exclusions spécifiques pour UK
-        if country == 'UK' and partner_code in ['005', '016', '015', '003']:
-            flag = 0
-
-        # Exclusions spécifiques pour DE
-        if country == 'DE' and partner_code in ['005', '013']:
-            flag = 0
-
-    # Création de nouvelles IBL pour UK
-    if country == 'UK' and ibl == 'ELS':
-        if partner_code in ['005', '016', '015', '003']:
-            new_ibl = 'ELS_UK_CFS_MKB'
-        else:
-            new_ibl = 'ELS_UK'
-    # Création de nouvelles IBL pour DE
-    elif country == 'DE' and ibl == 'ELS':
-        if partner_code in ['006', '069', '005', '013']:
-            new_ibl = 'ELS_DE'
-        else:
-            new_ibl = 'ELS_DE_IN_ONE_GOTIM'
-    else:
-        new_ibl = ibl
-
-    return pd.Series([flag, new_ibl])
-
-# Appliquer la fonction aux dataframes
-df[['Flag_Country', 'IBL']] = df.apply(set_flag_and_ibl, axis=1)
+# Remplacer les virgules par des points, enlever les espaces et convertir en float
+df['MT_NEW_BUSINESS'] = (
+    df['MT_NEW_BUSINESS']
+    .str.replace(',', '.', regex=False)
+    .str.replace(' ', '', regex=False)
+    .astype(float)
+)
