@@ -1,0 +1,17 @@
+import pandas as pd
+
+# Concaténer les combinaisons uniques de Country, Code_SAE_STIM, et Lib_SAE_STIM à partir de df_MEL et df_CANCEL
+ref_table = pd.concat([
+    df_MEL[['Country', 'Code_SAE_STIM', 'Lib_SAE_STIM']],
+    df_CANCEL[['Country', 'Code_SAE_STIM', 'Lib_SAE_STIM']]
+]).drop_duplicates().reset_index(drop=True)
+
+# Joindre la table de référence avec df_SPOT sur Country et Lib_SAE_STIM pour récupérer Code_SAE_STIM
+df_SPOT = pd.merge(
+    df_SPOT,
+    ref_table[['Country', 'Lib_SAE_STIM', 'Code_SAE_STIM']],
+    on=['Country', 'Lib_SAE_STIM'],
+    how='left'
+)
+
+# Maintenant, df_SPOT contient la colonne Code_SAE_STIM reconstituée
