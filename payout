@@ -1,21 +1,32 @@
-df['DT_STATUS_CHANGE'] = pd.to_datetime(df['DT_STATUS_CHANGE'], errors='coerce')
-df['End date'] = pd.to_datetime(df['End date'], errors='coerce')
+Avg_Lead_Time_Days :=
+CALCULATE(
+    AVERAGE(Spotfire[Lead Time in Days]),
+    Spotfire[Flag_Country] = 1,
+    Spotfire[FLG_MEL_Valide] = 1,
+    TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
+    TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
+    TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
+    TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
+    TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
+    TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
+    TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
+    TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
+)
 
 
-def flag_mel_valide(row):
-    cod_status_major = str(row['COD_STATUS_MAJOR'])
-    dt_status_change = row['DT_STATUS_CHANGE']
-    end_date = row['End date']
-
-    if len(cod_status_major.strip()) < 1 or pd.isna(cod_status_major):
-        return 0
-
-    if pd.notnull(dt_status_change) and pd.notnull(end_date):
-        days_diff = (end_date - dt_status_change).days
-        if days_diff > 30:
-            return 0
-
-    return 1
-
-# Appliquer la fonction
-df['FlagMELValide'] = df.apply(flag_mel_valide, axis=1)
+Avg_Last_Doc_LeadTime :=
+CALCULATE(
+    AVERAGE(Spotfire[Last Doc LeadTime in Days]),
+    Spotfire[Flag_Country] = 1,
+    Spotfire[FLG_MEL_Valide] = 1,
+    TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
+    TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
+    TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
+    TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
+    TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
+    TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
+    TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
+    TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
+)
