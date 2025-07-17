@@ -1,7 +1,65 @@
-# Remplacer les virgules par des points, enlever les espaces et convertir en float
-df['MT_NEW_BUSINESS'] = (
-    df['MT_NEW_BUSINESS']
-    .str.replace(',', '.', regex=False)
-    .str.replace(' ', '', regex=False)
-    .astype(float)
-)
+| Pays   | Conditions principales                                                                                                                                                           |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **BE** | Si `COD_IBL == "04"` : `Last Doc LeadTime in days <= 5 → 1`, sinon `<=1 → 1`                                                                                                     |
+| **DE** | Si `COD_PARTNER == "028"` : `<=10 → 1`, sinon si `LIB_LG_SALES_TEAM == "B0190"` : `<=10 → 1`, sinon `<=2 → 1`                                                                    |
+| **ES** | `Last Doc LeadTime in days <= 1 → 1`                                                                                                                                             |
+| **FR** | Si `COD_PARTNER == "005"` : `<=1 → 1`, sinon `<=2 → 1`                                                                                                                           |
+| **NL** | Si `COD_IBL == "04"` :  <br> - `ID_BROKER == "10000268" : <=3 → 1` <br> - `ID_BROKER == "10000779" : <=3 → 1` <br> - Sinon : `<=2 → 1` <br> Sinon : `<=1 → 1`                    |
+| **UK** | Si `COD_IBL == "04"` : <br> - `COD_PARTNER == "087" : <=5 → 1` <br> - Sinon si `ID_BROKER in ["10000279", "10476058"] : <=1 → 1` <br> - Sinon : `<=2 → 1` <br> Sinon : `<=1 → 1` |
+| **IT** | Toujours `0`                                                                                                                                                                     |
+
+
+def compute_inSLA(row):
+    country = row['Country']
+    cod_ibl = str(row['COD_IBL'])
+    cod_partner = str(row['COD_PARTNER'])
+    id_broker = str(row['ID_BROKER'])
+    lib_lg_sales_team = str(row['LIB_LG_SALES_TEAM'])
+    leadtime = row['Last Doc LeadTime in days']
+
+    if country == 'IT':
+        return 0
+
+    elif country == 'BE':
+        if cod_ibl == '04':
+            return 1 if leadtime <= 5 else 0
+        return 1 if leadtime <= 1 else 0
+
+    elif country == 'DE':
+        if cod_partner == '028':
+            return 1 if leadtime <= 10 else 0
+        if lib_lg_sales_team == 'B0190':
+            return 1 if leadtime <= 10 else 0
+        return 1 if leadtime <= 2 else 0
+
+    elif country == 'ES':
+        return 1 if leadtime <= 1 else 0
+
+    elif country == 'FR':
+        if cod_partner == '005':
+            return 1 if leadtime <= 1 else 0
+        return 1 if leadtime <= 2 else 0
+
+    elif country == 'NL':
+        if cod_ibl == '04':
+            if id_broker == '10000268':
+                return 1 if leadtime <= 3 else 0
+            if id_broker == '10000779':
+                return 1 if leadtime <= 3 else 0
+            return 1 if leadtime <= 2 else 0
+        return 1 if leadtime <= 1 else 0
+
+    elif country == 'GB':  # UK
+        if cod_ibl == '04':
+            if cod_partner == '087':
+                return 1 if leadtime <= 5 else 0
+            if id_broker in ['10000279', '10476058']:
+                return 1 if leadtime <= 1 else 0
+            return 1 if leadtime <= 2 else 0
+        return 1 if leadtime <= 1 else 0
+
+    else:
+        return 0  # Fallback pour les pays non listés
+
+# Application sur le dataframe
+df['inSLA'] = df.apply(compute_inSLA, axis=1)
