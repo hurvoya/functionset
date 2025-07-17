@@ -1,16 +1,14 @@
-def lead_time_category(leadtime):
-    if leadtime < 0.5001:
-        return "< 4hours"
-    elif leadtime < 1.0001:
-        return "< 1day"
-    elif leadtime < 2.0001:
-        return "< 2days"
-    elif leadtime < 3.0001:
-        return "< 3days"
-    elif leadtime < 5.0001:
-        return "< 5days"
+def touch_category(nb_touch):
+    if nb_touch < 1:
+        return "Touch 0"
+    elif nb_touch == 1:
+        return "Touch 1"
+    elif nb_touch == 2:
+        return "Touch 2"
+    elif nb_touch == 3:
+        return "Touch 3"
     else:
-        return "> 5days"
+        return "Touch 4+"
 
-# Appliquer la fonction
-df['LeadTime_Type'] = df['Last Doc LeadTime in days'].apply(lead_time_category)
+# Application sur le dataframe
+df['Touch_Type'] = df['Nb of touch (total)'].apply(touch_category)
