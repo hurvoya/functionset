@@ -1,32 +1,34 @@
-Avg_Lead_Time_Days :=
-CALCULATE(
-    AVERAGE(Spotfire[Lead Time in Days]),
-    Spotfire[Flag_Country] = 1,
-    Spotfire[FLG_MEL_Valide] = 1,
-    TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-    TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
-    TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
-    TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
-    TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
-    TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
-    TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
-    TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
-    TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
-)
-
-
-Avg_Last_Doc_LeadTime :=
-CALCULATE(
-    AVERAGE(Spotfire[Last Doc LeadTime in Days]),
-    Spotfire[Flag_Country] = 1,
-    Spotfire[FLG_MEL_Valide] = 1,
-    TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-    TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
-    TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
-    TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
-    TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
-    TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
-    TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
-    TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
-    TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
+Ratio_Contracts_LeadTime_Type :=
+DIVIDE(
+    -- Numérateur : Nb contrats Spotfire pour chaque LeadTime_Type
+    CALCULATE(
+        DISTINCTCOUNT(Spotfire[Contract Id]),
+        Spotfire[Flag_Country] = 1,
+        Spotfire[FLG_MEL_Valide] = 1,
+        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
+        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
+        TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
+        TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
+        TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
+        TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
+        TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
+        TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
+        TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
+    ),
+    -- Dénominateur : Nb total contrats Spotfire (tous LeadTime_Type confondus)
+    CALCULATE(
+        DISTINCTCOUNT(Spotfire[Contract Id]),
+        Spotfire[Flag_Country] = 1,
+        Spotfire[FLG_MEL_Valide] = 1,
+        REMOVEFILTERS(Spotfire[LeadTime_Type]), -- ❗ ignore le LeadTime_Type
+        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
+        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
+        TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
+        TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
+        TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
+        TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
+        TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
+        TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
+        TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
+    )
 )
