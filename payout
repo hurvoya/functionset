@@ -1,47 +1,17 @@
-Touch_Category :=
-SWITCH(
-    TRUE(),
-    Spotfire[Nb of touch (total)] = 0, "1-No Touch",
-    Spotfire[Nb of touch (internal)] > 0 && Spotfire[Nb of touch (external)] = 0, "2-Internal only",
-    Spotfire[Nb of touch (internal)] = 0 && Spotfire[Nb of touch (external)] > 0, "3-External only",
-    Spotfire[Nb of touch (internal)] > 0 && Spotfire[Nb of touch (external)] > 0, "4-Both",
-    "5-Unclassified"
-)
+def classify_touch(row):
+    total = row['Nb of touch (total)']
+    internal = row['Nb of touch (internal)']
+    external = row['Nb of touch (external)']
 
+    if total == 0:
+        return "No Touch"
+    elif internal > 0 and external == 0:
+        return "Internal only"
+    elif internal == 0 and external > 0:
+        return "External only"
+    elif internal > 0 and external > 0:
+        return "Both"
+    else:
+        return "Unclassified"
 
-Nb_Contracts_Touch_Category :=
-CALCULATE(
-    DISTINCTCOUNT(Spotfire[Contract Id]),
-    Spotfire[Flag_Country] = 1,
-    Spotfire[FLG_MEL_Valide] = 1,
-    TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-    TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
-    TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
-    TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
-    TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
-    TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
-    TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
-    TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
-    TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
-)
-
-%_Contracts_Touch_Category :=
-DIVIDE(
-    [Nb_Contracts_Touch_Category],
-    CALCULATE(
-        DISTINCTCOUNT(Spotfire[Contract Id]),
-        Spotfire[Flag_Country] = 1,
-        Spotfire[FLG_MEL_Valide] = 1,
-        REMOVEFILTERS(Spotfire[Touch_Category]), -- ✅ ignore le filtre catégorie
-        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
-        TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
-        TREATAS(VALUES(Fait_All[Partner]), Spotfire[Partner]),
-        TREATAS(VALUES(Fait_All[Financial Product]), Spotfire[Financial Product]),
-        TREATAS(VALUES(Fait_All[Commercial Product]), Spotfire[Commercial Product]),
-        TREATAS(VALUES(Fait_All[Market]), Spotfire[Market]),
-        TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
-        TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
-    )
-)
-
+df['Touch_Category'] = df.apply(classify_touch, axis=1)
