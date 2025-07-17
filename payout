@@ -1,14 +1,42 @@
-def touch_category(nb_touch):
-    if nb_touch < 1:
-        return "Touch 0"
-    elif nb_touch == 1:
-        return "Touch 1"
-    elif nb_touch == 2:
-        return "Touch 2"
-    elif nb_touch == 3:
-        return "Touch 3"
-    else:
-        return "Touch 4+"
-
-# Application sur le dataframe
-df['Touch_Type'] = df['Nb of touch (total)'].apply(touch_category)
+Fait_All =
+UNION (
+    SELECTCOLUMNS (
+        MEL,
+        "Country", MEL[Country],
+        "Contract Id", MEL[Contract Id],
+        "IBL", MEL[IBL],
+        "Organisme", MEL[Organisme],
+        "Partner", MEL[Partner],
+        "Financial Product", MEL[Financial Product],
+        "Commercial Product", MEL[Commercial Product],
+        "Market", MEL[Market],
+        "Apporteur", MEL[Apporteur],
+        "Agence", MEL[Agence]
+    ),
+    SELECTCOLUMNS (
+        Cancel_STL,
+        "Country", Cancel_STL[Country],
+        "Contract Id", Cancel_STL[Contract Id],
+        "IBL", Cancel_STL[IBL],
+        "Organisme", Cancel_STL[Organisme],
+        "Partner", Cancel_STL[Partner],
+        "Financial Product", Cancel_STL[Financial Product],
+        "Commercial Product", Cancel_STL[Commercial Product],
+        "Market", Cancel_STL[Market],
+        "Apporteur", Cancel_STL[Apporteur],
+        "Agence", Cancel_STL[Agence]
+    ),
+    SELECTCOLUMNS (
+        Spotfire,
+        "Country", Spotfire[Country],
+        "Contract Id", Spotfire[Contract Id],
+        "IBL", Spotfire[IBL],
+        "Organisme", Spotfire[Organisme],
+        "Partner", Spotfire[Partner],
+        "Financial Product", Spotfire[Financial Product],
+        "Commercial Product", Spotfire[Commercial Product],
+        "Market", Spotfire[Market],
+        "Apporteur", Spotfire[Apporteur],
+        "Agence", Spotfire[Agence]
+    )
+)
