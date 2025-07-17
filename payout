@@ -1,42 +1,29 @@
-Fait_All =
-UNION (
-    SELECTCOLUMNS (
-        MEL,
-        "Country", MEL[Country],
-        "Contract Id", MEL[Contract Id],
-        "IBL", MEL[IBL],
-        "Organisme", MEL[Organisme],
-        "Partner", MEL[Partner],
-        "Financial Product", MEL[Financial Product],
-        "Commercial Product", MEL[Commercial Product],
-        "Market", MEL[Market],
-        "Apporteur", MEL[Apporteur],
-        "Agence", MEL[Agence]
+%_Cancel_STL :=
+DIVIDE(
+    -- Numérateur : Nb distinct de Contract Id dans Cancel STL
+    CALCULATE(
+        DISTINCTCOUNT(Cancel_STL[Contract Id]),
+        TREATAS(VALUES(Fait_All[IBL]), Cancel_STL[IBL]),
+        TREATAS(VALUES(Fait_All[Organisme]), Cancel_STL[Organisme]),
+        TREATAS(VALUES(Fait_All[Partner]), Cancel_STL[Partner]),
+        TREATAS(VALUES(Fait_All[Financial Product]), Cancel_STL[Financial Product]),
+        TREATAS(VALUES(Fait_All[Commercial Product]), Cancel_STL[Commercial Product]),
+        TREATAS(VALUES(Fait_All[Market]), Cancel_STL[Market]),
+        TREATAS(VALUES(Fait_All[Apporteur]), Cancel_STL[Apporteur]),
+        TREATAS(VALUES(Fait_All[Agence]), Cancel_STL[Agence])
+        -- ❌ Pas de Country ici
     ),
-    SELECTCOLUMNS (
-        Cancel_STL,
-        "Country", Cancel_STL[Country],
-        "Contract Id", Cancel_STL[Contract Id],
-        "IBL", Cancel_STL[IBL],
-        "Organisme", Cancel_STL[Organisme],
-        "Partner", Cancel_STL[Partner],
-        "Financial Product", Cancel_STL[Financial Product],
-        "Commercial Product", Cancel_STL[Commercial Product],
-        "Market", Cancel_STL[Market],
-        "Apporteur", Cancel_STL[Apporteur],
-        "Agence", Cancel_STL[Agence]
-    ),
-    SELECTCOLUMNS (
-        Spotfire,
-        "Country", Spotfire[Country],
-        "Contract Id", Spotfire[Contract Id],
-        "IBL", Spotfire[IBL],
-        "Organisme", Spotfire[Organisme],
-        "Partner", Spotfire[Partner],
-        "Financial Product", Spotfire[Financial Product],
-        "Commercial Product", Spotfire[Commercial Product],
-        "Market", Spotfire[Market],
-        "Apporteur", Spotfire[Apporteur],
-        "Agence", Spotfire[Agence]
+    -- Dénominateur : Nb distinct de Contract Id dans MEL STL
+    CALCULATE(
+        DISTINCTCOUNT(MEL[Contract Id]),
+        TREATAS(VALUES(Fait_All[IBL]), MEL[IBL]),
+        TREATAS(VALUES(Fait_All[Organisme]), MEL[Organisme]),
+        TREATAS(VALUES(Fait_All[Partner]), MEL[Partner]),
+        TREATAS(VALUES(Fait_All[Financial Product]), MEL[Financial Product]),
+        TREATAS(VALUES(Fait_All[Commercial Product]), MEL[Commercial Product]),
+        TREATAS(VALUES(Fait_All[Market]), MEL[Market]),
+        TREATAS(VALUES(Fait_All[Apporteur]), MEL[Apporteur]),
+        TREATAS(VALUES(Fait_All[Agence]), MEL[Agence])
+        -- ❌ Pas de Country ici non plus
     )
 )
