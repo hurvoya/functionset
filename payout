@@ -1,39 +1,27 @@
-Analyse_Niveau =
-DATATABLE(
-    "Niveau", STRING,
-    {
-        {"Partner"},
-        {"Market"},
-        {"Sales Team"}
-    }
-)
-
-
-Axe_Dynamique :=
-SWITCH(
-    SELECTEDVALUE(Analyse_Niveau[Niveau]),
-    "Partner", SELECTEDVALUE(Spotfire[Partner]),
-    "Market", SELECTEDVALUE(Spotfire[Market]),
-    "Sales Team", SELECTEDVALUE(Spotfire[Sales Team])
-)
-
-
-Nb_Contracts_With_Touch :=
-CALCULATE(
-    DISTINCTCOUNT(Spotfire[Contract Id]),
-    Spotfire[Nb of touch (total)] > 0,
-    Spotfire[Flag_Country] = 1,
-    Spotfire[FLG_MEL_Valide] = 1,
-    TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-    TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
-    ...
-)
-
-
 Top10_Entities :=
-TOPN(
-    10,
-    VALUES(Axe_Dynamique),
-    [Nb_Contracts_With_Touch],
-    DESC
+VAR SelectedNiveau = SELECTEDVALUE(Analyse_Niveau[Niveau])
+RETURN
+SWITCH(
+    TRUE(),
+    SelectedNiveau = "Partner",
+        TOPN(
+            10,
+            VALUES(Spotfire[Partner]),
+            [Nb_Contracts_With_Touch],
+            DESC
+        ),
+    SelectedNiveau = "Market",
+        TOPN(
+            10,
+            VALUES(Spotfire[Market]),
+            [Nb_Contracts_With_Touch],
+            DESC
+        ),
+    SelectedNiveau = "Sales Team",
+        TOPN(
+            10,
+            VALUES(Spotfire[Sales Team]),
+            [Nb_Contracts_With_Touch],
+            DESC
+        )
 )
