@@ -1,29 +1,21 @@
-%_Cancel_STL :=
-DIVIDE(
-    -- Numérateur : Nb distinct de Contract Id dans Cancel STL
-    CALCULATE(
-        DISTINCTCOUNT(Cancel_STL[Contract Id]),
-        TREATAS(VALUES(Fait_All[IBL]), Cancel_STL[IBL]),
-        TREATAS(VALUES(Fait_All[Organisme]), Cancel_STL[Organisme]),
-        TREATAS(VALUES(Fait_All[Partner]), Cancel_STL[Partner]),
-        TREATAS(VALUES(Fait_All[Financial Product]), Cancel_STL[Financial Product]),
-        TREATAS(VALUES(Fait_All[Commercial Product]), Cancel_STL[Commercial Product]),
-        TREATAS(VALUES(Fait_All[Market]), Cancel_STL[Market]),
-        TREATAS(VALUES(Fait_All[Apporteur]), Cancel_STL[Apporteur]),
-        TREATAS(VALUES(Fait_All[Agence]), Cancel_STL[Agence])
-        -- ❌ Pas de Country ici
-    ),
-    -- Dénominateur : Nb distinct de Contract Id dans MEL STL
-    CALCULATE(
-        DISTINCTCOUNT(MEL[Contract Id]),
-        TREATAS(VALUES(Fait_All[IBL]), MEL[IBL]),
-        TREATAS(VALUES(Fait_All[Organisme]), MEL[Organisme]),
-        TREATAS(VALUES(Fait_All[Partner]), MEL[Partner]),
-        TREATAS(VALUES(Fait_All[Financial Product]), MEL[Financial Product]),
-        TREATAS(VALUES(Fait_All[Commercial Product]), MEL[Commercial Product]),
-        TREATAS(VALUES(Fait_All[Market]), MEL[Market]),
-        TREATAS(VALUES(Fait_All[Apporteur]), MEL[Apporteur]),
-        TREATAS(VALUES(Fait_All[Agence]), MEL[Agence])
-        -- ❌ Pas de Country ici non plus
-    )
-)
+df['DT_STATUS_CHANGE'] = pd.to_datetime(df['DT_STATUS_CHANGE'], errors='coerce')
+df['End date'] = pd.to_datetime(df['End date'], errors='coerce')
+
+
+def flag_mel_valide(row):
+    cod_status_major = str(row['COD_STATUS_MAJOR'])
+    dt_status_change = row['DT_STATUS_CHANGE']
+    end_date = row['End date']
+
+    if len(cod_status_major.strip()) < 1 or pd.isna(cod_status_major):
+        return 0
+
+    if pd.notnull(dt_status_change) and pd.notnull(end_date):
+        days_diff = (end_date - dt_status_change).days
+        if days_diff > 30:
+            return 0
+
+    return 1
+
+# Appliquer la fonction
+df['FlagMELValide'] = df.apply(flag_mel_valide, axis=1)
