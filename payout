@@ -1,10 +1,24 @@
-Ratio_Contracts_LeadTime_Type :=
+Seuil_LeadTime =
+DATATABLE(
+    "Seuil", DOUBLE,
+    {
+        {0.5001}, // < 4hours
+        {1.0001}, // < 1day
+        {2.0001}, // < 2days
+        {3.0001}, // < 3days
+        {5.0001}  // < 5days
+    }
+)
+
+
+%_Contracts_LT_Dynamic :=
 DIVIDE(
-    -- Numérateur : Nb contrats Spotfire pour chaque LeadTime_Type
+    -- Numérateur : contrats Spotfire dont Last Doc LeadTime < seuil choisi
     CALCULATE(
         DISTINCTCOUNT(Spotfire[Contract Id]),
         Spotfire[Flag_Country] = 1,
         Spotfire[FLG_MEL_Valide] = 1,
+        Spotfire[Last Doc LeadTime in Days] < SELECTEDVALUE(Seuil_LeadTime[Seuil]),
         TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
         TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
         TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
@@ -15,12 +29,11 @@ DIVIDE(
         TREATAS(VALUES(Fait_All[Apporteur]), Spotfire[Apporteur]),
         TREATAS(VALUES(Fait_All[Agence]), Spotfire[Agence])
     ),
-    -- Dénominateur : Nb total contrats Spotfire (tous LeadTime_Type confondus)
+    -- Dénominateur : total contrats Spotfire
     CALCULATE(
         DISTINCTCOUNT(Spotfire[Contract Id]),
         Spotfire[Flag_Country] = 1,
         Spotfire[FLG_MEL_Valide] = 1,
-        REMOVEFILTERS(Spotfire[LeadTime_Type]), -- ❗ ignore le LeadTime_Type
         TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
         TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL]),
         TREATAS(VALUES(Fait_All[Organisme]), Spotfire[Organisme]),
