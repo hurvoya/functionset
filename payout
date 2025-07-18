@@ -1,53 +1,30 @@
-Monthly_Efficiency_Actual_FTE :=
-DIVIDE(
-    CALCULATE(
-        DISTINCTCOUNT(MEL[Contract Id]),
-        MEL[Flag_Country] = 1,
-        MEL[FLG_BPM] = 1, -- exemple : adapte selon tes filtres
-        TREATAS(VALUES(Fait_All[Country]), MEL[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), MEL[IBL])
-    ),
-    CALCULATE(
-        SUM(FTE[Actual FTE]),
-        TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
-    )
+Total_WorkingDays :=
+CALCULATE(
+    SUM(FTE[WorkingDays]),
+    TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
 )
 
 
-Monthly_Efficiency_Op_FTE :=
-DIVIDE(
-    CALCULATE(
-        DISTINCTCOUNT(MEL[Contract Id]),
-        MEL[Flag_Country] = 1,
-        MEL[FLG_BPM] = 1,
-        TREATAS(VALUES(Fait_All[Country]), MEL[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), MEL[IBL])
-    ),
-    CALCULATE(
-        SUM(FTE[Op FTE]) + SUM(FTE[Task Force FTE]),
-        TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
-    )
+Total_Actual_FTE :=
+CALCULATE(
+    SUM(FTE[Actual FTE]),
+    TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
 )
 
 
-Daily_Efficiency_Actual_FTE :=
-DIVIDE(
-    [Monthly_Efficiency_Actual_FTE],
-    CALCULATE(
-        SUM(FTE[WorkingDays]),
-        TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
-    )
+Total_Op_FTE :=
+CALCULATE(
+    SUM(FTE[Op FTE]),
+    TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
 )
 
-Daily_Efficiency_Op_FTE :=
-DIVIDE(
-    [Monthly_Efficiency_Op_FTE],
-    CALCULATE(
-        SUM(FTE[WorkingDays]),
-        TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
-    )
+
+Total_TaskForce_FTE :=
+CALCULATE(
+    SUM(FTE[Task Force FTE]),
+    TREATAS(VALUES(Fait_All[Country]), FTE[Country]),
+    TREATAS(VALUES(Fait_All[IBL]), FTE[IBL])
 )
