@@ -1,13 +1,15 @@
-Top10_Partners :=
-TOPN(
-    10,
-    VALUES(Spotfire[Partner]),
-    CALCULATE(
-        DISTINCTCOUNT(Spotfire[Contract Id]),
-        Spotfire[Nb of touch (total)] > 0,
-        Spotfire[Flag_Country] = 1,
-        Spotfire[FLG_MEL_Valide] = 1,
-        TREATAS(...)
-    ),
-    DESC
-)
+import pandas as pd
+
+# Convertir la colonne en datetime
+df_mel['Start Date'] = pd.to_datetime(df_mel['Start Date'])
+
+# Créer une colonne “Month_Period”
+def classify_period(day):
+    if day <= 10:
+        return "Début de mois"
+    elif day <= 20:
+        return "Milieu de mois"
+    else:
+        return "Fin de mois"
+
+df_mel['Month_Period'] = df_mel['Start Date'].dt.day.apply(classify_period)
