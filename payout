@@ -1,18 +1,8 @@
-%_No_Touch :=
-DIVIDE(
-    CALCULATE(
-        DISTINCTCOUNT(Spotfire[Contract Id]),
-        Spotfire[Touch_Category] = "No Touch",
-        Spotfire[Flag_Country] = 1,
-        Spotfire[FLG_MEL_Valide] = 1,
-        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL])
+Show_SLA :=
+IF(
+    CONTAINS(
+        TREATAS(VALUES(Fait_All[Country]), SLA[Country]),
+        SLA[Country], SLA[Country]
     ),
-    CALCULATE(
-        DISTINCTCOUNT(Spotfire[Contract Id]),
-        Spotfire[Flag_Country] = 1,
-        Spotfire[FLG_MEL_Valide] = 1,
-        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
-        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL])
-    )
+    1, 0
 )
