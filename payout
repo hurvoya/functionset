@@ -1,15 +1,18 @@
-import pandas as pd
-
-# Convertir la colonne en datetime
-df_mel['Start Date'] = pd.to_datetime(df_mel['Start Date'])
-
-# Créer une colonne “Month_Period”
-def classify_period(day):
-    if day <= 10:
-        return "Début de mois"
-    elif day <= 20:
-        return "Milieu de mois"
-    else:
-        return "Fin de mois"
-
-df_mel['Month_Period'] = df_mel['Start Date'].dt.day.apply(classify_period)
+%_No_Touch :=
+DIVIDE(
+    CALCULATE(
+        DISTINCTCOUNT(Spotfire[Contract Id]),
+        Spotfire[Touch_Category] = "No Touch",
+        Spotfire[Flag_Country] = 1,
+        Spotfire[FLG_MEL_Valide] = 1,
+        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
+        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL])
+    ),
+    CALCULATE(
+        DISTINCTCOUNT(Spotfire[Contract Id]),
+        Spotfire[Flag_Country] = 1,
+        Spotfire[FLG_MEL_Valide] = 1,
+        TREATAS(VALUES(Fait_All[Country]), Spotfire[Country]),
+        TREATAS(VALUES(Fait_All[IBL]), Spotfire[IBL])
+    )
+)
