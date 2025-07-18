@@ -1,27 +1,13 @@
-Top10_Entities :=
-VAR SelectedNiveau = SELECTEDVALUE(Analyse_Niveau[Niveau])
-RETURN
-SWITCH(
-    TRUE(),
-    SelectedNiveau = "Partner",
-        TOPN(
-            10,
-            VALUES(Spotfire[Partner]),
-            [Nb_Contracts_With_Touch],
-            DESC
-        ),
-    SelectedNiveau = "Market",
-        TOPN(
-            10,
-            VALUES(Spotfire[Market]),
-            [Nb_Contracts_With_Touch],
-            DESC
-        ),
-    SelectedNiveau = "Sales Team",
-        TOPN(
-            10,
-            VALUES(Spotfire[Sales Team]),
-            [Nb_Contracts_With_Touch],
-            DESC
-        )
+Top10_Partners :=
+TOPN(
+    10,
+    VALUES(Spotfire[Partner]),
+    CALCULATE(
+        DISTINCTCOUNT(Spotfire[Contract Id]),
+        Spotfire[Nb of touch (total)] > 0,
+        Spotfire[Flag_Country] = 1,
+        Spotfire[FLG_MEL_Valide] = 1,
+        TREATAS(...)
+    ),
+    DESC
 )
