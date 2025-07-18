@@ -1,8 +1,5 @@
-Show_SLA :=
-IF(
-    CONTAINS(
-        TREATAS(VALUES(Fait_All[Country]), SLA[Country]),
-        SLA[Country], SLA[Country]
-    ),
-    1, 0
+SLA_Filtree =
+FILTER(
+    SLA,
+    SLA[Country] IN VALUES(Fait_All[Country])
 )
