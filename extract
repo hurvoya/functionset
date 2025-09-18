@@ -1,0 +1,17 @@
+import pandas as pd
+
+# On rassemble tous les dataframes
+df_all = pd.concat([be, fr, uk, it, es, de, nl], ignore_index=True)
+
+# Pivot avec concaténation des labels si plusieurs valeurs
+df_final = df_all.pivot_table(
+    index="CODE_PRODUIT_COMMERCIAL",
+    columns="Country",
+    values="LIB_PRODUIT_COMMERCIAL",
+    aggfunc=lambda x: "; ".join(sorted(set(x.dropna())))
+).reset_index()
+
+# Réordonner les colonnes pour avoir code + pays
+df_final = df_final[["CODE_PRODUIT_COMMERCIAL", "BE", "FR", "UK", "IT", "ES", "DE", "NL"]]
+
+print(df_final.head())
