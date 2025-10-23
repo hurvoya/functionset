@@ -1,17 +1,140 @@
-Niveau d’impact des corrections	Exemples typiques	Actions à mener	Livrables concernés	Commentaire
-🟢 Impact mineur	- Suppression de doublons
-- Correction ponctuelle d’un format
-- Imputation d’une variable manquante	➤ Remplir les livrables d’itération (LIV-10 à LIV-12) :
-– journal des corrections
-– mini-EDA de validation
-– synthèse des effets	✅ Étape 4 uniquement	Pas besoin de refaire les livrables 1–2–3. Tu ajoutes juste une note “MAJ v1.1” dans le rapport de qualité.
-🟡 Impact modéré	- Ajout / suppression de variables
-- Ajustement d’une règle de jointure
-- Mise à jour d’une source partielle	➤ Mettre à jour les livrables impactés :
-– LIV-01_DataQualityReport_v2
-– LIV-02_DataDictionary_v2
-➤ Réaliser une EDA ciblée (LIV-11)	✅ Étape 1 + Étape 4	Les changements sont limités, mais affectent la structure du dataset. On versionne (v2).
-🔴 Impact majeur	- Nouvelle source de données
-- Refonte complète du modèle ou pipeline
-- Changements de logique métier	➤ Refaire les livrables 1, 2 et 4 (préparation & EDA) en version v2 complète
-➤ Produire un nouveau rapport de conclusions (LIV-07_v2)	✅ Étapes 1–2–3 + Étape 4	On repart sur une “seconde boucle complète”. L’objectif : reconstruire un socle de données propre et compris.
+🧰 1️⃣ Data Quality Report
+
+(Phase : Préparation & Contrôles techniques)
+
+🎯 Objectif : documenter l’état initial des données et démontrer leur fiabilité.
+
+📄 Contenu typique :
+
+Section	Description
+1. Description du périmètre	Sources de données, tables utilisées, volumétrie, période couverte
+2. Contrôles effectués	Liste des contrôles réalisés (types de variables, formats, doublons, valeurs nulles, outliers, incohérences de jointures, etc.)
+3. Résultats des contrôles	Tableaux synthétiques avec pourcentage de valeurs manquantes, doublons détectés, distribution par type
+4. Anomalies identifiées	Liste des problèmes détectés avec leur gravité (mineur/majeur)
+5. Actions correctives / recommandations	Ce qui a été fait ou doit être fait pour corriger les anomalies
+6. Synthèse	État de santé global des données (“Qualité acceptable pour analyse” ou “Actions correctives requises”)
+
+💡 Format conseillé : tableau Excel, ou document Word 2–3 pages max, ou Data Quality Dashboard (Power BI si suivi récurrent).
+
+📘 2️⃣ Dictionnaire de données
+
+(Phase : Préparation)
+
+🎯 Objectif : documenter toutes les variables pour garantir la compréhension et la réutilisabilité.
+
+📄 Contenu typique :
+
+Champ	Description
+Nom de la variable	Nom exact dans la base ou dataset
+Description	Signification métier
+Type	Numérique, catégoriel, texte, date…
+Unité	Si applicable (€, %, jours, etc.)
+Source	Table, fichier ou API d’origine
+Taux de complétude	% de valeurs non nulles
+Traitement appliqué	Nettoyage, normalisation, imputation
+Commentaire / remarque	Particularités ou points d’attention
+
+💡 Format conseillé : Excel / Google Sheet partagé (souvent maintenu collaborativement).
+
+🧩 3️⃣ Schéma ou Modèle de données
+
+(Phase : Préparation)
+
+🎯 Objectif : donner une vue claire des tables, relations et clés.
+📄 Contenu typique :
+
+Diagramme entités–relations (tables, clés primaires et étrangères)
+
+Flux de données entre sources et dataset final
+
+Description textuelle des liens et règles de jointure
+
+(Optionnel) mini légende des codes / agrégations
+
+💡 Format conseillé : PowerPoint / draw.io / Lucidchart (graphique clair et à jour).
+
+🔍 4️⃣ EDA Report / Notebook
+
+(Phase : EDA – Exploration analytique)
+
+🎯 Objectif : consigner les analyses exploratoires et leurs résultats.
+
+📄 Contenu typique :
+
+Section	Description
+1. Objectif de l’analyse	Rappel du périmètre et des questions explorées
+2. Analyse univariée	Distributions, statistiques descriptives, valeurs extrêmes
+3. Analyse bivariée	Corrélations, croisements de variables, relations avec la cible
+4. Analyse multivariée (si applicable)	PCA, clustering exploratoire, patterns globaux
+5. Outliers et valeurs manquantes	Nature, volume, impact possible
+6. Observations clés	Points notables : comportements atypiques, tendances, biais possibles
+7. Visualisations	Histogrammes, heatmaps, scatterplots, boxplots, etc.
+8. Conclusions analytiques brèves	Ce qu’on apprend sur la donnée à ce stade
+
+💡 Format conseillé :
+
+Notebook Jupyter / RMarkdown pour la traçabilité technique
+
+ou PowerPoint / PDF synthétique si destiné à un public non technique
+
+💡 5️⃣ Synthèse des constats EDA / Data Insights Report
+
+(Phase : Conclusions & Interprétation)
+
+🎯 Objectif : formaliser ce que “raconte” la donnée, au-delà des chiffres.
+
+📄 Contenu typique :
+
+Section	Description
+1. Rappel du périmètre analysé	Ce qu’on a étudié, et pourquoi
+2. Principaux enseignements	Ce que l’EDA révèle sur le comportement des données (ex : saisonnalités, segments dominants, variables influentes)
+3. Points d’attention / biais	Données incohérentes, sous-représentées, biais potentiels
+4. Hypothèses métier	Ce que cela suggère sur le plan business ou opérationnel
+5. Recommandations	Actions à mener : corrections, enrichissements, variables à créer
+6. Décision	Passer à la modélisation / dataviz ou réitérer la préparation
+
+💡 Format conseillé : PowerPoint de 3–5 slides max, clair et orienté “décision”.
+
+🔁 6️⃣ Journal de corrections / EDA de validation
+
+(Phase : Itération)
+
+🎯 Objectif : garder trace des modifications de données et valider leurs effets.
+
+📄 Contenu typique :
+
+Section	Description
+1. Anomalie initiale détectée	Issue identifiée dans la 1re EDA
+2. Action corrective appliquée	Nettoyage, imputation, transformation, suppression…
+3. Vérification après correction	Résultat du contrôle post-correction (nouveaux % de manquants, outliers, etc.)
+4. EDA ciblée de validation	Visualisations ou statistiques avant/après
+5. Conclusion	Correction validée / nécessite nouvel ajustement
+
+💡 Format conseillé : petit tableau Excel ou courte note d’accompagnement au Notebook.
+
+📊 7️⃣ Validation finale pour modélisation / data visualisation
+
+(Phase : sortie du cycle)
+
+🎯 Objectif : acter que la donnée est prête et comprise.
+📄 Contenu typique :
+
+Récapitulatif des corrections validées
+
+Score de qualité final
+
+Liste des variables retenues
+
+Validation formelle (ex : “Jeu de données prêt pour modélisation / dashboard” signé par le data lead ou PO)
+
+
+
+✅ En résumé synthétique (si tu veux le mettre en slide)
+Étape	Livrable principal	Objectif du livrable
+Préparation	Data Quality Report / Dictionnaire / Modèle	Fiabiliser et documenter
+EDA	EDA Report / Graphiques / Synthèse exploratoire	Comprendre les données
+Conclusions	Data Insights Report	Tirer des enseignements métier
+Itération	Journal de corrections + EDA ciblée	Vérifier et valider les ajustements
+Validation finale	Note de validation	Acter la stabilité et le passage à la suite
+
+💡 Format : mail / note de validation (souvent informelle, mais essentielle).
