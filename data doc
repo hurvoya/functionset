@@ -1,0 +1,25 @@
+🧭 1. Phase – Préparation & Contrôles techniques
+Code	Nom du livrable	Description	Format conseillé
+LIV-01_DataQualityReport	Rapport de qualité des données	Résume les contrôles effectués (valeurs manquantes, doublons, types, cohérence).	Excel / Word / Power BI
+LIV-02_DataDictionary	Dictionnaire de données	Description détaillée des variables, sources, types, taux de complétude, règles de gestion.	Excel / Sheet
+LIV-03_DataModelDiagram	Modèle de données	Schéma entités–relations / flux de données entre sources et dataset.	PPTX / Draw.io
+🔍 2. Phase – EDA (Exploration analytique)
+Code	Nom du livrable	Description	Format conseillé
+LIV-04_EDAReport	Rapport EDA complet	Statistiques descriptives, distributions, corrélations, patterns, outliers.	Notebook / PDF / PPTX
+LIV-05_EDAVisualsPack	Ensemble des graphiques exploratoires	Visualisations brutes issues de l’EDA (histogrammes, boxplots, heatmaps).	PNG / PPTX / dossier
+LIV-06_EDASummary	Synthèse EDA	2–3 pages avec les constats principaux et points d’attention.	Word / PPTX
+💡 3. Phase – Conclusions / Interprétation
+Code	Nom du livrable	Description	Format conseillé
+LIV-07_DataInsightsReport	Rapport de conclusions analytiques	Traduction des résultats EDA en enseignements métier et recommandations.	PPTX / PDF
+LIV-08_ActionPlan_Preparation	Plan d’actions de correction ou d’enrichissement	Liste des actions à mener côté préparation, issues de l’EDA.	Excel / Sheet
+LIV-09_HypothesesBusiness	Hypothèses métier ou analytiques	Hypothèses formulées suite à l’exploration des données.	Word / Notion
+🔁 4. Phase – Itération / Correction
+Code	Nom du livrable	Description	Format conseillé
+LIV-10_CorrectionsLog	Journal de corrections	Liste des ajustements appliqués, raisons et impact attendu.	Excel / Sheet
+LIV-11_ValidationEDA	EDA ciblée post-correction	Vérification des effets des corrections via mini-EDA.	Notebook / PDF
+LIV-12_CorrectionSummary	Résumé de validation	Synthèse des corrections validées et de leur effet.	Word / PPTX
+✅ 5. Phase – Validation & Passage à la suite
+Code	Nom du livrable	Description	Format conseillé
+LIV-13_FinalValidationNote	Note de validation finale	Confirme que le dataset est stable et prêt pour la modélisation / dataviz.	Word / Email / PDF
+LIV-14_DataSetFinal	Jeu de données validé	Dataset propre et compréhensible, prêt à l’exploitation.	Parquet / CSV / DB
+LIV-15_DocumentationSummary	Synthèse documentaire du use case	Liste et lien vers tous les livrables produits, pour archivage.	PDF / Notion / SharePoint
