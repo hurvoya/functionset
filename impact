@@ -1,0 +1,17 @@
+Niveau d’impact des corrections	Exemples typiques	Actions à mener	Livrables concernés	Commentaire
+🟢 Impact mineur	- Suppression de doublons
+- Correction ponctuelle d’un format
+- Imputation d’une variable manquante	➤ Remplir les livrables d’itération (LIV-10 à LIV-12) :
+– journal des corrections
+– mini-EDA de validation
+– synthèse des effets	✅ Étape 4 uniquement	Pas besoin de refaire les livrables 1–2–3. Tu ajoutes juste une note “MAJ v1.1” dans le rapport de qualité.
+🟡 Impact modéré	- Ajout / suppression de variables
+- Ajustement d’une règle de jointure
+- Mise à jour d’une source partielle	➤ Mettre à jour les livrables impactés :
+– LIV-01_DataQualityReport_v2
+– LIV-02_DataDictionary_v2
+➤ Réaliser une EDA ciblée (LIV-11)	✅ Étape 1 + Étape 4	Les changements sont limités, mais affectent la structure du dataset. On versionne (v2).
+🔴 Impact majeur	- Nouvelle source de données
+- Refonte complète du modèle ou pipeline
+- Changements de logique métier	➤ Refaire les livrables 1, 2 et 4 (préparation & EDA) en version v2 complète
+➤ Produire un nouveau rapport de conclusions (LIV-07_v2)	✅ Étapes 1–2–3 + Étape 4	On repart sur une “seconde boucle complète”. L’objectif : reconstruire un socle de données propre et compris.
