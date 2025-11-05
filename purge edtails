@@ -12,6 +12,12 @@ Le niveau d’analyse se fait au niveau SIREN (et non client_id), donc on devra 
 Table	Clé de jointure	Vers quoi ?
 df_client	client_id	df_contract.contract_client_id & df_request.request_client_id
 df_contract	contract_id	df_contentieux.cont_contract_id
+
+
+
+
+
+
 ✅ Règles de purge exprimées simplement
 
 Pour un SIREN donné :
@@ -27,6 +33,10 @@ Si au moins une demande est au statut ACC,
 Si au moins un contrat est en contentieux (contract_code_structure = 'X')
 → alors TOUS les contrats en contentieux doivent être archivés contentieux (status 92,93,99 dans df_contentieux)
 → ET la date d’archivage la plus récente doit être > 6 ans
+
+
+
+
 
 🧱 Étapes de construction (pragmatique)
 1) Préparer la table Tiers / SIREN
@@ -47,6 +57,9 @@ SIREN_BY_CLIENT = df_client
 
 → On garde pour chaque contrat la date max des statuts (92/93/99)
 
+
+
+
 📊 Volet Analyse des Données (ce que tu veux)
 A) Qualité & Cohérence des identifiants
 Analyse	Explication
@@ -63,6 +76,11 @@ C) Historique & Durées
 Analyse	Indicateur
 Ancienneté moyenne des contrats terminés	Vérification cohérence règle 6 ans
 Délai moyen entre demande → contrat	Utilisation commerciale
+
+
+
+
+
 🧩 Indicateurs Concrets à Calculer
 Indicateur	Formule	Utilité
 Nb clients sans SIREN	count(client_id) where client_siren is null	Voir si besoin nettoyage
