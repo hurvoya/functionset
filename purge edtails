@@ -1,0 +1,72 @@
+🎯 1) Objectif Purge Tiers (logique & règles)
+
+Le niveau d’analyse se fait au niveau SIREN (et non client_id), donc on devra :
+
+(a) regrouper les clients par SIREN
+
+(b) identifier l’ensemble des contrats, demandes, contentieux associés à un même SIREN
+
+(c) évaluer les règles pour déterminer l’éligibilité à la purge.
+
+🔗 Relations clés
+Table	Clé de jointure	Vers quoi ?
+df_client	client_id	df_contract.contract_client_id & df_request.request_client_id
+df_contract	contract_id	df_contentieux.cont_contract_id
+✅ Règles de purge exprimées simplement
+
+Pour un SIREN donné :
+
+Tous les contrats doivent être au statut TER
+→ ET la date de fin du contrat doit être > 6 ans dans le passé
+
+Aucune demande (df_request) ne doit avoir request_last_modification_date < 12 mois
+
+Si au moins une demande est au statut ACC,
+→ sa request_last_modification_date doit être > 6 ans
+
+Si au moins un contrat est en contentieux (contract_code_structure = 'X')
+→ alors TOUS les contrats en contentieux doivent être archivés contentieux (status 92,93,99 dans df_contentieux)
+→ ET la date d’archivage la plus récente doit être > 6 ans
+
+🧱 Étapes de construction (pragmatique)
+1) Préparer la table Tiers / SIREN
+-- Attention : certains client n'ont pas de SIREN → à analyser à part
+SIREN_BY_CLIENT = df_client
+
+2) Contrats par SIREN
+
+→ On joint df_client à df_contract
+→ On agrège : min(contract_end_date), count(*), % TER, % en contentieux
+
+3) Demandes par SIREN
+
+→ On joint df_client à df_request
+→ On calcule la dernière date de modification + le nombre de demandes ACC
+
+4) Contentieux
+
+→ On garde pour chaque contrat la date max des statuts (92/93/99)
+
+📊 Volet Analyse des Données (ce que tu veux)
+A) Qualité & Cohérence des identifiants
+Analyse	Explication
+Nombre de clients sans SIREN	→ Peut indiquer des fiches non consolidées / anonymes
+Nombre de SIREN associés à plusieurs client_id	→ Cas de doublons potentiels
+Nombre de clients sans contrat	→ Tiers prospect abandonnés ?
+Nombre de clients sans demande ni contrat	→ Tiers obsolète ? Purge souvent immédiate.
+B) Couverture Contrats / Demandes
+Analyse	Indicateur
+% de contrats actifs vs terminés	Qualité de maturité parc client
+% de demandes ACC modifiées < 6 ans	Frein à la purge
+% de contrats passés en contentieux	Risque juridique
+C) Historique & Durées
+Analyse	Indicateur
+Ancienneté moyenne des contrats terminés	Vérification cohérence règle 6 ans
+Délai moyen entre demande → contrat	Utilisation commerciale
+🧩 Indicateurs Concrets à Calculer
+Indicateur	Formule	Utilité
+Nb clients sans SIREN	count(client_id) where client_siren is null	Voir si besoin nettoyage
+Nb SIREN multi client_id	count(distinct client_id) per SIREN > 1	Identifier doublons potentiels
+Nb tiers sans contrat	client_id not in df_contract	Tiers non exploité
+Nb tiers sans demande	client_id not in df_request	Vérifie inactivité
+Nb tiers sans contrat & sans demande	cas purge rapide	Candidat purge direct
