@@ -1,195 +1,93 @@
-import pandas as pd
-import numpy as np
+# ==== OPTI MÉMOIRE : dtypes utiles ====
+# Aligne les dtypes et réduit la mémoire
+if df_request["request_status"].dtype != "category":
+    df_request["request_status"] = df_request["request_status"].astype("category")
 
-# =========================
-# 0) Prépa dates & constantes
-# =========================
-# S'assure que les colonnes dates sont bien au format datetime
-for df, cols in [
-    (df_contrat, ["contract_start_date", "contract_end_date"]),
-    (df_request, ["request_last_modification_date"]),
-    (df_contentieux, ["cont_date_contentieux"]),
-]:
-    for c in cols:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce")
+# S'assure que les id ont le même dtype pour le mapping
+df_request["request_client_id"] = df_request["request_client_id"].astype(df_client["client_id"].dtype, copy=False)
 
-# Références temporelles
-today = pd.Timestamp.today().normalize()
-cutoff_6y  = today - pd.DateOffset(years=6)
-cutoff_12m = today - pd.DateOffset(months=12)
+# ==== HASH MAP client_id -> SIREN (aucun merge de 4M lignes) ====
+siren_map = pd.Series(df_client["client_siren"].values, index=df_client["client_id"].values)
 
-# =========================
-# 1) Clé SIREN par client
-# =========================
-clients = df_client[["client_id", "client_siren", "client_raison_social"]].copy()
-
-# NB: groupby sur SIREN ignore les NaN → on traite uniquement les SIREN connus dans le tableau des flags.
-siren_base = (
-    clients.loc[clients["client_siren"].notna(), ["client_siren"]]
-    .drop_duplicates()
-    .rename(columns={"client_siren": "SIREN"})
-)
-
-# =========================
-# 2) Contrats par SIREN
-# =========================
-contr = (
-    df_contrat
-    .merge(clients[["client_id", "client_siren"]], left_on="contract_client_id", right_on="client_id", how="left")
-    .rename(columns={"client_siren": "SIREN"})
-)
-
-# Indicateurs de règle 1 (tous les contrats TER et terminés depuis ≥ 6 ans)
-contr["is_TER"]    = contr["contract_status"].eq("TER")
-contr["end_6y_ok"] = contr["contract_end_date"].le(cutoff_6y)  # NaT → False
-
-# Agrégat par SIREN
-agg_r1 = (
-    contr.groupby("SIREN", dropna=True)
-    .apply(lambda g: bool(len(g)==0 or ((g["is_TER"] & g["end_6y_ok"]).all())))
-    .rename("flag_1_TER_6y")
-    .reset_index()
-)
-
-# =========================
-# 3) Demandes par SIREN
-# =========================
-req = (
+# -----------------------------
+# RÈGLE 2 : aucune demande modifiée dans les 12 derniers mois
+# -----------------------------
+# Agrégat par client_id (réduit fort le volume vs 4M lignes)
+last_mod_by_client = (
     df_request
-    .merge(clients[["client_id", "client_siren"]], left_on="request_client_id", right_on="client_id", how="left")
-    .rename(columns={"client_siren": "SIREN"})
+    .groupby("request_client_id", observed=True)["request_last_modification_date"]
+    .max()
 )
 
-# (Règle 2) — aucune demande modifiée dans les 12 derniers mois
-last_mod_by_siren = req.groupby("SIREN", dropna=True)["request_last_modification_date"].max().rename("req_last_mod_max")
+# map client -> SIREN, puis agrégat par SIREN
+last_mod_by_siren = (
+    last_mod_by_client
+    .rename("req_last_mod_max")
+    .to_frame()
+    .assign(SIREN=lambda d: siren_map.reindex(d.index).values)
+    .dropna(subset=["SIREN"])  # ignore clients sans SIREN pour l'agrégat
+    .groupby("SIREN", observed=True)["req_last_mod_max"].max()
+)
+
+# Construction du flag_2 (si pas de demande pour un SIREN, on considère True)
 r2 = (
     last_mod_by_siren
+    .reindex(tiers_flags["SIREN"])  # assure même univers de SIREN
     .to_frame()
-    .assign(flag_2_no_req_12m=lambda d: d["req_last_mod_max"].lt(cutoff_12m) | d["req_last_mod_max"].isna())  # si pas de demande → True
+    .assign(flag_2_no_req_12m=lambda d: d["req_last_mod_max"].lt(cutoff_12m) | d["req_last_mod_max"].isna())
     .reset_index()[["SIREN", "flag_2_no_req_12m"]]
 )
 
-# (Règle 3) — si au moins une demande ACC, sa dernière modif doit dater d'il y a ≥ 6 ans
-req_acc = req[req["request_status"].eq("ACC")]
-last_mod_acc_by_siren = req_acc.groupby("SIREN", dropna=True)["request_last_modification_date"].max().rename("acc_last_mod_max")
+# -----------------------------
+# RÈGLE 3 : demandes ACC modifiées il y a ≥ 6 ans
+# -----------------------------
+# On filtre d'abord ACC (réduit fortement le volume)
+req_acc = df_request[df_request["request_status"] == "ACC"]
 
-# Si pas de demande ACC → règle satisfaite (True)
+# Agrégat par client_id
+acc_last_mod_by_client = (
+    req_acc
+    .groupby("request_client_id", observed=True)["request_last_modification_date"]
+    .max()
+)
+
+# map client -> SIREN, puis agrégat par SIREN
+acc_last_mod_by_siren = (
+    acc_last_mod_by_client
+    .rename("acc_last_mod_max")
+    .to_frame()
+    .assign(SIREN=lambda d: siren_map.reindex(d.index).values)
+    .dropna(subset=["SIREN"])
+    .groupby("SIREN", observed=True)["acc_last_mod_max"].max()
+)
+
+# Si pas de demande ACC pour un SIREN → True
 r3 = (
-    last_mod_acc_by_siren
+    acc_last_mod_by_siren
+    .reindex(tiers_flags["SIREN"])  # inclut SIREN sans ACC (NaN)
     .to_frame()
     .assign(flag_3_ACC_6y=lambda d: d["acc_last_mod_max"].le(cutoff_6y))
-    .reindex(siren_base["SIREN"])  # pour inclure SIREN sans ACC (NaN)
     .assign(flag_3_ACC_6y=lambda d: d["flag_3_ACC_6y"].fillna(True))
-    .reset_index()
-    .rename(columns={"index": "SIREN"})
-)[["SIREN", "flag_3_ACC_6y"]]
-
-# =========================
-# 4) Contentieux (règle 4)
-# =========================
-# On identifie les contrats "en contentieux" côté contrats (code structure == 'X')
-contr_X = contr[contr["contract_code_structure"].eq("X")][["contract_id", "SIREN"]].copy()
-
-# On ne garde que les statuts d'archivage 92/93/99, et on prend la date d'entrée la plus ancienne (min) comme "date d'archivage"
-cont_arch = (
-    df_contentieux[df_contentieux["cont_code_status"].isin([92, 93, 99])]
-    .groupby("cont_contract_id", dropna=True)["cont_date_contentieux"]
-    .min()  # "date la plus éloignée" = la plus ancienne
-    .rename("arch_date")
-    .reset_index()
-    .rename(columns={"cont_contract_id": "contract_id"})
+    .reset_index()[["SIREN", "flag_3_ACC_6y"]]
 )
 
-# On rattache ces dates aux contrats en contentieux (X)
-contr_X_arch = contr_X.merge(cont_arch, on="contract_id", how="left")
-
-# Pour chaque SIREN : 
-# - s'il n'y a PAS de contrat X → règle satisfaite (True)
-# - sinon, TOUS les contrats X doivent avoir une arch_date non nulle ET ≤ cutoff_6y
-def _flag_r4(group):
-    if len(group) == 0:
-        return True
-    # Un contrat X sans arch_date → False
-    if group["arch_date"].isna().any():
-        return False
-    return bool((group["arch_date"] <= cutoff_6y).all())
-
-r4 = (
-    contr_X_arch.groupby("SIREN", dropna=True)
-    .apply(_flag_r4)
-    .rename("flag_4_contentieux_arch_6y")
-    .reindex(siren_base["SIREN"])  # inclure SIREN sans X (→ NaN)
-    .fillna(True)                   # pas de contrat X → True
-    .reset_index()
-)
-
-# =========================
-# 5) Assemblage des flags au niveau SIREN
-# =========================
+# -----------------------------
+# Réinjecte ces flags sans faire de gros merges coûteux
+# -----------------------------
 tiers_flags = (
-    siren_base
-    .merge(agg_r1, on="SIREN", how="left")
+    tiers_flags
+    .drop(columns=[c for c in ["flag_2_no_req_12m", "flag_3_ACC_6y"] if c in tiers_flags], errors="ignore")
     .merge(r2, on="SIREN", how="left")
     .merge(r3, on="SIREN", how="left")
-    .merge(r4, on="SIREN", how="left")
 )
 
-# Remplacement des NaN par True (cas "pas de données" → règle satisfaite par vacuité)
-for c in ["flag_1_TER_6y", "flag_2_no_req_12m", "flag_3_ACC_6y", "flag_4_contentieux_arch_6y"]:
-    tiers_flags[c] = tiers_flags[c].fillna(True).astype(bool).astype(int)
+# Valeurs manquantes → True (cas "pas de données")
+for c in ["flag_2_no_req_12m", "flag_3_ACC_6y"]:
+    tiers_flags[c] = tiers_flags[c].fillna(True).astype(int)
 
-# Flag final : ET logique de toutes les règles
+# Recalcule le flag final si besoin
 tiers_flags["flag_eligible_purge"] = (
     tiers_flags[["flag_1_TER_6y", "flag_2_no_req_12m", "flag_3_ACC_6y", "flag_4_contentieux_arch_6y"]]
     .all(axis=1)
     .astype(int)
 )
-
-# =========================
-# 6) (Optionnel) Diagnostic minimum utile
-# =========================
-# Clients sans SIREN (pour suivi qualité)
-clients_sans_siren = clients[clients["client_siren"].isna()].copy()
-
-# Clients (via client_id) sans contrat et/ou sans demande
-clients_with_contr = contr.dropna(subset=["SIREN"])[["client_id"]].drop_duplicates()
-clients_with_req   = req.dropna(subset=["SIREN"])[["client_id"]].drop_duplicates()
-
-clients_sans_contrat = clients.merge(clients_with_contr, on="client_id", how="left", indicator=True)
-clients_sans_contrat = clients_sans_contrat[clients_sans_contrat["_merge"].eq("left_only")].drop(columns=["_merge"])
-
-clients_sans_demande = clients.merge(clients_with_req, on="client_id", how="left", indicator=True)
-clients_sans_demande = clients_sans_demande[clients_sans_demande["_merge"].eq("left_only")].drop(columns=["_merge"])
-
-# Aperçu résultats
-print(tiers_flags.head())
-print("\nNb SIREN:", len(tiers_flags))
-print("Nb SIREN éligibles purge:", tiers_flags["flag_eligible_purge"].sum())
-print("\nNb clients sans SIREN:", len(clients_sans_siren))
-print("Nb clients sans contrat:", len(clients_sans_contrat))
-print("Nb clients sans demande:", len(clients_sans_demande))
-
-
-
-
-
-
-
-Détails / hypothèses intégrées
-
-Niveau d’évaluation : SIREN (tous les client_id rattachés au même SIREN sont consolidés).
-
-Règle 1 : si un SIREN n’a aucun contrat, on considère la règle satisfaite (pas d’empêchement à la purge).
-
-Règle 2 : si un SIREN n’a aucune demande, règle satisfaite.
-
-Règle 3 : si aucune demande ACC, règle satisfaite ; sinon la dernière modif ACC doit dater d’au moins 6 ans.
-
-Règle 4 : si aucun contrat en contentieux (X), règle satisfaite.
-S’il y en a, chaque contrat X doit avoir un enregistrement d’archivage contentieux (codes 92/93/99) avec une date d’entrée la plus ancienne ≤ cutoff_6y.
-
-Les dates manquantes sont considérées bloquantes pour la règle correspondante (ex. contract_end_date manquante rend la condition « terminé depuis 6 ans » fausse).
-
-Tu peux maintenant filtrer les SIREN purgeables avec :
-tiers_purgeables = tiers_flags[tiers_flags["flag_eligible_purge"].eq(1)]
