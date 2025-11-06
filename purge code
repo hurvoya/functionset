@@ -1,6 +1,7 @@
-r2 = siren_base.copy()
-r2["req_last_mod_max"] = r2["SIREN"].map(last_mod_by_siren)
-r2["flag_2_no_req_12m"] = (
-    r2["req_last_mod_max"].lt(cutoff_12m) | r2["req_last_mod_max"].isna()
+r3 = siren_base.copy()
+r3["acc_last_mod_max"] = r3["SIREN"].map(acc_last_mod_by_siren)
+# Pas de demande ACC pour un SIREN → NaN → True
+r3["flag_3_ACC_6y"] = (
+    r3["acc_last_mod_max"].le(cutoff_6y) | r3["acc_last_mod_max"].isna()
 ).astype(int)
-r2 = r2[["SIREN", "flag_2_no_req_12m"]]
+r3 = r3[["SIREN", "flag_3_ACC_6y"]]
