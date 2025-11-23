@@ -1,144 +1,53 @@
-# ============================================================
-# Nouveau flag : flg_is_not_ekip
-# ============================================================
-
-# 1) On prépare la liste des client_id présents dans df_ekip
-#    On la convertit en set pour accélérer les tests d'appartenance
-ekip_client_ids = set(df_ekip["client_id"].dropna().unique())
-
-# 2) On crée une table client -> SIREN (index unique)
-client_to_siren = (
-    clients[["client_id", "client_siren"]]
-    .dropna(subset=["client_siren"])
-    .drop_duplicates("client_id")
-    .set_index("client_id")["client_siren"]
-)
-
-# 3) On récupère uniquement les clients EKIP qui ont un SIREN associé
-#    (si certains client_id EKIP n'existent pas dans df_client → on les ignore)
-ekip_siren = client_to_siren.loc[
-    client_to_siren.index.intersection(ekip_client_ids)
-]
-
-# ekip_siren est maintenant une Series de SIREN qui ont au moins 1 client EKIP
-sirens_with_ekip = set(ekip_siren.values)
-
-# 4) Construire le flag au niveau SIREN :
-#    - SIREN ∈ sirens_with_ekip → False
-#    - Sinon → True
-tiers_flags["flg_is_not_ekip"] = (~tiers_flags["SIREN"].isin(sirens_with_ekip)).astype(int)
-
-
-
-# ============================================================
-# 1) Colonnes "exposition" : contrat associé / demande associée
-# ============================================================
-
-# flg_is_contract_associated :
-#   - 0 si flag_1_TER_6y est NaN (aucun contrat associé)
-#   - 1 sinon (au moins une info contrat pour ce SIREN)
-tiers_flags["flg_is_contract_associated"] = (
-    ~tiers_flags["flag_1_TER_6y"].isna()
-).astype(int)
-
-# flg_is_request_associated :
-#   - 0 si flag_2_no_req_12m est NaN (aucune demande associée)
-#   - 1 sinon (au moins une info demande pour ce SIREN)
-tiers_flags["flg_is_request_associated"] = (
-    ~tiers_flags["flag_2_no_req_12m"].isna()
-).astype(int)
-
-# ============================================================
-# 2) Remplacer les NaN par True sur les 4 flags de règles
-#    puis convertir en 0/1
-# ============================================================
-
-flag_cols = [
-    "flag_1_TER_6y",
-    "flag_2_no_req_12m",
-    "flag_3_ACC_6y",
-    "flag_4_contentieux_arch_6y",
-]
-
-# En absence d'info → on considère la règle comme respectée → True
-tiers_flags[flag_cols] = tiers_flags[flag_cols].fillna(True)
-
-# Conversion bool → 0/1 (True = 1, False = 0)
-tiers_flags[flag_cols] = tiers_flags[flag_cols].astype(int)
-
-# ============================================================
-# 3) Recalcul du flag final d'éligibilité (si besoin)
-# ============================================================
-
-tiers_flags["flag_eligible_purge"] = (
-    tiers_flags[flag_cols].all(axis=1).astype(int)
-)
-
-
-
-
-
 import pandas as pd
 
-# 1) On s'assure que la date de création est bien au format datetime
+# On part de df_client avec au moins :
+# - client_siren
+# - client_id
+# - client_organism
+# - client_creation_date
+
+# 1) On s'assure que la date de création est bien en datetime
 df_client["client_creation_date"] = pd.to_datetime(
     df_client["client_creation_date"], errors="coerce"
 )
 
-# 2) Fonction utilitaire pour construire "id|organisme"
-def build_id_org_concat(sub_df):
-    """
-    sub_df : sous-dataframe pour un SIREN donné,
-             contenant au moins client_id et client_organism.
-    Retourne une chaîne du type 'id1|org1; id2|org2; ...'
-    avec des paires uniques, triées pour stabilité.
-    """
-    # On garde seulement les lignes où au moins un des 2 est non nul
-    sub_df = sub_df.dropna(subset=["client_id", "client_organism"], how="all")
+# 2) Créer une colonne "id|organisme" en vectoriel (très rapide)
+#    - on remplace les NaN par "" pour éviter "nan" dans les chaînes
+tmp = df_client.copy()
 
-    # Construction des paires id|organisme sous forme de strings
-    pairs = []
-    for _, row in sub_df.iterrows():
-        cid = row["client_id"]
-        org = row["client_organism"]
-        # On convertit en string proprement, même si l'un des deux est NaN
-        cid_str = "" if pd.isna(cid) else str(cid)
-        org_str = "" if pd.isna(org) else str(org)
-        pairs.append(f"{cid_str}|{org_str}")
-    
-    # On enlève les doublons et on trie pour avoir un ordre stable
-    pairs = sorted(set(pairs))
-    
-    # On concatène avec '; ' comme séparateur
-    return "; ".join(pairs)
+tmp["client_id_str"] = tmp["client_id"].astype("string")          # string pandas (gère les NaN)
+tmp["client_organism_str"] = tmp["client_organism"].astype("string")
 
-# 3) Agrégat par SIREN
-df_client_agg = (
-    df_client
-    .groupby("client_siren")
-    .agg(
-        client_organism_map = ("client_id", lambda x: None),  # placeholder, on remplace juste après
-        last_creation_date  = ("client_creation_date", "max") # date de création la plus récente
-    )
-)
+tmp["client_id_str"] = tmp["client_id_str"].fillna("")
+tmp["client_organism_str"] = tmp["client_organism_str"].fillna("")
 
-# On doit reconstruire client_organism_map avec la fonction qui a besoin de plusieurs colonnes
-# → on refait un groupby mais en appliquant directement notre fonction custom
-id_org_series = (
-    df_client
-    .groupby("client_siren")[["client_id", "client_organism"]]
-    .apply(build_id_org_concat)
+# Concaténation vectorielle "id|organisme"
+tmp["id_org"] = tmp["client_id_str"] + "|" + tmp["client_organism_str"]
+
+# 3) On enlève les doublons SIREN / id_org pour éviter de répéter les mêmes couples
+tmp_unique = tmp.drop_duplicates(subset=["client_siren", "id_org"])
+
+# 4) Construire client_organism_map par groupby + join (tout en vectoriel)
+#    - on trie pour avoir un ordre stable
+id_org_map = (
+    tmp_unique
+    .sort_values(["client_siren", "id_org"])
+    .groupby("client_siren")["id_org"]
+    .apply("; ".join)   # concatène tous les id_org d'un SIREN avec "; "
     .rename("client_organism_map")
 )
 
-# On remplace la colonne dans df_client_agg
-df_client_agg["client_organism_map"] = id_org_series
+# 5) Calculer la dernière date de création par SIREN
+last_creation = (
+    df_client
+    .groupby("client_siren")["client_creation_date"]
+    .max()
+    .rename("last_creation_date")
+)
 
-# On remet le SIREN en colonne (au lieu d'index)
-df_client_agg = df_client_agg.reset_index().rename(columns={"client_siren": "SIREN"})
-
-
-
-
-tiers_flags = tiers_flags.merge(df_client_agg, on="SIREN", how="left")
-
+# 6) Assembler dans un df agrégé par SIREN
+df_client_agg = (
+    pd.concat([id_org_map, last_creation], axis=1)
+    .reset_index()
+    .rename(columns={"client_siren": "SIREN"})
+)
