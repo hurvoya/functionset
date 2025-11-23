@@ -5,4 +5,13 @@ df_rtj["siren"] = df_rtj["siren"].astype("string").str.replace(" ", "", regex=Fa
 df_rtj = df_rtj[df_rtj["siren"].str.len() > 0]
 
 # 3) Convertir en entier (zones invalides -> NaN)
-df_rtj["siren"] = pd.to_numeric(df_rtj["siren"], errors="co_
+df_rtj["siren"] = pd.to_numeric(df_rtj["siren"], errors="coerce")
+
+# 4) Supprimer les valeurs NaN (donc siren non convertibles)
+df_rtj = df_rtj.dropna(subset=["siren"])
+
+# 5) Convertir définitivement en int
+df_rtj["siren"] = df_rtj["siren"].astype(int)
+
+# 6) Supprimer les doublons si jamais
+df_rtj = df_rtj.drop_duplicates(subset=["siren"]).reset_index(drop=True)
