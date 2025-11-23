@@ -1,17 +1,22 @@
-# 1) Enlever TOUS les espaces dans les siren
-df_rtj["siren"] = df_rtj["siren"].astype("string").str.replace(" ", "", regex=False)
+# On extrait proprement les client_id à exclure
+wholesale_client_ids = set(df_wholesale["client_id"].dropna().unique())
 
-# 2) Supprimer les siren vides après nettoyage
-df_rtj = df_rtj[df_rtj["siren"].str.len() > 0]
 
-# 3) Convertir en entier (zones invalides -> NaN)
-df_rtj["siren"] = pd.to_numeric(df_rtj["siren"], errors="coerce")
+client_to_siren = (
+    df_client.loc[df_client["client_siren"].notna(), ["client_id", "client_siren"]]
+    .drop_duplicates("client_id")
+    .set_index("client_id")["client_siren"]
+)
 
-# 4) Supprimer les valeurs NaN (donc siren non convertibles)
-df_rtj = df_rtj.dropna(subset=["siren"])
 
-# 5) Convertir définitivement en int
-df_rtj["siren"] = df_rtj["siren"].astype(int)
+# On récupère les SIREN correspondant aux client_id wholesale
+sirens_with_wholesale = client_to_siren.loc[
+    client_to_siren.index.intersection(wholesale_client_ids)
+]
 
-# 6) Supprimer les doublons si jamais
-df_rtj = df_rtj.drop_duplicates(subset=["siren"]).reset_index(drop=True)
+sirens_with_wholesale = set(sirens_with_wholesale.values)
+
+
+tiers_flags["flg_not_wholesale"] = (
+    ~tiers_flags["SIREN"].isin(sirens_with_wholesale)
+).astype(int)
