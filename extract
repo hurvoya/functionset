@@ -1,22 +1,18 @@
-# On extrait proprement les client_id à exclure
-wholesale_client_ids = set(df_wholesale["client_id"].dropna().unique())
+# On part de df_client avec client_siren et client_sirette
 
+# Optionnel : on enlève les lignes sans SIREN
+tmp_sirette = df_client.dropna(subset=["client_siren"]).copy()
 
-client_to_siren = (
-    df_client.loc[df_client["client_siren"].notna(), ["client_id", "client_siren"]]
-    .drop_duplicates("client_id")
-    .set_index("client_id")["client_siren"]
+# Agrégat : pour chaque SIREN, on construit une liste de client_sirette
+sirette_by_siren = (
+    tmp_sirette
+    .groupby("client_siren")["client_sirette"]
+    .apply(lambda x: sorted(set(x.dropna())))  # liste unique, triée, sans NaN
+    .rename("list_sirette")
+    .reset_index()
+    .rename(columns={"client_siren": "SIREN"})
 )
 
 
-# On récupère les SIREN correspondant aux client_id wholesale
-sirens_with_wholesale = client_to_siren.loc[
-    client_to_siren.index.intersection(wholesale_client_ids)
-]
 
-sirens_with_wholesale = set(sirens_with_wholesale.values)
-
-
-tiers_flags["flg_not_wholesale"] = (
-    ~tiers_flags["SIREN"].isin(sirens_with_wholesale)
-).astype(int)
+tiers_flags = tiers_flags.merge(sirette_by_siren, on="SIREN", how="left")
