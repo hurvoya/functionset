@@ -1,22 +1,32 @@
-# Ajouter la colonne SIREN dans req_small à partir de la siren_map
-req_small["SIREN"] = siren_map.loc[req_small["request_client_id"]].values
+# On part de DF avec les colonnes : LAND1 et STCD2
 
+# Dictionnaire pays -> sous-dataframe
+pays_map = {
+    "FR": "df_france",
+    "IT": "df_italie",
+    "DE": "df_allemagne",
+    "BE": "df_belgique",
+    "NL": "df_netherland",
+    "ES": "df_espagne",
+}
 
-# ============================================================
-# Infos supplémentaires sur les DEMANDES par SIREN
-# - liste des request_id associés
-# - date de dernière modif la plus récente
-# ============================================================
+# Dictionnaire où on stockera les DFS
+dfs = {}
 
-req_agg_info = (
-    req_small
-    .groupby("SIREN", dropna=True)
-    .agg(
-        list_request_ids = ("request_id", lambda x: sorted(set(x.dropna()))),
-        max_request_last_mod = ("request_last_modification_date", "max")
+for code_pays, nom_df in pays_map.items():
+    sub = (
+        DF.loc[DF["LAND1"] == code_pays, ["STCD2"]]   # filtre par pays + garde STCD2
+        .dropna(subset=["STCD2"])                     # enlève les lignes vides
+        .drop_duplicates()                            # enlève les doublons
+        .rename(columns={"STCD2": "siren"})           # renomme la colonne
+        .reset_index(drop=True)                       # reset propre
     )
-    .reset_index()
-)
+    dfs[nom_df] = sub
 
-# Merge dans tiers_flags (en complément du merge contrats juste avant)
-tiers_flags = tiers_flags.merge(req_agg_info, on="SIREN", how="left")
+# Tu peux ensuite accéder ainsi :
+df_france     = dfs["df_france"]
+df_italie     = dfs["df_italie"]
+df_allemagne  = dfs["df_allemagne"]
+df_belgique   = dfs["df_belgique"]
+df_netherland = dfs["df_netherland"]
+df_espagne    = dfs["df_espagne"]
