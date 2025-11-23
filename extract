@@ -1,18 +1,13 @@
-# On part de df_client avec client_siren et client_sirette
+# Liste des 7 colonnes de règles
+rule_cols = [
+    "flag_1_TER_6y",
+    "flag_2_no_req_12m",
+    "flag_3_ACC_6y",
+    "flag_4_contentieux_arch_6y",
+    "flg_is_not_ekip",
+    "flg_not_rtj",
+    "flg_not_wholesale"
+]
 
-# Optionnel : on enlève les lignes sans SIREN
-tmp_sirette = df_client.dropna(subset=["client_siren"]).copy()
-
-# Agrégat : pour chaque SIREN, on construit une liste de client_sirette
-sirette_by_siren = (
-    tmp_sirette
-    .groupby("client_siren")["client_sirette"]
-    .apply(lambda x: sorted(set(x.dropna())))  # liste unique, triée, sans NaN
-    .rename("list_sirette")
-    .reset_index()
-    .rename(columns={"client_siren": "SIREN"})
-)
-
-
-
-tiers_flags = tiers_flags.merge(sirette_by_siren, on="SIREN", how="left")
+# Flag final : 1 si toutes les règles = 1, sinon 0
+tiers_flags["flag_final_eligible"] = tiers_flags[rule_cols].all(axis=1).astype(int)
