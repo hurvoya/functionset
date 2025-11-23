@@ -1,17 +1,29 @@
-import pandas as pd
+# ============================================================
+# Nouveau flag : flg_is_not_ekip
+# ============================================================
 
-# On rassemble tous les dataframes
-df_all = pd.concat([be, fr, uk, it, es, de, nl], ignore_index=True)
+# 1) On prépare la liste des client_id présents dans df_ekip
+#    On la convertit en set pour accélérer les tests d'appartenance
+ekip_client_ids = set(df_ekip["client_id"].dropna().unique())
 
-# Pivot avec concaténation des labels si plusieurs valeurs
-df_final = df_all.pivot_table(
-    index="CODE_PRODUIT_COMMERCIAL",
-    columns="Country",
-    values="LIB_PRODUIT_COMMERCIAL",
-    aggfunc=lambda x: "; ".join(sorted(set(x.dropna())))
-).reset_index()
+# 2) On crée une table client -> SIREN (index unique)
+client_to_siren = (
+    clients[["client_id", "client_siren"]]
+    .dropna(subset=["client_siren"])
+    .drop_duplicates("client_id")
+    .set_index("client_id")["client_siren"]
+)
 
-# Réordonner les colonnes pour avoir code + pays
-df_final = df_final[["CODE_PRODUIT_COMMERCIAL", "BE", "FR", "UK", "IT", "ES", "DE", "NL"]]
+# 3) On récupère uniquement les clients EKIP qui ont un SIREN associé
+#    (si certains client_id EKIP n'existent pas dans df_client → on les ignore)
+ekip_siren = client_to_siren.loc[
+    client_to_siren.index.intersection(ekip_client_ids)
+]
 
-print(df_final.head())
+# ekip_siren est maintenant une Series de SIREN qui ont au moins 1 client EKIP
+sirens_with_ekip = set(ekip_siren.values)
+
+# 4) Construire le flag au niveau SIREN :
+#    - SIREN ∈ sirens_with_ekip → False
+#    - Sinon → True
+tiers_flags["flg_is_not_ekip"] = (~tiers_flags["SIREN"].isin(sirens_with_ekip)).astype(int)
