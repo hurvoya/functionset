@@ -1,107 +1,94 @@
-import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
 
-def compute_country_stats(df):
-    """
-    df : DataFrame d'un seul pays, avec les colonnes décrites.
-    Retourne un dict avec toutes les stats pour ce pays.
-    """
+# On s'assure que les pays sont dans un ordre stable
+df_stats_all = df_stats_all.sort_values("Country")
 
-    # Sécurités de base
-    if df.empty:
-        return {
-            "Country": df["Country"].iloc[0] if "Country" in df.columns and len(df) > 0 else "UNKNOWN",
-            "nb_total_IEJI": 0
-        }
 
-    country = df["Country"].iloc[0]
+Barplot : nombre total d’IEJI par pays
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["nb_total_IEJI"])
+plt.title("Nombre total d'IEJI par pays")
+plt.xlabel("Pays")
+plt.ylabel("Nombre d'IEJI")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
 
-    # ---- Volumétrie de base ----
-    # Nombre total d'IEJI (on prend nunique au cas où)
-    nb_total_ieji = df["IEJI"].nunique()
+Règle 1 — TER 6y
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule1_ratio_1"])
+plt.title("Ratio IEJI satisfaisant la règle 1 (TER 6y) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 1 = 1)")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)  # le ratio est entre 0 et 1
+plt.tight_layout()
+plt.show()
 
-    stats = {
-        "Country": country,
-        "nb_total_IEJI": nb_total_ieji,
-    }
 
-    # Pour simplifier les ratios
-    def ratio(val):
-        return val / nb_total_ieji if nb_total_ieji > 0 else np.nan
+Règle 2 — Req 12m
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule2_ratio_1"])
+plt.title("Ratio IEJI satisfaisant la règle 2 (Req 12m) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 2 = 1)")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
 
-    # ---- Règles 1 à 4 : nb =1 / nb =0 / ratio ----
-    rule_map_1_4 = {
-        "Rule 1 is TER 6y": "rule1",
-        "Rule 2 is Req 12m": "rule2",
-        "Rule 3 is Acc Req 6y": "rule3",
-        "Rule 4 is Contentieux 6y": "rule4",
-    }
+Règle 3 — Acc Req 6y
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule3_ratio_1"])
+plt.title("Ratio IEJI satisfaisant la règle 3 (Acc Req 6y) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 3 = 1)")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
 
-    for col, short in rule_map_1_4.items():
-        nb_1 = (df[col] == 1).sum()
-        nb_0 = (df[col] == 0).sum()
-        stats[f"{short}_nb_1"] = nb_1
-        stats[f"{short}_nb_0"] = nb_0
-        stats[f"{short}_ratio_1"] = ratio(nb_1)
-        stats[f"{short}_ratio_0"] = ratio(nb_0)
 
-    # ---- Répartition règles 5, 6, 7 (exclusions EKIP/Wholesale/Artegy) ----
-    # Ici on calcule nb et ratio pour 1 et 0
-    rule_map_5_7 = {
-        "Rule 5 not EKIP": "rule5_not_EKIP",
-        "Rule 6 not Wholesale": "rule6_not_Wholesale",
-        "Rule 7 not Artegy": "rule7_not_Artegy",
-    }
+Règle 4 — Contentieux 6y
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule4_ratio_1"])
+plt.title("Ratio IEJI satisfaisant la règle 4 (Contentieux 6y) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 4 = 1)")
+plt.xticks(rotation=45)
 
-    for col, short in rule_map_5_7.items():
-        nb_1 = (df[col] == 1).sum()
-        nb_0 = (df[col] == 0).sum()
-        stats[f"{short}_nb_1"] = nb_1
-        stats[f"{short}_nb_0"] = nb_0
-        stats[f"{short}_ratio_1"] = ratio(nb_1)
-        stats[f"{short}_ratio_0"] = ratio(nb_0)
+Règle 5 — not EKIP
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule5_not_EKIP_ratio_1"])
+plt.title("Ratio IEJI non EKIP (règle 5) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 5 = 1)")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
 
-    # ---- Flag final : nb/ration 1 vs 0 ----
-    final_col = "flag_final_eligible_purge"
-    nb_final_1 = (df[final_col] == 1).sum()
-    nb_final_0 = (df[final_col] == 0).sum()
-    stats["final_nb_1"] = nb_final_1
-    stats["final_nb_0"] = nb_final_0
-    stats["final_ratio_1"] = ratio(nb_final_1)
-    stats["final_ratio_0"] = ratio(nb_final_0)
 
-    # ---- Répartition selon association Contrat / Request ----
-    # cases :
-    #   A : contrat only (1,0)
-    #   B : request only (0,1)
-    #   C : les deux (1,1)
-    #   D : aucun (0,0)
-    c = df["FLG is contract associated"]
-    r = df["FLG is Request associated"]
+Règle 6 — not Wholesale
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule6_not_Wholesale_ratio_1"])
+plt.title("Ratio IEJI non Wholesale (règle 6) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 6 = 1)")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
 
-    cond_contrat_only  = (c == 1) & (r == 0)
-    cond_request_only  = (c == 0) & (r == 1)
-    cond_both          = (c == 1) & (r == 1)
-    cond_none          = (c == 0) & (r == 0)
 
-    nb_contrat_only = cond_contrat_only.sum()
-    nb_request_only = cond_request_only.sum()
-    nb_both         = cond_both.sum()
-    nb_none         = cond_none.sum()
+Règle 7 — not Artegy
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["rule7_not_Artegy_ratio_1"])
+plt.title("Ratio IEJI non Artegy (règle 7) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio (rule 7 = 1)")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
 
-    stats["asso_contrat_only_nb"]  = nb_contrat_only
-    stats["asso_request_only_nb"]  = nb_request_only
-    stats["asso_both_nb"]          = nb_both
-    stats["asso_none_nb"]          = nb_none
-
-    stats["asso_contrat_only_ratio"]  = ratio(nb_contrat_only)
-    stats["asso_request_only_ratio"]  = ratio(nb_request_only)
-    stats["asso_both_ratio"]          = ratio(nb_both)
-    stats["asso_none_ratio"]          = ratio(nb_none)
-
-    # ---- Moyenne nb de clients / organisme par IEJI ----
-    # (simplement la moyenne des colonnes)
-    stats["avg_clients_per_IEJI"] = df["Clients number"].mean()
-    stats["avg_organisms_per_IEJI"] = df["Organisme number"].mean()
-
-    return stats
