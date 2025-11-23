@@ -1,4 +1,12 @@
-# Liste des 7 colonnes de règles
+import pandas as pd
+
+# -----------------------------
+# 1) DataFrame France : df_fr
+# -----------------------------
+# Hypothèse : df_fr contient déjà uniquement les lignes France
+# et a une colonne "IEGI" + les colonnes de flags 0/1
+
+# Liste des colonnes de règles (adapte à tes noms exacts)
 rule_cols = [
     "flag_1_TER_6y",
     "flag_2_no_req_12m",
@@ -9,5 +17,42 @@ rule_cols = [
     "flg_not_wholesale"
 ]
 
-# Flag final : 1 si toutes les règles = 1, sinon 0
-tiers_flags["flag_final_eligible"] = tiers_flags[rule_cols].all(axis=1).astype(int)
+# Nom de la colonne flag final
+final_flag_col = "flag_final_eligible"
+
+# -----------------------------
+# 2) Construction des stats
+# -----------------------------
+stats_rows = []
+
+# Ligne 1 : nombre total d'IEGI (on prend nunique au cas où)
+nb_total_iegis = df_fr["IEGI"].nunique()
+stats_rows.append({
+    "metric": "nb_total_iegis",
+    "value": nb_total_iegis
+})
+
+# Lignes suivantes : nombre d'IEGI qui satisfont chaque règle (== 1)
+for col in rule_cols:
+    nb_ok = (df_fr[col] == 1).sum()
+    stats_rows.append({
+        "metric": f"nb_iegis_{col}_eq_1",
+        "value": nb_ok
+    })
+
+# Ligne flag final
+nb_final_ok = (df_fr[final_flag_col] == 1).sum()
+stats_rows.append({
+    "metric": f"nb_iegis_{final_flag_col}_eq_1",
+    "value": nb_final_ok
+})
+
+# -----------------------------
+# 3) DataFrame de stats
+# -----------------------------
+df_stats_fr = pd.DataFrame(stats_rows)
+
+# Optionnel : pour la lisibilité, tu peux ajouter aussi un % du total
+df_stats_fr["ratio_on_total"] = df_stats_fr["value"] / nb_total_iegis
+
+print(df_stats_fr)
