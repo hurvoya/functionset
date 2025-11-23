@@ -1,49 +1,19 @@
-Graphique du final ratio par pays
-
+Moyenne des clients par IEJI, par pays
 plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["final_ratio_1"])
-plt.title("Ratio IEJI éligibles à la purge (flag final = 1) par pays")
+plt.bar(df_stats_all["Country"], df_stats_all["avg_clients_per_IEJI"])
+plt.title("Nombre moyen de clients par IEJI par pays")
 plt.xlabel("Pays")
-plt.ylabel("Ratio flag final = 1")
+plt.ylabel("Clients moyens par IEJI")
 plt.xticks(rotation=45)
-plt.ylim(0, 1)
 plt.tight_layout()
 plt.show()
 
-
-
-Graphique : répartition contrat / request par pays
-import numpy as np
-import matplotlib.pyplot as plt
-
-df_stats_all = df_stats_all.sort_values("Country").reset_index(drop=True)
-
-countries = df_stats_all["Country"].values
-x = np.arange(len(countries))  # positions sur l'axe X
-
-width = 0.2  # largeur de chaque barre
-
-r_contrat_only  = df_stats_all["asso_contrat_only_ratio"].values
-r_request_only  = df_stats_all["asso_request_only_ratio"].values
-r_both          = df_stats_all["asso_both_ratio"].values
-r_none          = df_stats_all["asso_none_ratio"].values
-
-plt.figure(figsize=(10, 5))
-
-plt.bar(x - 1.5*width, r_contrat_only,  width, label="Contrat only (1,0)")
-plt.bar(x - 0.5*width, r_request_only,  width, label="Request only (0,1)")
-plt.bar(x + 0.5*width, r_both,          width, label="Both (1,1)")
-plt.bar(x + 1.5*width, r_none,          width, label="None (0,0)")
-
-plt.xticks(x, countries, rotation=45)
+Moyenne des organismes par IEJI, par pays
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["avg_organisms_per_IEJI"])
+plt.title("Nombre moyen d'organismes par IEJI par pays")
 plt.xlabel("Pays")
-plt.ylabel("Ratio")
-plt.title("Répartition des associations Contrat / Request par pays")
-plt.ylim(0, 1)
-plt.legend()
+plt.ylabel("Organismes moyens par IEJI")
+plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
-
-
-
-
