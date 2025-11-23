@@ -1,7 +1,7 @@
-df_siren_clean = (
-    df[["col-0"]]                    # on garde uniquement la colonne
-    .rename(columns={"col-0": "siren"})
-    .dropna(subset=["siren"])        # enlève tous les NaN
-    .drop_duplicates()               # enlève les doublons
-    .reset_index(drop=True)          # index propre
-)
+# On extrait les listes de SIREN sous forme de sets (plus rapide pour l'appartenance)
+wholesale_sirens = set(df_wholesale["siren"].dropna().unique())
+rtj_sirens       = set(df_rtj["siren"].dropna().unique())
+
+# Création des flags
+df_tierre["flg_not_wholesale"] = (~df_tierre["SIREN"].isin(wholesale_sirens)).astype(int)
+df_tierre["flg_not_rtj"]       = (~df_tierre["SIREN"].isin(rtj_sirens)).astype(int)
