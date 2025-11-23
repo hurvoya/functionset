@@ -1,7 +1,8 @@
-# On extrait les listes de SIREN sous forme de sets (plus rapide pour l'appartenance)
-wholesale_sirens = set(df_wholesale["siren"].dropna().unique())
-rtj_sirens       = set(df_rtj["siren"].dropna().unique())
+# 1) Enlever TOUS les espaces dans les siren
+df_rtj["siren"] = df_rtj["siren"].astype("string").str.replace(" ", "", regex=False)
 
-# Création des flags
-df_tierre["flg_not_wholesale"] = (~df_tierre["SIREN"].isin(wholesale_sirens)).astype(int)
-df_tierre["flg_not_rtj"]       = (~df_tierre["SIREN"].isin(rtj_sirens)).astype(int)
+# 2) Supprimer les siren vides après nettoyage
+df_rtj = df_rtj[df_rtj["siren"].str.len() > 0]
+
+# 3) Convertir en entier (zones invalides -> NaN)
+df_rtj["siren"] = pd.to_numeric(df_rtj["siren"], errors="co_
