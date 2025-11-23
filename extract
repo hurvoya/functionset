@@ -1,53 +1,72 @@
 import pandas as pd
 
-# On part de df_client avec au moins :
-# - client_siren
-# - client_id
-# - client_organism
-# - client_creation_date
-
-# 1) On s'assure que la date de création est bien en datetime
+# ============================================================
+# 1) Conversion dates
+# ============================================================
 df_client["client_creation_date"] = pd.to_datetime(
     df_client["client_creation_date"], errors="coerce"
 )
 
-# 2) Créer une colonne "id|organisme" en vectoriel (très rapide)
-#    - on remplace les NaN par "" pour éviter "nan" dans les chaînes
+# ============================================================
+# 2) Construction optimisée de id|organisme
+# ============================================================
 tmp = df_client.copy()
 
-tmp["client_id_str"] = tmp["client_id"].astype("string")          # string pandas (gère les NaN)
-tmp["client_organism_str"] = tmp["client_organism"].astype("string")
+tmp["client_id_str"] = tmp["client_id"].astype("string").fillna("")
+tmp["client_organism_str"] = tmp["client_organism"].astype("string").fillna("")
 
-tmp["client_id_str"] = tmp["client_id_str"].fillna("")
-tmp["client_organism_str"] = tmp["client_organism_str"].fillna("")
-
-# Concaténation vectorielle "id|organisme"
 tmp["id_org"] = tmp["client_id_str"] + "|" + tmp["client_organism_str"]
 
-# 3) On enlève les doublons SIREN / id_org pour éviter de répéter les mêmes couples
+# Éviter les doublons SIREN / couple id_org
 tmp_unique = tmp.drop_duplicates(subset=["client_siren", "id_org"])
 
-# 4) Construire client_organism_map par groupby + join (tout en vectoriel)
-#    - on trie pour avoir un ordre stable
+# ============================================================
+# 3) Construction optimisée du mapping id|organisme pour chaque SIREN
+# ============================================================
 id_org_map = (
     tmp_unique
     .sort_values(["client_siren", "id_org"])
     .groupby("client_siren")["id_org"]
-    .apply("; ".join)   # concatène tous les id_org d'un SIREN avec "; "
+    .apply("; ".join)
     .rename("client_organism_map")
 )
 
-# 5) Calculer la dernière date de création par SIREN
+# ============================================================
+# 4) Date de création la plus récente pour chaque SIREN
+# ============================================================
 last_creation = (
-    df_client
-    .groupby("client_siren")["client_creation_date"]
+    df_client.groupby("client_siren")["client_creation_date"]
     .max()
     .rename("last_creation_date")
 )
 
-# 6) Assembler dans un df agrégé par SIREN
+# ============================================================
+# 5) Nombre de clients distincts par SIREN
+# ============================================================
+nb_clients = (
+    df_client
+    .groupby("client_siren")["client_id"]
+    .nunique(dropna=True)        # compte les client_id uniques non-NaN
+    .rename("nb_clients")
+)
+
+# Option : si un SIREN n'a *que* des NaN, nunique(dropna=True)=0 → conforme à ton besoin.
+
+# ============================================================
+# 6) Nombre d’organismes distincts par SIREN
+# ============================================================
+nb_organisms = (
+    df_client
+    .groupby("client_siren")["client_organism"]
+    .nunique(dropna=True)
+    .rename("nb_organisms")
+)
+
+# ============================================================
+# 7) Assemblage final par SIREN
+# ============================================================
 df_client_agg = (
-    pd.concat([id_org_map, last_creation], axis=1)
+    pd.concat([id_org_map, last_creation, nb_clients, nb_organisms], axis=1)
     .reset_index()
     .rename(columns={"client_siren": "SIREN"})
 )
