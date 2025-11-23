@@ -1,94 +1,49 @@
+Graphique du final ratio par pays
+
+plt.figure(figsize=(8, 4))
+plt.bar(df_stats_all["Country"], df_stats_all["final_ratio_1"])
+plt.title("Ratio IEJI éligibles à la purge (flag final = 1) par pays")
+plt.xlabel("Pays")
+plt.ylabel("Ratio flag final = 1")
+plt.xticks(rotation=45)
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
+
+
+
+Graphique : répartition contrat / request par pays
+import numpy as np
 import matplotlib.pyplot as plt
 
-# On s'assure que les pays sont dans un ordre stable
-df_stats_all = df_stats_all.sort_values("Country")
+df_stats_all = df_stats_all.sort_values("Country").reset_index(drop=True)
 
+countries = df_stats_all["Country"].values
+x = np.arange(len(countries))  # positions sur l'axe X
 
-Barplot : nombre total d’IEJI par pays
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["nb_total_IEJI"])
-plt.title("Nombre total d'IEJI par pays")
+width = 0.2  # largeur de chaque barre
+
+r_contrat_only  = df_stats_all["asso_contrat_only_ratio"].values
+r_request_only  = df_stats_all["asso_request_only_ratio"].values
+r_both          = df_stats_all["asso_both_ratio"].values
+r_none          = df_stats_all["asso_none_ratio"].values
+
+plt.figure(figsize=(10, 5))
+
+plt.bar(x - 1.5*width, r_contrat_only,  width, label="Contrat only (1,0)")
+plt.bar(x - 0.5*width, r_request_only,  width, label="Request only (0,1)")
+plt.bar(x + 0.5*width, r_both,          width, label="Both (1,1)")
+plt.bar(x + 1.5*width, r_none,          width, label="None (0,0)")
+
+plt.xticks(x, countries, rotation=45)
 plt.xlabel("Pays")
-plt.ylabel("Nombre d'IEJI")
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.show()
-
-Règle 1 — TER 6y
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule1_ratio_1"])
-plt.title("Ratio IEJI satisfaisant la règle 1 (TER 6y) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 1 = 1)")
-plt.xticks(rotation=45)
-plt.ylim(0, 1)  # le ratio est entre 0 et 1
-plt.tight_layout()
-plt.show()
-
-
-Règle 2 — Req 12m
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule2_ratio_1"])
-plt.title("Ratio IEJI satisfaisant la règle 2 (Req 12m) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 2 = 1)")
-plt.xticks(rotation=45)
+plt.ylabel("Ratio")
+plt.title("Répartition des associations Contrat / Request par pays")
 plt.ylim(0, 1)
-plt.tight_layout()
-plt.show()
-
-Règle 3 — Acc Req 6y
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule3_ratio_1"])
-plt.title("Ratio IEJI satisfaisant la règle 3 (Acc Req 6y) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 3 = 1)")
-plt.xticks(rotation=45)
-plt.ylim(0, 1)
+plt.legend()
 plt.tight_layout()
 plt.show()
 
 
-Règle 4 — Contentieux 6y
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule4_ratio_1"])
-plt.title("Ratio IEJI satisfaisant la règle 4 (Contentieux 6y) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 4 = 1)")
-plt.xticks(rotation=45)
 
-Règle 5 — not EKIP
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule5_not_EKIP_ratio_1"])
-plt.title("Ratio IEJI non EKIP (règle 5) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 5 = 1)")
-plt.xticks(rotation=45)
-plt.ylim(0, 1)
-plt.tight_layout()
-plt.show()
-
-
-Règle 6 — not Wholesale
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule6_not_Wholesale_ratio_1"])
-plt.title("Ratio IEJI non Wholesale (règle 6) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 6 = 1)")
-plt.xticks(rotation=45)
-plt.ylim(0, 1)
-plt.tight_layout()
-plt.show()
-
-
-Règle 7 — not Artegy
-plt.figure(figsize=(8, 4))
-plt.bar(df_stats_all["Country"], df_stats_all["rule7_not_Artegy_ratio_1"])
-plt.title("Ratio IEJI non Artegy (règle 7) par pays")
-plt.xlabel("Pays")
-plt.ylabel("Ratio (rule 7 = 1)")
-plt.xticks(rotation=45)
-plt.ylim(0, 1)
-plt.tight_layout()
-plt.show()
 
