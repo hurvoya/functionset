@@ -1,63 +1,37 @@
-import pandas as pd
+# ============================================================
+# 5) Nombre de clients distincts par SIREN (sans 0 / NaN)
+# ============================================================
 
-# ============================================================
-# 1) Conversion dates
-# ============================================================
-df_client["client_creation_date"] = pd.to_datetime(
-    df_client["client_creation_date"], errors="coerce"
-)
+# On crée une version "nettoyée" de client_id :
+# - NaN si client_id vaut 0 ou "0"
+df_client["client_id_for_count"] = df_client["client_id"]
 
-# ============================================================
-# 2) Construction optimisée de id|organisme
-# ============================================================
-tmp = df_client.copy()
+# Si client_id est numérique
+df_client.loc[df_client["client_id_for_count"] == 0, "client_id_for_count"] = np.nan
+# Si jamais certains 0 sont des strings "0"
+df_client.loc[df_client["client_id_for_count"].astype(str) == "0", "client_id_for_count"] = np.nan
 
-tmp["client_id_str"] = tmp["client_id"].astype("string").fillna("")
-tmp["client_organism_str"] = tmp["client_organism"].astype("string").fillna("")
-
-tmp["id_org"] = tmp["client_id_str"] + "|" + tmp["client_organism_str"]
-
-# Éviter les doublons SIREN / couple id_org
-tmp_unique = tmp.drop_duplicates(subset=["client_siren", "id_org"])
-
-# ============================================================
-# 3) Construction optimisée du mapping id|organisme pour chaque SIREN
-# ============================================================
-id_org_map = (
-    tmp_unique
-    .sort_values(["client_siren", "id_org"])
-    .groupby("client_siren")["id_org"]
-    .apply("; ".join)
-    .rename("client_organism_map")
-)
-
-# ============================================================
-# 4) Date de création la plus récente pour chaque SIREN
-# ============================================================
-last_creation = (
-    df_client.groupby("client_siren")["client_creation_date"]
-    .max()
-    .rename("last_creation_date")
-)
-
-# ============================================================
-# 5) Nombre de clients distincts par SIREN
-# ============================================================
 nb_clients = (
     df_client
-    .groupby("client_siren")["client_id"]
-    .nunique(dropna=True)        # compte les client_id uniques non-NaN
+    .groupby("client_siren")["client_id_for_count"]
+    .nunique(dropna=True)        # ne compte que les valeurs non NaN et ≠ 0
     .rename("nb_clients")
 )
 
-# Option : si un SIREN n'a *que* des NaN, nunique(dropna=True)=0 → conforme à ton besoin.
+# ============================================================
+# 6) Nombre d’organismes distincts par SIREN (sans 0 / NaN)
+# ============================================================
 
-# ============================================================
-# 6) Nombre d’organismes distincts par SIREN
-# ============================================================
+df_client["client_organism_for_count"] = df_client["client_organism"]
+
+# Si organisme codé numériquement
+df_client.loc[df_client["client_organism_for_count"] == 0, "client_organism_for_count"] = np.nan
+# Si certains "0" sont en string
+df_client.loc[df_client["client_organism_for_count"].astype(str) == "0", "client_organism_for_count"] = np.nan
+
 nb_organisms = (
     df_client
-    .groupby("client_siren")["client_organism"]
+    .groupby("client_siren")["client_organism_for_count"]
     .nunique(dropna=True)
     .rename("nb_organisms")
 )
@@ -65,6 +39,7 @@ nb_organisms = (
 # ============================================================
 # 7) Assemblage final par SIREN
 # ============================================================
+
 df_client_agg = (
     pd.concat([id_org_map, last_creation, nb_clients, nb_organisms], axis=1)
     .reset_index()
