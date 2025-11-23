@@ -1,47 +1,25 @@
 # ============================================================
-# 5) Nombre de clients distincts par SIREN (sans 0 / NaN)
+# Infos supplémentaires sur les CONTRATS par SIREN
+# - liste des contract_id associés
+# - end date la plus récente
 # ============================================================
 
-# On crée une version "nettoyée" de client_id :
-# - NaN si client_id vaut 0 ou "0"
-df_client["client_id_for_count"] = df_client["client_id"]
-
-# Si client_id est numérique
-df_client.loc[df_client["client_id_for_count"] == 0, "client_id_for_count"] = np.nan
-# Si jamais certains 0 sont des strings "0"
-df_client.loc[df_client["client_id_for_count"].astype(str) == "0", "client_id_for_count"] = np.nan
-
-nb_clients = (
-    df_client
-    .groupby("client_siren")["client_id_for_count"]
-    .nunique(dropna=True)        # ne compte que les valeurs non NaN et ≠ 0
-    .rename("nb_clients")
-)
-
-# ============================================================
-# 6) Nombre d’organismes distincts par SIREN (sans 0 / NaN)
-# ============================================================
-
-df_client["client_organism_for_count"] = df_client["client_organism"]
-
-# Si organisme codé numériquement
-df_client.loc[df_client["client_organism_for_count"] == 0, "client_organism_for_count"] = np.nan
-# Si certains "0" sont en string
-df_client.loc[df_client["client_organism_for_count"].astype(str) == "0", "client_organism_for_count"] = np.nan
-
-nb_organisms = (
-    df_client
-    .groupby("client_siren")["client_organism_for_count"]
-    .nunique(dropna=True)
-    .rename("nb_organisms")
-)
-
-# ============================================================
-# 7) Assemblage final par SIREN
-# ============================================================
-
-df_client_agg = (
-    pd.concat([id_org_map, last_creation, nb_clients, nb_organisms], axis=1)
+# Agrégat par SIREN :
+# - list_contract_ids : liste unique des contract_id triés
+# - max_contract_end_date : date de fin la plus récente
+contr_agg_info = (
+    contr
+    .groupby("SIREN", dropna=True)
+    .agg(
+        list_contract_ids = ("contract_id", lambda x: sorted(set(x.dropna()))),
+        max_contract_end_date = ("contract_end_date", "max")
+    )
     .reset_index()
-    .rename(columns={"client_siren": "SIREN"})
 )
+
+# Tu pourras ensuite merger ça dans tiers_flags :
+tiers_flags = tiers_flags.merge(contr_agg_info, on="SIREN", how="left")
+
+
+
+
