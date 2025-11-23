@@ -1,25 +1,22 @@
+# Ajouter la colonne SIREN dans req_small à partir de la siren_map
+req_small["SIREN"] = siren_map.loc[req_small["request_client_id"]].values
+
+
 # ============================================================
-# Infos supplémentaires sur les CONTRATS par SIREN
-# - liste des contract_id associés
-# - end date la plus récente
+# Infos supplémentaires sur les DEMANDES par SIREN
+# - liste des request_id associés
+# - date de dernière modif la plus récente
 # ============================================================
 
-# Agrégat par SIREN :
-# - list_contract_ids : liste unique des contract_id triés
-# - max_contract_end_date : date de fin la plus récente
-contr_agg_info = (
-    contr
+req_agg_info = (
+    req_small
     .groupby("SIREN", dropna=True)
     .agg(
-        list_contract_ids = ("contract_id", lambda x: sorted(set(x.dropna()))),
-        max_contract_end_date = ("contract_end_date", "max")
+        list_request_ids = ("request_id", lambda x: sorted(set(x.dropna()))),
+        max_request_last_mod = ("request_last_modification_date", "max")
     )
     .reset_index()
 )
 
-# Tu pourras ensuite merger ça dans tiers_flags :
-tiers_flags = tiers_flags.merge(contr_agg_info, on="SIREN", how="left")
-
-
-
-
+# Merge dans tiers_flags (en complément du merge contrats juste avant)
+tiers_flags = tiers_flags.merge(req_agg_info, on="SIREN", how="left")
