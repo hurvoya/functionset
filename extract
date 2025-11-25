@@ -1,38 +1,11 @@
-import pandas as pd
-import numpy as np
-
-# 1) Normaliser la date de fin de lot
-df_lot["lot__end__date"] = pd.to_datetime(df_lot["lot__end__date"], errors="coerce")
-
-# 2) Groupby par contrat
-grouped = df_lot.groupby("contract__id", dropna=True)
-
-# 3) Flag : tous les lots de ce contrat sont-ils TER ?
-all_lots_ter = grouped["lot__status"].apply(lambda s: (s == "TER").all())
-
-# 4) Dernière date de fin de lot (max) par contrat
-max_lot_end_date = grouped["lot__end__date"].max()
-
-# 5) Construction du dataframe final au niveau contract__id
-df_contract_end = (
-    pd.DataFrame({
-        "contract__id": all_lots_ter.index,
-        "all_lots_ter": all_lots_ter.values,
-        "contract_end_date": max_lot_end_date.values
-    })
-)
-
-# 6) Si au moins un lot n'est pas TER, on supprime la date de fin (NaT)
-df_contract_end.loc[~df_contract_end["all_lots_ter"], "contract_end_date"] = pd.NaT
-
-df_contract_end_only = df_contract_end[["contract__id", "contract_end_date"]]
+DF["contract_end_date_x"] = pd.to_datetime(DF["contract_end_date_x"], errors="coerce")
+DF["contract_end_date_y"] = pd.to_datetime(DF["contract_end_date_y"], errors="coerce")
 
 
-# On fait une jointure gauche (left merge) pour garder toutes les lignes de DF
-DF = DF.merge(
-    df_contract_end[["contract__id", "contract_end_date"]], 
-    on="contract__id",
-    how="left"
-)
+DF["flg_end_date_equal"] = (
+    (DF["contract_end_date_x"] == DF["contract_end_date_y"]) |
+    (DF["contract_end_date_x"].isna() & DF["contract_end_date_y"].isna())
+).astype(int)
 
+DF["flg_end_date_equal"].value_counts()
 
