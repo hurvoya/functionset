@@ -1,0 +1,149 @@
+Implementation of the Welcome Call Process
+
+Objective: Introduce verification calls on selected cases (depending on contract types and predefined criteria) to confirm with the end customer that the equipment ordered matches our records and to detect potential fraud. Any suspected fraud must be escalated immediately.
+
+Two Types of Calls Implemented
+
+1. Calls for All New Dealers
+
+Verification calls conducted on approximately 8–10 contracts per new dealer.
+
+Contact made directly with the end customers.
+
+This control has been implemented since November 2024.
+
+2. Calls for Existing Partner Dealers
+
+Conducted on dealers showing a production increase of at least 30% year-over-year, with a minimum outstanding volume of €500,000.
+
+The process still involves calling end customers for around 8–10 selected contracts.
+
+This control is newly created and has not yet been executed (“more sensitive” part of the process).
+
+Scope of the Verification
+
+Systematically confirm the equipment delivered (asset verification).
+
+Ensure alignment between the contract, the declared equipment, and the customer’s confirmation.
+
+
+
+
+
+Additional Observations on the Implementation Across Countries
+
+Instructions shared two years ago, but the corresponding country-level IBLs remained very high-level and macro. Each country structured its process independently.
+
+As a result, significant discrepancies exist between countries and IBLs in how the two types of calls are identified and applied.
+
+Countries reported difficulties in identifying the relevant cases for both call types, due to:
+
+Lack of clear operational guidance.
+
+Data quality issues in customer records, making it hard to extract reliable call lists.
+
+The challenge is especially strong for the second call (existing partner dealers), where:
+
+Countries do not clearly understand the identification logic.
+
+They also lack a practical method to determine the 30% production increase criterion and the €500k outstanding threshold in their systems.
+
+
+
+
+
+Toward a Centralized Approach
+
+The overall objective is to establish a common, centralized center supporting all countries — both those using CIEL systems and those operating outside CIEL.
+
+Iberia has already succeeded in identifying new dealers for the second call, demonstrating that the approach is feasible.
+
+Next step: Assess whether Iberia’s method can be replicated or adapted for the other countries to ensure consistency and reduce discrepancies in the identification process.
+
+
+
+
+
+
+Scope & Timing
+1. Scope
+
+Business Lines Included:
+
+ELS and TLS
+
+Out of Scope:
+
+BLS, RTJ, BNP, 3-Step IT, and KIA accounts
+
+Note: KIA accounts are identified through the IPEC table.
+
+Countries Covered:
+
+All countries, both CIEL and non-CIEL.
+
+A priority group has been selected for the initial phase:
+
+France, Italy, UK, Iberia, and Romania
+
+2. Timing
+
+Project deadline: End of June 2026
+
+Operational guidelines to be provided to countries by: January 2026
+
+
+
+
+
+Expected Deliverables
+1. Support to Countries and IBLs for Data Extractions
+
+Obtain and apply the relevant criteria for both types of calls
+
+Standardize extraction methodologies across countries and IBLs
+
+Produce and deliver the extraction files to the countries
+
+Run a pilot phase with selected countries
+
+Harmonize and secure the full extraction process (standardization + data reliability + replicability)
+
+2. Analysis Identified for New Dealers
+
+Conduct a 2023–2024 study, starting with France, then extending to Spain and the UK
+
+Use inputs from IBLs, market information, and exclude KIA accounts
+
+Key indicators to analyse:
+
+Average time to first contract activation
+
+Average time to reach 8 activated contracts
+
+Average time to reach 8 end customers
+
+Average number of end customers after 6 months and after 1 year
+
+Average number of activated contracts after 6 months and after 1 year
+
+Total number of activated contracts and customers involved over the period
+
+
+
+
+Key Performance Indicators (KPIs)
+
+Several KPIs have been identified (see next slide), but at this stage it is difficult to assess the actual business impact of the project, mainly because:
+
+We do not yet have the necessary volume data,
+
+Making it impossible to quantify how the controls will influence the overall portfolio.
+
+One of the objectives of the upcoming analysis is therefore to:
+
+Estimate a detection rate (fraud / inconsistencies),
+
+Assess what this percentage represents at portfolio level,
+
+And ultimately determine the potential impact on business performance based on these projections.
