@@ -1,1 +1,95 @@
-Multiple data quality controls are performed by the DQA, such as completeness, uniqueness, consistency, and validity checks. Depending on the use case, a subset of the indicators listed below will be monitored.
+Multiple data quality controls are performed by the DQA, such as completeness, uniqueness, consistency, and validity checks. 
+Depending on the use case, a subset of the indicators listed below will be monitored.
+
+
+
+This section describes the data collection and preparation steps required to support the analyses.
+It covers the identification of data sources, the extraction process, and the data preparation activities necessary to ensure data consistency, reliability, and usability for the defined use cases.
+
+
+EDA Report – Introduction
+
+The EDA Report provides access to the analytical notebook supporting the exploratory data analysis.
+It contains all calculations, transformations, and analytical logic applied to the data, including the underlying code and assumptions used throughout the analysis.
+This deliverable ensures transparency, traceability, and reproducibility of the analytical work.
+
+
+EDA Statistics – Introduction
+
+The EDA Statistics deliverable consolidates the key descriptive statistics computed during the analysis, at country level.
+It provides a structured and traceable view of the statistical measures studied, enabling comparison across countries and supporting further analysis and validation activities.
+
+
+
+EDA Insights Report – Introduction
+
+The EDA Insights Report presents the key findings of the exploratory data analysis to be shared with the business.
+It focuses on the insights derived from the data, the questions discussed with the business, and the feedback collected during the sessions.
+This deliverable supports decision-making and helps identify potential impacts on future analyses, business processes, and the further development of the solution.
+
+
+
+Correction Log – Introduction
+
+The Correction Log is used to track all data issues, adjustments, and corrections identified during the EDA process.
+It provides a clear audit trail of detected issues, implemented corrections, and validation status, ensuring transparency, governance, and alignment between business, data, and IT teams.
+
+
+
+Indicator Definition – Introduction
+
+The Indicator Definition deliverable documents the indicators to be included in the dashboard.
+It is defined in collaboration with the business and provides a clear description of each indicator, including its purpose, calculation logic, and business interpretation.
+This deliverable serves as the reference for aligning business expectations with the dashboard content.
+
+
+
+
+Dashboard Mockup – Introduction
+
+The Dashboard Mockup provides a conceptual view of the dashboard to be developed.
+It helps structure discussions with stakeholders by outlining the expected layout, pages, indicators, filters, and visual elements.
+This deliverable supports alignment on the dashboard design before the technical build phase.
+
+
+
+
+
+
+Dashboard Technical Build – Introduction
+
+The Dashboard Technical Build documents the technical implementation of the dashboard.
+It details the measures, calculations, data model, and technical configurations implemented in the reporting tool (e.g. Power BI).
+This deliverable ensures technical traceability, maintainability, and consistency with the defined indicators and mockup.
+
+
+
+
+Pilot Follow-Up – Introduction
+
+This section aims to track all feedback collected during the pilot phase.
+It provides visibility on the feedback received, its status, and the progress of related actions.
+The pilot follow-up supports structured reporting, ensures traceability of feedback, and facilitates the consolidation and presentation of lessons learned at the end of the pilot.
+
+
+
+
+EDA Statistics
+
+“Consolidate and track key descriptive statistics derived from the exploratory data analysis.”
+
+Indicator Definition
+
+“Define and document the business indicators to be included in the dashboard.”
+
+Dashboard Mockup
+
+“Provide a conceptual layout and structure of the dashboard prior to development.”
+
+Dashboard Technical Build
+
+“Document the technical implementation of the dashboard and its underlying calculations.”
+
+Pilot Follow-Up
+
+“Track and monitor feedback and actions identified during the pilot phase.”
