@@ -134,3 +134,152 @@ Pilot → feedback, follow-up, go/no-go
 👉 Un onglet / une section par phase
 👉 Checkboxes + texte libre toujours ensemble
 👉 Même structure partout = adoption maximale
+
+
+
+========================================================================================
+==========================================================================================
+
+🧩 Checklist – Excel Single Sheet Structure
+🟦 1. Structure générale de l’onglet
+
+👉 Un seul onglet, structuré verticalement par phase
+👉 Chaque phase est une section bien délimitée (couleur / bordures)
+
+Exemple de structure verticale :
+
+[HEADER – Use Case Information]
+
+[PHASE 1 – FRAMING]
+  - Prerequisites
+  - Inputs
+  - Activities & Best Practices
+  - Outputs
+  - Deliverables Checklist
+  - Group Documentation
+  - Validation
+
+[PHASE 2 – DATA PREPARATION]
+  ...
+
+[PHASE 3 – EDA]
+  ...
+
+[PHASE 4 – DASHBOARD CREATION]
+  ...
+
+[PHASE 5 – PILOT]
+  ...
+
+🟦 2. Header – Use Case Information (tout en haut)
+Colonne	Contenu
+A	Use Case Name
+B	Free text
+C	Owner
+D	Name
+E	Start Date
+F	Date
+G	Status
+H	In progress / Completed
+
+👉 Cette partie reste figée (Freeze Panes recommandé).
+
+🟦 3. Template standard par phase (répété 5 fois)
+
+Chaque phase suit exactement la même logique, ce qui est clé pour l’adoption.
+
+🔹 PHASE: FRAMING
+🟩 A. Phase Objective (1–2 lignes)
+A	B–H
+Objective	Define scope, objectives, stakeholders and planning
+🟩 B. Prerequisites (checkbox + justification)
+A	B	C	D–H
+Prerequisites	Completed	Mandatory	Comments / Justification
+KPIs defined	⬜	Yes	
+Data shared with Data Platform	⬜	Yes	
+Planning validated	⬜	Yes	
+
+👉 Règle d’or :
+Si Completed = No → Comments obligatoire
+
+🟩 C. Inputs
+A	B	C	D
+Input	Provided by	Available	Comments
+Business requirements	Business	⬜	
+KPI list	Business	⬜	
+🟩 D. Key Activities & Best Practices
+A	B	C–H
+Activity / Best Practice	Done	Comments
+Initiate framing document	⬜	
+Review with business	⬜	
+💡 Keep assumptions explicit	⬜	
+
+👉 Tu peux séparer :
+
+Mandatory activities
+
+Best practices (icône 💡)
+
+🟩 E. Outputs
+A	B	C
+Output	Produced	Link / Reference
+Framing document	⬜	
+Validated planning	⬜	
+🟩 F. Deliverables Checklist
+A	B	C	D
+Deliverable	Mandatory / Optional	Produced	If not, justification
+Framing document	Mandatory	⬜	
+Planning	Mandatory	⬜	
+
+🔥 Très fort pour la gouvernance
+
+🟩 G. Group Documentation Alignment
+A	B	C
+Group Section	Updated	Comments
+Governance	⬜	
+KPI Definition	⬜	
+🟩 H. Phase Validation
+A	B
+Phase Completed	⬜ Yes / ⬜ No
+Validated by	
+Date	
+🟦 4. Comment rendre ça hyper utilisable
+✅ Excel tips
+
+Checkboxes (Form Controls)
+
+Freeze top rows
+
+Light color per phase (bleu / vert / gris)
+
+Conditional formatting :
+
+Rouge si Mandatory = Yes & Completed = No
+
+Data validation (Yes / No / N/A)
+
+🟦 5. Pourquoi ce format est excellent
+
+✔️ Un collègue peut lancer un use case seul
+✔️ Sert de :
+
+guide méthodo
+
+outil de suivi
+
+preuve de conformité
+✔️ Fonctionne pour :
+
+junior
+
+senior
+
+audit
+
+pilotage projet
+
+🎯 Recommandation finale
+
+👉 Un seul onglet Excel
+👉 Même structure pour chaque phase
+👉 Checkbox + commentaire toujours ensemble
