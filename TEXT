@@ -1,24 +1,10 @@
-Use Case Owner
-
-Accountable for the use case and its objectives.
-Ensures alignment with business needs and validates key decisions and outcomes.
-
-Use Case Developer
-
-Responsible for designing, building, and implementing the use case.
-Handles the technical and analytical development.
-
-Use Case Reviewer
-
-Provides review and challenge throughout the project.
-Validates assumptions, methodology, and deliverables from a business or technical perspective.
-
-Use Case User
-
-End user of the use case or solution.
-Uses the outputs for decision-making or operational activities.
-
-Other Stakeholders
-
-Additional parties involved or impacted by the use case.
-May include IT, compliance, risk, data owners, or management.
+Colonne (FR)	Colonne (EN) recommandée	Description (à mettre en aide)
+Donnée	Data Element	Business-friendly name of the data element (e.g. Customer Email).
+Input / Output	Data Stage (Input / Output)	Indicates whether the data quality rule applies to input data or output data.
+Description	Business Description	Business description of the data element.
+Table	Source Table	Technical name of the table where the data is stored.
+Champ	Field Name	Technical field/column name in the source table.
+Règle	Data Quality Rule	Description of the data quality rule to be applied (e.g. Email must be populated).
+Critère de qualité	Data Quality Dimension	Data quality dimension assessed (e.g. Completeness, Uniqueness, Consistency, Validity).
+Seuil	Threshold	Accepted threshold for the rule (e.g. max 10% missing values).
+Fréquence	Check Frequency	Frequency at which the rule is executed (e.g. Monthly).
