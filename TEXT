@@ -1,108 +1,23 @@
-🔧 Data Preparation – Types of Actions & Icons
-1️⃣ Filtering
+Planning – Note
 
-Description: Remove records based on predefined conditions.
+The five steps displayed in this planning are mandatory and must be included in all cases.
+Additional sub-steps can be added under each phase and reflected in the planning as needed.
 
-Examples: Exclude inactive contracts, remove test records.
+Planning Validation
 
-Icon suggestion:
-🔽 Funnel / Filter icon
+Validated by: [Name / Role]
 
-2️⃣ Field Selection
 
-Description: Select relevant fields and discard unused columns.
+Initial Planning – Note
 
-Examples: Keep business-relevant attributes only.
+This planning is defined at the end of the framing phase and remains unchanged thereafter.
+The date must be specified.
+Any subsequent updates must be reflected in the Updated Planning tab.
 
-Icon suggestion:
-📋 Checklist / Columns icon
 
-3️⃣ Renaming / Standardization
+This document aims to align with the standards and guidelines provided by the Group.
+As such, certain section titles and structures have been retained as defined by the Group, while being adapted and aligned with our internal methodology and practices.
 
-Description: Rename fields and standardize naming conventions.
+This document serves as a reference framework for the project, ensuring consistency, traceability, and compliance with Group expectations, while allowing for pragmatic implementation at local level.
 
-Examples: Align field names across sources.
-
-Icon suggestion:
-✏️ Pencil / Rename tag icon
-
-4️⃣ Data Type Conversion
-
-Description: Convert data types to ensure consistency.
-
-Examples: String to date, integer to decimal.
-
-Icon suggestion:
-🔄 Arrows / Swap icon
-
-5️⃣ Data Cleaning
-
-Description: Correct or remove invalid, inconsistent, or incomplete values.
-
-Examples: Trim spaces, fix formats, handle null values.
-
-Icon suggestion:
-🧹 Broom / Clean icon
-
-6️⃣ Deduplication
-
-Description: Identify and remove duplicate records.
-
-Examples: Duplicate customers or contracts.
-
-Icon suggestion:
-📑➖ Duplicate pages with minus sign
-
-7️⃣ Enrichment
-
-Description: Add new fields derived from existing data or external sources.
-
-Examples: Calculated indicators, flags, categorizations.
-
-Icon suggestion:
-➕ Plus / Puzzle piece icon
-
-8️⃣ Aggregation
-
-Description: Aggregate data to a higher level.
-
-Examples: Sum amounts by dealer, count contracts by month.
-
-Icon suggestion:
-📊 Bar chart / Sigma (∑) icon
-
-9️⃣ Derivation / Calculation
-
-Description: Create calculated fields using business logic.
-
-Examples: Average duration, growth rate.
-
-Icon suggestion:
-🧮 Calculator icon
-
-🔟 Joining / Merging
-
-Description: Join input tables to create consolidated datasets.
-
-Examples: Join dealer table with contracts and customers.
-
-Icon suggestion:
-🔗 Chain link / Merge icon
-
-1️⃣1️⃣ Validation / Quality Check
-
-Description: Apply data quality checks during preparation.
-
-Examples: Completeness or consistency validation.
-
-Icon suggestion:
-✔️ Checkmark / Shield icon
-
-1️⃣2️⃣ Formatting
-
-Description: Apply formatting rules to fields.
-
-Examples: Date formats, uppercase text.
-
-Icon suggestion:
-🎨 Paintbrush / Format icon
+The documentation is reviewed on a quarterly basis. Feedback collected during the quarter is consolidated in a dedicated tracking document, which is used to assess required updates and improvements. This structured review process ensures that the documentation remains up to date, relevant, and aligned with evolving needs and standards.
