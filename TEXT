@@ -1,3 +1,24 @@
-This section focuses on the identification and documentation of the data used throughout the project.
-It aims to provide a clear and structured view of the data sources, fields, and definitions required to support the analyses and dashboard development.
-The Data Dictionary plays a key role in this section, ensuring data transparency, consistency, and traceability by documenting where the data comes from, how it is used, and how it should be interpreted.
+Use Case Owner
+
+Accountable for the use case and its objectives.
+Ensures alignment with business needs and validates key decisions and outcomes.
+
+Use Case Developer
+
+Responsible for designing, building, and implementing the use case.
+Handles the technical and analytical development.
+
+Use Case Reviewer
+
+Provides review and challenge throughout the project.
+Validates assumptions, methodology, and deliverables from a business or technical perspective.
+
+Use Case User
+
+End user of the use case or solution.
+Uses the outputs for decision-making or operational activities.
+
+Other Stakeholders
+
+Additional parties involved or impacted by the use case.
+May include IT, compliance, risk, data owners, or management.
