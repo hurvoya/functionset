@@ -1,13 +1,136 @@
-Data Quality Rule Inventory
+1️⃣ Structure globale du document « Checklist »
+Page 1 – Introduction
 
-“List and document the data quality rules applied across the project.”
+Purpose of the checklist
 
-Data Quality Statistics
+How to use it
 
-“Provide quantitative metrics on data quality checks and their outcomes.”
+Target audience (data analysts, project owners, etc.)
 
-(Si tu veux rester cohérent avec le fait que ce livrable peut être plutôt descriptif/statistique)
+“This checklist is designed to guide teams through each project phase, ensuring consistency, best practices, and alignment with Group standards.”
 
-Framing Pilot
+Page 2 – Overview of Project Phases
 
-“Define and share the pilot organization, scope, and operating model with the business.”
+Un tableau très simple :
+
+Phase	Description	Status
+Framing	Define scope, objectives, governance	⬜
+Data Preparation	Collect and prepare data	⬜
+EDA	Explore data and derive insights	⬜
+Dashboard Creation	Build and validate dashboard	⬜
+Pilot	Run and follow up pilot	⬜
+
+👉 Ça donne une vision macro immédiate.
+
+2️⃣ Template standard à répéter pour chaque phase
+
+👉 C’est le cœur de ton document.
+Tu fais exactement la même structure pour chaque phase (Framing, Data Prep, etc.).
+
+🔹 Phase: Framing
+A. Phase Objective
+
+Define the scope, objectives, stakeholders, and planning of the use case.
+
+B. Prerequisites (Before Starting the Phase)
+
+☑️ Checklist (checkboxes)
+
+⬜ KPIs clearly defined
+
+⬜ Business expectations clarified
+
+⬜ Data Platform contact identified
+
+⬜ Initial data availability confirmed
+
+📝 Comments / Justification (if not completed)
+
+[Free text – explain why and mitigation]
+
+C. Inputs
+Input	Provided by	Available (Yes/No)	Comments
+Business requirements	Business	⬜	
+Initial KPI list	Business	⬜	
+Data sources overview	IT / Data	⬜	
+D. Key Activities & Best Practices
+Mandatory actions
+
+⬜ Initiate the Framing Document
+
+⬜ Present and complete it with the business
+
+⬜ Align on scope and assumptions
+
+Best practices
+
+💡 Validate understanding with examples
+
+💡 Keep assumptions explicit
+
+💡 Involve data stakeholders early
+
+E. Outputs
+Output	Status	Link / Reference
+Framing Document	⬜	
+Validated KPI list	⬜	
+Initial Planning	⬜	
+F. Deliverables Checklist
+Deliverable	Mandatory / Optional	Produced (Yes/No)	If No, justification
+Framing Document	Mandatory	⬜	
+Initial Planning	Mandatory	⬜	
+Stakeholder List	Optional	⬜	
+
+👉 Très important : la colonne “If No, justification”
+= parfaite pour audit / gouvernance.
+
+G. Group Documentation Alignment
+Group Document Section	Updated (Yes/No)	Comments
+Governance section	⬜	
+KPI definition section	⬜	
+H. Phase Validation
+
+Phase completed: ⬜ Yes / ⬜ No
+
+Validated by:
+
+Date:
+
+3️⃣ Pourquoi cette structure marche très bien
+
+✔️ Réutilisable pour toutes les phases
+✔️ Mélange process / opérationnel / gouvernance
+✔️ Fonctionne pour :
+
+onboarding de nouveaux collègues
+
+audit / OPC
+
+pilotage qualité
+✔️ Force la réflexion quand quelque chose n’est pas fait (justification)
+
+4️⃣ Adaptation rapide aux autres phases
+
+Tu gardes la même ossature, tu ajustes juste :
+
+les prérequis
+
+les inputs / outputs
+
+les livrables
+
+Exemples :
+
+Data Preparation → sources, joins, data quality checks
+
+EDA → notebooks, stats, insights
+
+Dashboard → mockup, technical build, RLS
+
+Pilot → feedback, follow-up, go/no-go
+
+5️⃣ Recommandation finale (très importante)
+
+👉 Un onglet / une section par phase
+👉 Checkboxes + texte libre toujours ensemble
+👉 Même structure partout = adoption maximale
