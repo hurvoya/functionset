@@ -1,56 +1,53 @@
 import pandas as pd
 import numpy as np
 
-def normalize_phone(s: pd.Series) -> pd.Series:
-    """Nettoie les téléphones: cast en string, trim, remplace les non-renseignés par NaN."""
-    s = s.copy()
+# df = ton dataframe: id_client, tel_1, tel_2, dte_histo
+df2 = df.copy()
+df2["dte_histo"] = pd.to_datetime(df2["dte_histo"], errors="coerce")
 
-    # garder NaN tels quels, sinon string
-    s = s.astype("string")
+# Optionnel mais recommandé : uniformiser en string et trim
+for c in ["tel_1", "tel_2"]:
+    df2[c] = df2[c].astype("string").str.strip()
 
-    # strip espaces
-    s = s.str.strip()
+# -----------------------
+# 1) TEL_1 : garder le tel_1 valide le plus récent
+# -----------------------
+df_tel1 = (
+    df2.loc[
+        df2["tel_1"].notna()
+        & (df2["tel_1"] != "")
+        & (df2["tel_1"] != "000"),
+        ["id_client", "tel_1", "dte_histo"]
+    ]
+    .sort_values(["id_client", "dte_histo"])
+    .drop_duplicates("id_client", keep="last")   # le plus récent
+    .drop(columns="dte_histo")
+)
 
-    # remplacer vides par NaN
-    s = s.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "NULL": pd.NA})
+# -----------------------
+# 2) TEL_2 : garder le tel_2 valide le plus récent
+# -----------------------
+df_tel2 = (
+    df2.loc[
+        df2["tel_2"].notna()
+        & (df2["tel_2"] != "")
+        & (df2["tel_2"] != "000"),
+        ["id_client", "tel_2", "dte_histo"]
+    ]
+    .sort_values(["id_client", "dte_histo"])
+    .drop_duplicates("id_client", keep="last")
+    .drop(columns="dte_histo")
+)
 
-    # remplacer "000" et variantes (0000..., 0, etc) par NaN si tu veux
-    # Ici: on considère uniquement exactement "000" comme non renseigné
-    s = s.mask(s == "000", pd.NA)
+# -----------------------
+# 3) Base clients + merge (pour garder tous les clients même sans tel)
+# -----------------------
+base_clients = df2[["id_client"]].drop_duplicates()
 
-    return s
-
-def last_valid_by_client(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-
-    # s'assurer que dte_histo est bien en datetime
-    df["dte_histo"] = pd.to_datetime(df["dte_histo"], errors="coerce")
-
-    # normaliser tel_1 / tel_2
-    df["tel_1"] = normalize_phone(df["tel_1"])
-    df["tel_2"] = normalize_phone(df["tel_2"])
-
-    # trier du plus ancien au plus récent pour que "last" prenne le plus récent
-    df = df.sort_values(["id_client", "dte_histo"])
-
-    def last_non_null(s: pd.Series):
-        # on enlève les NA puis on prend la dernière valeur (donc la plus récente)
-        s2 = s.dropna()
-        return s2.iloc[-1] if len(s2) else pd.NA
-
-    out = (
-        df.groupby("id_client", as_index=False)
-          .agg(
-              tel_1=("tel_1", last_non_null),
-              tel_2=("tel_2", last_non_null),
-              dte_histo_last=("dte_histo", "max"),  # optionnel: la date la plus récente tout court
-          )
-    )
-
-    return out
-
-# --- usage ---
-# df_tel = ton dataframe avec id_client, tel_1, tel_2, dte_histo
-base_propre = last_valid_by_client(df_tel)
+base_propre = (
+    base_clients
+    .merge(df_tel1, on="id_client", how="left")
+    .merge(df_tel2, on="id_client", how="left")
+)
 
 base_propre.head()
