@@ -1,0 +1,25 @@
+# Nombre total de lignes dupliquées
+df.duplicated().sum()
+
+# Afficher les lignes dupliquées
+df[df.duplicated(keep=False)].sort_values(by=df.columns.tolist())
+
+
+for col in df.columns:
+    nb = df[col].duplicated().sum()
+    if nb > 0:
+        print(f"Colonne '{col}' : {nb} doublons")
+
+
+df[df['id_contract'].duplicated(keep=False)].sort_values('id_contract')
+
+
+
+# Doublons par contrat
+df[df.duplicated(subset=['id_contract'], keep=False)]
+
+# Doublons par contrat + client
+df[df.duplicated(subset=['id_contract', 'id_client'], keep=False)]
+
+# Doublons par contrat + apporteur + client
+df[df.duplicated(subset=['id_contract', 'id_apporteur', 'id_client'], keep=False)]
