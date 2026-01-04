@@ -1,25 +1,56 @@
-# Nombre total de lignes dupliquées
-df.duplicated().sum()
+import pandas as pd
+import numpy as np
 
-# Afficher les lignes dupliquées
-df[df.duplicated(keep=False)].sort_values(by=df.columns.tolist())
+def normalize_phone(s: pd.Series) -> pd.Series:
+    """Nettoie les téléphones: cast en string, trim, remplace les non-renseignés par NaN."""
+    s = s.copy()
 
+    # garder NaN tels quels, sinon string
+    s = s.astype("string")
 
-for col in df.columns:
-    nb = df[col].duplicated().sum()
-    if nb > 0:
-        print(f"Colonne '{col}' : {nb} doublons")
+    # strip espaces
+    s = s.str.strip()
 
+    # remplacer vides par NaN
+    s = s.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA, "NULL": pd.NA})
 
-df[df['id_contract'].duplicated(keep=False)].sort_values('id_contract')
+    # remplacer "000" et variantes (0000..., 0, etc) par NaN si tu veux
+    # Ici: on considère uniquement exactement "000" comme non renseigné
+    s = s.mask(s == "000", pd.NA)
 
+    return s
 
+def last_valid_by_client(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
 
-# Doublons par contrat
-df[df.duplicated(subset=['id_contract'], keep=False)]
+    # s'assurer que dte_histo est bien en datetime
+    df["dte_histo"] = pd.to_datetime(df["dte_histo"], errors="coerce")
 
-# Doublons par contrat + client
-df[df.duplicated(subset=['id_contract', 'id_client'], keep=False)]
+    # normaliser tel_1 / tel_2
+    df["tel_1"] = normalize_phone(df["tel_1"])
+    df["tel_2"] = normalize_phone(df["tel_2"])
 
-# Doublons par contrat + apporteur + client
-df[df.duplicated(subset=['id_contract', 'id_apporteur', 'id_client'], keep=False)]
+    # trier du plus ancien au plus récent pour que "last" prenne le plus récent
+    df = df.sort_values(["id_client", "dte_histo"])
+
+    def last_non_null(s: pd.Series):
+        # on enlève les NA puis on prend la dernière valeur (donc la plus récente)
+        s2 = s.dropna()
+        return s2.iloc[-1] if len(s2) else pd.NA
+
+    out = (
+        df.groupby("id_client", as_index=False)
+          .agg(
+              tel_1=("tel_1", last_non_null),
+              tel_2=("tel_2", last_non_null),
+              dte_histo_last=("dte_histo", "max"),  # optionnel: la date la plus récente tout court
+          )
+    )
+
+    return out
+
+# --- usage ---
+# df_tel = ton dataframe avec id_client, tel_1, tel_2, dte_histo
+base_propre = last_valid_by_client(df_tel)
+
+base_propre.head()
