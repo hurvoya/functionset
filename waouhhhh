@@ -1,2 +1,19 @@
-bad = df_x[(df_x["dte_mel"].notna()) & (df_x["dte_fin_contrat"].notna()) & (df_x["dte_fin_contrat"] < df_x["dte_mel"])]
-bad
+X = "TON_ID"
+
+cols = ["country","id_apporteur","id_contract","dte_mel","dte_fin_contrat","mtd_total_lot","lib_partner","ibl"]
+df_one = df.loc[df["id_apporteur"] == X, cols].copy()
+
+# Nettoyage clés (caractères invisibles)
+df_one["country"] = df_one["country"].astype(str).str.strip()
+df_one["id_apporteur"] = df_one["id_apporteur"].astype(str).str.strip()
+df_one["id_contract"] = df_one["id_contract"].astype(str).str.strip()
+
+# Parsing dates + normalize
+df_one["dte_mel"] = pd.to_datetime(df_one["dte_mel"], errors="coerce").dt.normalize()
+df_one["dte_fin_contrat"] = pd.to_datetime(df_one["dte_fin_contrat"], errors="coerce").dt.normalize()
+
+# Un contrat = une ligne
+df_one = df_one.drop_duplicates(subset=["country","id_contract"])
+
+print(df_one)
+print(df_one.dtypes)
