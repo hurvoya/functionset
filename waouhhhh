@@ -1,22 +1,15 @@
-cap8 = stock_filt[stock_filt["nb_contrats_cum"] == 8]
-
-kpi_cap8_annual = (
-    cap8
-    .groupby(["country", "id_apporteur", "event_id"])
-    .agg(
-        date_cap8=("mois_ref", "min"),
-        date_new_dealer=("date_new_dealer", "first"),
-    )
+scatter_df = (
+    stock
+    .query("is_key_account == False")
     .assign(
-        year=lambda x: x["date_new_dealer"].dt.year,
-        delay_days=lambda x: (x["date_cap8"] - x["date_new_dealer"]).dt.days
+        year=lambda x: x["date_new_dealer"].dt.year
     )
     .query("year in [2024, 2025]")
-    .groupby(["country", "year"])
+    .groupby(["country", "id_apporteur", "event_id", "year"])
     .agg(
-        avg_days_to_8=("delay_days", "mean"),
-        median_days_to_8=("delay_days", "median"),
-        nb_dealers_reaching_8=("id_apporteur", "nunique"),
+        nb_calls_total=("nb_calls_mois", "sum"),
+        montant_finance_total=("montant_finance_mois", "sum"),
+        new_dealer_type=("new_dealer_type", "first"),
     )
     .reset_index()
 )
