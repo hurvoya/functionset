@@ -1,69 +1,12 @@
-def compute_new_dealer_events_debug(
-    df_contract: pd.DataFrame,
-    dealer_col="id_apporteur",
-    country_col="country",
-    contract_id_col="id_contract",
-    mel_col="dte_mel",
-    fin_col="dte_fin_contrat",
-    lookback_months=12,
-    debug_id=None
-):
-    dfc = df_contract.copy()
+X = "TON_ID"
 
-    # Étape 0 — ce que la fonction reçoit vraiment
-    if debug_id is not None:
-        print("\n=== INPUT DF (avant dropna) ===")
-        print(dfc[dfc[dealer_col].astype(str).str.strip() == str(debug_id).strip()]
-              [[country_col, dealer_col, contract_id_col, mel_col, fin_col]])
+# DF 1 : mini-DF (celui qui marche)
+df_event1 = df[df["id_apporteur"] == X].copy()
 
-    # Étape 1 — dropna MEL
-    dfc = dfc.dropna(subset=[dealer_col, mel_col])
+# DF 2 : DF global MAIS limité à ce dealer
+df_event2 = df[
+    df["id_apporteur"].astype(str).str.strip() == str(X).strip()
+].copy()
 
-    if debug_id is not None:
-        print("\n=== AFTER dropna(dte_mel) ===")
-        print(dfc[dfc[dealer_col].astype(str).str.strip() == str(debug_id).strip()]
-              [[country_col, dealer_col, contract_id_col, mel_col, fin_col]])
-
-    # Étape 2 — sort
-    dfc = dfc.sort_values([country_col, dealer_col, mel_col])
-
-    # Étape 3 — calculs
-    dfc["rolling_max_fin_prev"] = (
-        dfc.groupby([country_col, dealer_col])[fin_col]
-           .cummax()
-           .shift(1)
-    )
-
-    dfc["has_prev_contract"] = (
-        dfc.groupby([country_col, dealer_col]).cumcount() > 0
-    )
-
-    dfc["lookback_start"] = dfc[mel_col] - pd.DateOffset(months=lookback_months)
-
-    dfc["trigger"] = (
-        dfc["rolling_max_fin_prev"].isna()
-        | (dfc["rolling_max_fin_prev"] < dfc["lookback_start"])
-    )
-
-    if debug_id is not None:
-        print("\n=== COMPUTED COLUMNS ===")
-        print(
-            dfc[dfc[dealer_col].astype(str).str.strip() == str(debug_id).strip()]
-            [[country_col, dealer_col, contract_id_col, mel_col, fin_col,
-              "rolling_max_fin_prev", "lookback_start", "has_prev_contract", "trigger"]]
-        )
-
-    events = dfc.loc[
-        dfc["trigger"],
-        [country_col, dealer_col, mel_col, "has_prev_contract"]
-    ].copy()
-
-    events = events.rename(columns={mel_col: "date_new_dealer"})
-    events["new_dealer_type"] = np.where(
-        events["has_prev_contract"], "known", "first_time"
-    )
-
-    events = events.sort_values([country_col, dealer_col, "date_new_dealer"])
-    events["event_id"] = events.groupby([country_col, dealer_col]).cumcount() + 1
-
-    return events.drop(columns=["has_prev_contract"])
+print("Event1 shape:", df_event1.shape)
+print("Event2 shape:", df_event2.shape)
