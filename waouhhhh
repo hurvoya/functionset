@@ -1,6 +1,12 @@
-df_dealer = df[(df["country"] == c) & (df["id_apporteur"] == dealer)].copy()
+FUTURE_DATE = pd.Timestamp("2100-01-01")
 
-df_dealer = df_dealer.drop_duplicates(subset=["country","id_contract"])
-df_dealer = df_dealer.sort_values("dte_mel")
+df["dte_fin_contrat_effective"] = np.where(
+    df["status"] == "INS",
+    FUTURE_DATE,
+    df["dte_fin_contrat"]
+)
 
-df_dealer[["id_contract","dte_mel","dte_fin_contrat","status","mtd_total_lot"]].head(50)
+df["dte_fin_contrat_effective"] = pd.to_datetime(
+    df["dte_fin_contrat_effective"],
+    errors="coerce"
+).dt.normalize()
