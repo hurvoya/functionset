@@ -1,17 +1,22 @@
-kpi_delay_creation_annual = (
-    events
-    .query("is_key_account == False")
-    .dropna(subset=["date_creation_apporteur", "date_new_dealer"])
+cap8 = stock_filt[stock_filt["nb_contrats_cum"] == 8]
+
+kpi_cap8_annual = (
+    cap8
+    .groupby(["country", "id_apporteur", "event_id"])
+    .agg(
+        date_cap8=("mois_ref", "min"),
+        date_new_dealer=("date_new_dealer", "first"),
+    )
     .assign(
         year=lambda x: x["date_new_dealer"].dt.year,
-        delay_days=lambda x: (x["date_new_dealer"] - x["date_creation_apporteur"]).dt.days
+        delay_days=lambda x: (x["date_cap8"] - x["date_new_dealer"]).dt.days
     )
     .query("year in [2024, 2025]")
     .groupby(["country", "year"])
     .agg(
-        avg_delay_days=("delay_days", "mean"),
-        median_delay_days=("delay_days", "median"),
-        nb_new_dealers=("id_apporteur", "nunique")
+        avg_days_to_8=("delay_days", "mean"),
+        median_days_to_8=("delay_days", "median"),
+        nb_dealers_reaching_8=("id_apporteur", "nunique"),
     )
     .reset_index()
 )
