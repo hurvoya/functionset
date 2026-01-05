@@ -1,22 +1,5 @@
-import pandas as pd
-
-START = pd.Timestamp("2024-01-01")
-END   = pd.Timestamp("2025-12-31")
-
-# --- EVENTS : fenêtre sur la date de déclenchement ---
-events_2425 = events.copy()
-events_2425["date_new_dealer"] = pd.to_datetime(events_2425["date_new_dealer"], errors="coerce")
-
-events_2425 = events_2425[
-    (events_2425["date_new_dealer"] >= START) &
-    (events_2425["date_new_dealer"] <= END)
-].copy()
-
-# --- STOCK : fenêtre d'affichage mensuelle (mois_ref) ---
-stock_2425 = stock.copy()
-stock_2425["mois_ref"] = pd.to_datetime(stock_2425["mois_ref"], errors="coerce")
-
-stock_2425 = stock_2425[
-    (stock_2425["mois_ref"] >= START) &
-    (stock_2425["mois_ref"] <= END)
-].copy()
+tmp = events_2425.copy()
+if "date_creation_apporteur" in tmp.columns:
+    tmp["date_creation_apporteur"] = pd.to_datetime(tmp["date_creation_apporteur"], errors="coerce")
+    print("events_2425 avec création < 2024:",
+          (tmp["date_creation_apporteur"] < START).sum())
