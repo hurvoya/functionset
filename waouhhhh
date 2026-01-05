@@ -1,4 +1,12 @@
-stock_no_ka = stock[
-    (stock["is_key_account"] == False) &
-    (stock["en_suivi"] == True)
-]
+kpi_calls = (
+    stock_no_ka
+    .assign(
+        year_month=stock_no_ka["mois_ref"].dt.to_period("M").astype(str)
+    )
+    .groupby(["country", "year_month"])
+    .agg(
+        nb_calls=("nb_calls_mois", "sum"),
+        nb_new_dealers_actifs=("id_apporteur", "nunique")
+    )
+    .reset_index()
+)
