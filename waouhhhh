@@ -1,18 +1,8 @@
-df = df.copy()
+df_x = df[df["id_apporteur"] == X].dropna(subset=["dte_mel"]).sort_values("dte_mel").copy()
 
-# sécurité : nettoyage des strings
-for c in ["dte_mel", "dte_fin_contrat"]:
-    df[c] = df[c].astype(str).str.strip().replace({"None": None, "nan": None, "NaT": None, "": None})
+tmp = df_x.copy()
+tmp["rolling_max_fin_prev"] = tmp["dte_fin_contrat"].cummax().shift(1)
+tmp["lookback_start"] = tmp["dte_mel"] - pd.DateOffset(months=12)
+tmp["trigger"] = tmp["rolling_max_fin_prev"].isna() | (tmp["rolling_max_fin_prev"] < tmp["lookback_start"])
 
-# parsing robuste
-df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce", dayfirst=False)
-df["dte_fin_contrat"] = pd.to_datetime(df["dte_fin_contrat"], errors="coerce", dayfirst=False)
-
-# normalisation à la journée
-df["dte_mel"] = df["dte_mel"].dt.normalize()
-df["dte_fin_contrat"] = df["dte_fin_contrat"].dt.normalize()
-
-# sanity check global
-print(df[["dte_mel","dte_fin_contrat"]].dtypes)
-print("dte_mel NaT rate:", df["dte_mel"].isna().mean())
-print("dte_fin_contrat NaT rate:", df["dte_fin_contrat"].isna().mean())
+tmp[["id_contract","dte_mel","dte_fin_contrat","rolling_max_fin_prev","lookback_start","trigger"]]
