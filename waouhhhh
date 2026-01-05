@@ -1,16 +1,19 @@
-kpi_delay_creation = (
-    events_no_ka
-    .assign(
-        delay_days=(
-            events_no_ka["date_new_dealer"]
-            - events_no_ka["date_creation_apporteur"]
-        ).dt.days,
-        year_month=events_no_ka["date_creation_apporteur"].dt.to_period("M").astype(str)
-    )
-    .groupby(["country", "year_month"])
-    .agg(
-        avg_delay_days=("delay_days", "mean"),
-        median_delay_days=("delay_days", "median")
-    )
-    .reset_index()
+dealer_dim = (
+    df[["country", "id_apporteur", "dte_creation_v2"]]
+    .drop_duplicates(subset=["country", "id_apporteur"])
+    .rename(columns={"dte_creation_v2": "date_creation_apporteur"})
 )
+
+dealer_dim["date_creation_apporteur"] = pd.to_datetime(
+    dealer_dim["date_creation_apporteur"], errors="coerce"
+).dt.normalize()
+
+
+events = events.merge(
+    dealer_dim,
+    on=["country", "id_apporteur"],
+    how="left"
+)
+
+
+events["date_creation_apporteur"].isna().mean()
