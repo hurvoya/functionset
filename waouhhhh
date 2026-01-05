@@ -1,3 +1,2 @@
-ev_x = events[events["id_apporteur"] == X]
-print(ev_x)
-
+print(df_x[["dte_mel","dte_fin_contrat"]])
+print("fin_contrat isna:", df_x["dte_fin_contrat"].isna().mean())
