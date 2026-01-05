@@ -1,19 +1,20 @@
-dealer_dim = (
-    df[["country", "id_apporteur", "dte_creation_v2"]]
-    .drop_duplicates(subset=["country", "id_apporteur"])
-    .rename(columns={"dte_creation_v2": "date_creation_apporteur"})
+cap8 = stock_no_ka[stock_no_ka["nb_contrats_cum"] == 8]
+
+kpi_cap8 = (
+    cap8
+    .groupby(["country", "id_apporteur", "event_id"])
+    .agg(
+        date_cap8=("mois_ref", "min"),
+        date_new_dealer=("date_new_dealer", "first")
+    )
+    .assign(
+        delay_days=lambda x: (x["date_cap8"] - x["date_new_dealer"]).dt.days
+    )
+    .reset_index()
+    .groupby("country")
+    .agg(
+        avg_days_to_8=("delay_days", "mean"),
+        nb_dealers_reaching_8=("id_apporteur", "nunique")
+    )
+    .reset_index()
 )
-
-dealer_dim["date_creation_apporteur"] = pd.to_datetime(
-    dealer_dim["date_creation_apporteur"], errors="coerce"
-).dt.normalize()
-
-
-events = events.merge(
-    dealer_dim,
-    on=["country", "id_apporteur"],
-    how="left"
-)
-
-
-events["date_creation_apporteur"].isna().mean()
