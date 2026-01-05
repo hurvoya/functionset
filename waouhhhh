@@ -1,19 +1,2 @@
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(10, 6))
-
-for year, color in [(2024, "tab:blue"), (2025, "tab:orange")]:
-    sub = scatter_df[scatter_df["year"] == year]
-    plt.scatter(
-        sub["nb_calls_total"],
-        sub["montant_finance_total"],
-        alpha=0.6,
-        label=str(year)
-    )
-
-plt.xlabel("Nombre total de calls (sur 6 mois / 8 contrats)")
-plt.ylabel("Montant financé total (€)")
-plt.title("New Dealers — Montant financé vs Nombre de calls")
-plt.legend()
-plt.grid(True)
-plt.show()
+for threshold in [10_000, 20_000]:
+    plt.axhline(threshold, linestyle="--", color="red", alpha=0.5)
