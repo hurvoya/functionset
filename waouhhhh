@@ -1,4 +1,21 @@
-df_event2[
-    ["country", "id_contract", "dte_mel", "dte_fin_contrat"]
-].sort_values(["dte_mel","dte_fin_contrat"])
+# df = DataFrame que tu passes à compute_new_dealer_events
+print("DF global shape:", df.shape)
+print("Columns:", df.columns.tolist())
 
+
+X = "TON_ID"
+
+# 1) Copie
+dfc = df.copy()
+
+# 2) dropna comme dans la fonction
+dfc = dfc.dropna(subset=["id_apporteur", "dte_mel"])
+
+# 3) tri comme dans la fonction
+dfc = dfc.sort_values(["country", "id_apporteur", "dte_mel"])
+
+# 4) lignes vues pour ce dealer
+dfc_x = dfc[dfc["id_apporteur"].astype(str).str.strip() == str(X).strip()]
+
+print("Nombre de lignes dfc_x:", len(dfc_x))
+print(dfc_x[["country", "id_contract", "dte_mel", "dte_fin_contrat"]])
