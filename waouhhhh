@@ -1,7 +1,3 @@
-X = "TON_ID"
-
-df_x = df[df["id_apporteur"] == X].copy()
-print("Nb lignes brut pour ce dealer:", len(df_x))
-print("Nb contrats distincts:", df_x["id_contract"].nunique())
-print(df_x[["country","id_contract","dte_mel","dte_fin_contrat","lib_partner"]].sort_values("dte_mel"))
+ev_x = events[events["id_apporteur"] == X]
+print(ev_x)
 
