@@ -1,38 +1,21 @@
-stock_filt = stock[
-    (stock["is_key_account"] == False)
-]
-
-
-stock_filt["year_new_dealer"] = stock_filt["date_new_dealer"].dt.year
-stock_filt = stock_filt[stock_filt["year_new_dealer"].isin([2024, 2025])]
-
-
-kpi_decision = (
-    stock_filt
-    .groupby(["country", "id_apporteur", "event_id", "year_new_dealer"])
+kpi_delay_annual = (
+    events
+    .merge(
+        dealer_dim,  # table avec date_creation_apporteur
+        on=["country", "id_apporteur"],
+        how="left"
+    )
+    .query("is_key_account == False")
+    .assign(
+        year=lambda x: x["date_new_dealer"].dt.year,
+        delay_days=lambda x: (x["date_new_dealer"] - x["date_creation_apporteur"]).dt.days
+    )
+    .query("year in [2024, 2025]")
+    .groupby(["country", "year"])
     .agg(
-        nb_calls_total=("nb_calls_mois", "sum"),
-        montant_finance_total=("montant_finance_mois", "sum"),
-        new_dealer_type=("new_dealer_type", "first"),
+        avg_delay_days=("delay_days", "mean"),
+        median_delay_days=("delay_days", "median"),
+        nb_dealers=("id_apporteur", "nunique")
     )
     .reset_index()
 )
-
-
-def simulate_threshold(df, threshold):
-    kept = df[df["montant_finance_total"] >= threshold]
-    dropped = df[df["montant_finance_total"] < threshold]
-
-    return {
-        "threshold": threshold,
-        "calls_kept": kept["nb_calls_total"].sum(),
-        "calls_dropped": dropped["nb_calls_total"].sum(),
-        "amount_kept": kept["montant_finance_total"].sum(),
-        "amount_dropped": dropped["montant_finance_total"].sum(),
-        "nb_dealers_dropped": dropped.shape[0],
-    }
-
-simulations = pd.DataFrame([
-    simulate_threshold(kpi_decision, t)
-    for t in [5_000, 10_000, 20_000, 30_000]
-])
