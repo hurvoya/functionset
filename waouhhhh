@@ -1,11 +1,7 @@
-kpi_delay_annual = (
+kpi_delay_creation_annual = (
     events
-    .merge(
-        dealer_dim,  # table avec date_creation_apporteur
-        on=["country", "id_apporteur"],
-        how="left"
-    )
     .query("is_key_account == False")
+    .dropna(subset=["date_creation_apporteur", "date_new_dealer"])
     .assign(
         year=lambda x: x["date_new_dealer"].dt.year,
         delay_days=lambda x: (x["date_new_dealer"] - x["date_creation_apporteur"]).dt.days
@@ -15,7 +11,7 @@ kpi_delay_annual = (
     .agg(
         avg_delay_days=("delay_days", "mean"),
         median_delay_days=("delay_days", "median"),
-        nb_dealers=("id_apporteur", "nunique")
+        nb_new_dealers=("id_apporteur", "nunique")
     )
     .reset_index()
 )
