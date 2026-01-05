@@ -1,8 +1,5 @@
-def to_datetime(df: pd.DataFrame, cols, normalize=True):
-    for c in cols:
-        if c in df.columns:
-            df[c] = pd.to_datetime(df[c], errors="coerce", utc=False)
-            # On enlève l'heure pour stabiliser toutes les comparaisons
-            if normalize:
-                df[c] = df[c].dt.normalize()
-    return df
+def month_end(s: pd.Series) -> pd.Series:
+    s = pd.to_datetime(s, errors="coerce")
+    s = s.dt.normalize()
+    # fin de mois à 00:00:00
+    return s.dt.to_period("M").dt.to_timestamp("M").dt.normalize()
