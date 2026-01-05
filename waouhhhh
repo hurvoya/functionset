@@ -1,17 +1,26 @@
-kpi_new_dealer = (
-    events
-    .assign(
-        year_month=events["date_new_dealer"].dt.to_period("M").astype(str)
-    )
-    .groupby(["country", "year_month"])
-    .agg(
-        nb_new_dealers=("id_apporteur", "nunique"),
-        nb_new_dealers_key_account=("is_key_account", "sum")
-    )
-    .reset_index()
+# 1) Prendre la ligne M0 de stock = contexte du déclenchement
+stock_m0 = (
+    stock
+    .sort_values(["country", "id_apporteur", "event_id", "mois_ref"])
+    .groupby(["country", "id_apporteur", "event_id"], as_index=False)
+    .first()
 )
 
-kpi_new_dealer["share_key_account"] = (
-    kpi_new_dealer["nb_new_dealers_key_account"]
-    / kpi_new_dealer["nb_new_dealers"]
+# 2) Choisir la colonne partenaire disponible dans stock
+partner_col = None
+for c in ["partner_actuel", "lib_partner", "lib_partner_actuel"]:
+    if c in stock_m0.columns:
+        partner_col = c
+        break
+
+if partner_col is None:
+    raise ValueError("Je ne trouve pas de colonne partenaire dans stock_m0 (partner_actuel/lib_partner/...).")
+
+# 3) Enrichir events avec le partenaire + flag key account
+events = events.merge(
+    stock_m0[["country", "id_apporteur", "event_id", partner_col]],
+    on=["country", "id_apporteur", "event_id"],
+    how="left",
 )
+
+events["is_key_account"] = events[partner_col].fillna("").ne("Not Allocated")
