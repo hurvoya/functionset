@@ -1,9 +1,6 @@
-row = top.iloc[0]
-c, dealer = row["country"], row["id_apporteur"]
+df_dealer = df[(df["country"] == c) & (df["id_apporteur"] == dealer)].copy()
 
-events_anom = (
-    events[(events["country"] == c) & (events["id_apporteur"] == dealer)]
-    .sort_values("date_new_dealer")
-)
+df_dealer = df_dealer.drop_duplicates(subset=["country","id_contract"])
+df_dealer = df_dealer.sort_values("dte_mel")
 
-events_anom.head(20), events_anom.tail(20), len(events_anom)
+df_dealer[["id_contract","dte_mel","dte_fin_contrat","status","mtd_total_lot"]].head(50)
