@@ -1,5 +1,7 @@
-def month_end(s: pd.Series) -> pd.Series:
-    s = pd.to_datetime(s, errors="coerce")
-    s = s.dt.normalize()
-    # fin de mois à 00:00:00
-    return s.dt.to_period("M").dt.to_timestamp("M").dt.normalize()
+X = "TON_ID"
+
+df_x = df[df["id_apporteur"] == X].copy()
+print("Nb lignes brut pour ce dealer:", len(df_x))
+print("Nb contrats distincts:", df_x["id_contract"].nunique())
+print(df_x[["country","id_contract","dte_mel","dte_fin_contrat","lib_partner"]].sort_values("dte_mel"))
+
