@@ -1,2 +1,2 @@
-df_x[["country","id_contract","dte_mel","dte_fin_contrat"]].value_counts()
-
+bad = df_x[(df_x["dte_mel"].notna()) & (df_x["dte_fin_contrat"].notna()) & (df_x["dte_fin_contrat"] < df_x["dte_mel"])]
+bad
