@@ -1,12 +1,17 @@
-FUTURE_DATE = pd.Timestamp("2100-01-01")
-
-df["dte_fin_contrat_effective"] = np.where(
-    df["status"] == "INS",
-    FUTURE_DATE,
-    df["dte_fin_contrat"]
+kpi_new_dealer = (
+    events
+    .assign(
+        year_month=events["date_new_dealer"].dt.to_period("M").astype(str)
+    )
+    .groupby(["country", "year_month"])
+    .agg(
+        nb_new_dealers=("id_apporteur", "nunique"),
+        nb_new_dealers_key_account=("is_key_account", "sum")
+    )
+    .reset_index()
 )
 
-df["dte_fin_contrat_effective"] = pd.to_datetime(
-    df["dte_fin_contrat_effective"],
-    errors="coerce"
-).dt.normalize()
+kpi_new_dealer["share_key_account"] = (
+    kpi_new_dealer["nb_new_dealers_key_account"]
+    / kpi_new_dealer["nb_new_dealers"]
+)
