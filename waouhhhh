@@ -1,14 +1,2 @@
-events, followed, stock = build_dealer_stock_pipeline(df)
-
-# Analyse 1 (répartition key account)
-analysis1 = (stock.groupby(["country", "mois_ref"])["is_key_account"]
-             .mean()
-             .reset_index(name="share_key_account"))
-
-# Analyses suivantes (hors key account)
-stock_no_ka = stock[stock["is_key_account"] == False].copy()
-
-# Calls par mois (hors KA)
-calls_month = (stock_no_ka.groupby(["country", "mois_ref"])["nb_calls_mois"]
-               .sum()
-               .reset_index())
+one = stock[(stock["id_apporteur"] == SOME_ID)].sort_values(["date_new_dealer","mois_ref"])
+one[["date_new_dealer","mois_ref","nb_contrats_mois","nb_contrats_cum","montant_finance_mois","montant_finance_cum"]]
