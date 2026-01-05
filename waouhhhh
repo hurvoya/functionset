@@ -1,12 +1,4 @@
-X = "TON_ID"
+df_event2[
+    ["country", "id_contract", "dte_mel", "dte_fin_contrat"]
+].sort_values(["dte_mel","dte_fin_contrat"])
 
-# DF 1 : mini-DF (celui qui marche)
-df_event1 = df[df["id_apporteur"] == X].copy()
-
-# DF 2 : DF global MAIS limité à ce dealer
-df_event2 = df[
-    df["id_apporteur"].astype(str).str.strip() == str(X).strip()
-].copy()
-
-print("Event1 shape:", df_event1.shape)
-print("Event2 shape:", df_event2.shape)
