@@ -1,5 +1,3 @@
-tmp = df_x.dropna(subset=["dte_mel"]).sort_values("dte_mel").copy()
-tmp["rolling_max_fin_prev"] = tmp["dte_fin_contrat"].cummax().shift(1)
-tmp["lookback_start"] = tmp["dte_mel"] - pd.DateOffset(months=12)
-tmp["trigger"] = tmp["rolling_max_fin_prev"].isna() | (tmp["rolling_max_fin_prev"] < tmp["lookback_start"])
-tmp[["id_contract","dte_mel","dte_fin_contrat","rolling_max_fin_prev","lookback_start","trigger"]]
+df_x = df[df["id_apporteur"] == X].copy()
+print(df_x[["dte_mel","dte_fin_contrat"]].dtypes)
+print(df_x[["dte_mel","dte_fin_contrat"]].head())
