@@ -1,9 +1,9 @@
-top = (
-    events.groupby(["country","id_apporteur"])
-          .size()
-          .sort_values(ascending=False)
-          .head(30)
-          .reset_index(name="nb_events")
+row = top.iloc[0]
+c, dealer = row["country"], row["id_apporteur"]
+
+events_anom = (
+    events[(events["country"] == c) & (events["id_apporteur"] == dealer)]
+    .sort_values("date_new_dealer")
 )
 
-top
+events_anom.head(20), events_anom.tail(20), len(events_anom)
