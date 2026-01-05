@@ -1,3 +1,18 @@
-df_x = df[df["id_apporteur"] == X].copy()
-print(df_x[["dte_mel","dte_fin_contrat"]].dtypes)
-print(df_x[["dte_mel","dte_fin_contrat"]].head())
+df = df.copy()
+
+# sécurité : nettoyage des strings
+for c in ["dte_mel", "dte_fin_contrat"]:
+    df[c] = df[c].astype(str).str.strip().replace({"None": None, "nan": None, "NaT": None, "": None})
+
+# parsing robuste
+df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce", dayfirst=False)
+df["dte_fin_contrat"] = pd.to_datetime(df["dte_fin_contrat"], errors="coerce", dayfirst=False)
+
+# normalisation à la journée
+df["dte_mel"] = df["dte_mel"].dt.normalize()
+df["dte_fin_contrat"] = df["dte_fin_contrat"].dt.normalize()
+
+# sanity check global
+print(df[["dte_mel","dte_fin_contrat"]].dtypes)
+print("dte_mel NaT rate:", df["dte_mel"].isna().mean())
+print("dte_fin_contrat NaT rate:", df["dte_fin_contrat"].isna().mean())
