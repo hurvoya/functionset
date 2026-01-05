@@ -1,2 +1,21 @@
-for threshold in [10_000, 20_000]:
-    plt.axhline(threshold, linestyle="--", color="red", alpha=0.5)
+def impact_seuil(df, seuil):
+    kept = df[df["montant_finance_total"] >= seuil]
+    dropped = df[df["montant_finance_total"] < seuil]
+
+    return pd.Series({
+        "seuil": seuil,
+        "calls_totaux": df["nb_calls_total"].sum(),
+        "calls_dropped": dropped["nb_calls_total"].sum(),
+        "calls_kept": kept["nb_calls_total"].sum(),
+        "montant_total": df["montant_finance_total"].sum(),
+        "montant_dropped": dropped["montant_finance_total"].sum(),
+        "montant_kept": kept["montant_finance_total"].sum(),
+        "nb_dealers_dropped": dropped.shape[0],
+    })
+
+impact_df = pd.DataFrame([
+    impact_seuil(scatter_df, s)
+    for s in [5_000, 10_000, 15_000, 20_000, 30_000]
+])
+
+impact_df
