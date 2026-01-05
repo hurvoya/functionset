@@ -1,12 +1,16 @@
-kpi_amount = (
-    stock_no_ka
+kpi_delay_creation = (
+    events_no_ka
     .assign(
-        year_month=stock_no_ka["mois_ref"].dt.to_period("M").astype(str)
+        delay_days=(
+            events_no_ka["date_new_dealer"]
+            - events_no_ka["date_creation_apporteur"]
+        ).dt.days,
+        year_month=events_no_ka["date_creation_apporteur"].dt.to_period("M").astype(str)
     )
     .groupby(["country", "year_month"])
     .agg(
-        montant_finance=("montant_finance_mois", "sum"),
-        montant_finance_cum=("montant_finance_cum", "sum")
+        avg_delay_days=("delay_days", "mean"),
+        median_delay_days=("delay_days", "median")
     )
     .reset_index()
 )
