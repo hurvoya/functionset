@@ -1,10 +1,3 @@
-# Sécuriser les dates sur dfc (et donc dfc_x)
-dfc["dte_mel"] = pd.to_datetime(dfc["dte_mel"], errors="coerce").dt.normalize()
-dfc["dte_fin_contrat"] = pd.to_datetime(dfc["dte_fin_contrat"], errors="coerce").dt.normalize()
-
-# Recréer dfc_x après coercion (important)
-dfc_x = dfc[dfc["id_apporteur"].astype(str).str.strip() == str(X).strip()].copy()
-
-print("dtype dte_mel:", dfc_x["dte_mel"].dtype)
-print("dtype dte_fin_contrat:", dfc_x["dte_fin_contrat"].dtype)
-print(dfc_x[["country","id_contract","dte_mel","dte_fin_contrat"]])
+print("df id:", id(df))
+print("cols:", [c for c in df.columns if "mel" in c.lower() or "fin" in c.lower()])
+print("dtypes:", df[["dte_mel","dte_fin_contrat"]].dtypes)
