@@ -1,21 +1,22 @@
-country = "ES"  # ou None si tu veux tout
+import pandas as pd
 
-plot_df = kpi_new_dealer_all.copy()
-if country:
-    plot_df = plot_df[plot_df["country"] == country]
+START = pd.Timestamp("2024-01-01")
+END   = pd.Timestamp("2025-12-31")
 
-plot_df = plot_df.sort_values("year_month")
-x = plot_df["year_month"]
-ka = plot_df["nb_new_dealers_key_account"]
-total = plot_df["nb_new_dealers"]
-non_ka = total - ka
+# --- EVENTS : fenêtre sur la date de déclenchement ---
+events_2425 = events.copy()
+events_2425["date_new_dealer"] = pd.to_datetime(events_2425["date_new_dealer"], errors="coerce")
 
-plt.figure(figsize=(12,5))
-plt.bar(x, non_ka, label="Not Allocated (hors KA)")
-plt.bar(x, ka, bottom=non_ka, label="Key Account")
-plt.xticks(rotation=45, ha="right")
-plt.ylabel("Nombre de New Dealers")
-plt.title(f"New Dealers mensuel — {country or 'Tous pays'}")
-plt.legend()
-plt.grid(True, axis="y", alpha=0.3)
-plt.show()
+events_2425 = events_2425[
+    (events_2425["date_new_dealer"] >= START) &
+    (events_2425["date_new_dealer"] <= END)
+].copy()
+
+# --- STOCK : fenêtre d'affichage mensuelle (mois_ref) ---
+stock_2425 = stock.copy()
+stock_2425["mois_ref"] = pd.to_datetime(stock_2425["mois_ref"], errors="coerce")
+
+stock_2425 = stock_2425[
+    (stock_2425["mois_ref"] >= START) &
+    (stock_2425["mois_ref"] <= END)
+].copy()
