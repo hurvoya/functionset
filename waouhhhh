@@ -1,4 +1,9 @@
-dfc["rolling_max_fin_prev"] = (
-    dfc.groupby([country_col, dealer_col])[fin_col]
-       .transform(lambda s: s.cummax().shift(1))
+top = (
+    events.groupby(["country","id_apporteur"])
+          .size()
+          .sort_values(ascending=False)
+          .head(30)
+          .reset_index(name="nb_events")
 )
+
+top
