@@ -1,8 +1,21 @@
-import matplotlib.pyplot as plt
-import pandas as pd
+country = "ES"  # ou None si tu veux tout
 
-def add_year_month_cols(df, date_col, ym_col="year_month"):
-    out = df.copy()
-    out[ym_col] = out[date_col].dt.to_period("M").astype(str)
-    out["year"] = out[date_col].dt.year
-    return out
+plot_df = kpi_new_dealer_all.copy()
+if country:
+    plot_df = plot_df[plot_df["country"] == country]
+
+plot_df = plot_df.sort_values("year_month")
+x = plot_df["year_month"]
+ka = plot_df["nb_new_dealers_key_account"]
+total = plot_df["nb_new_dealers"]
+non_ka = total - ka
+
+plt.figure(figsize=(12,5))
+plt.bar(x, non_ka, label="Not Allocated (hors KA)")
+plt.bar(x, ka, bottom=non_ka, label="Key Account")
+plt.xticks(rotation=45, ha="right")
+plt.ylabel("Nombre de New Dealers")
+plt.title(f"New Dealers mensuel — {country or 'Tous pays'}")
+plt.legend()
+plt.grid(True, axis="y", alpha=0.3)
+plt.show()
