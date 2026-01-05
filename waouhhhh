@@ -1,3 +1,4 @@
-print("df id:", id(df))
-print("cols:", [c for c in df.columns if "mel" in c.lower() or "fin" in c.lower()])
-print("dtypes:", df[["dte_mel","dte_fin_contrat"]].dtypes)
+dfc["rolling_max_fin_prev"] = (
+    dfc.groupby([country_col, dealer_col])[fin_col]
+       .transform(lambda s: s.cummax().shift(1))
+)
