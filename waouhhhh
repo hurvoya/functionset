@@ -1,54 +1,41 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 
-df = summary_bloc6.sort_values(["country", "year"]).copy()
+# Copie de travail
+df = stock.copy()
 
-countries = df["country"].unique()
-x = np.arange(len(countries))
-width = 0.35
+# Année d’analyse
+df["year"] = pd.to_datetime(df["date_new_dealer"], errors="coerce").dt.year
 
-df_2024 = df[df["year"] == 2024].set_index("country")
-df_2025 = df[df["year"] == 2025].set_index("country")
+# Filtre 2024–2025 + hors Key Account
+df = df[
+    (df["year"].isin([2024, 2025])) &
+    (df["is_key_account"] == False)
+].copy()
 
-fig, ax = plt.subplots(figsize=(13, 6))
-
-bars_2024 = ax.bar(
-    x - width/2,
-    df_2024.loc[countries, "median_delay"],
-    width,
-    label="2024 (médiane)"
+# Niveau EVENT : nombre total de contrats sur la fenêtre
+event_level = (
+    df
+    .groupby(["country", "year", "id_apporteur", "event_id"], as_index=False)
+    .agg(
+        nb_contrats_total=("nb_contrats_mois", "sum")
+    )
 )
 
-bars_2025 = ax.bar(
-    x + width/2,
-    df_2025.loc[countries, "median_delay"],
-    width,
-    label="2025 (médiane)"
+# Flag atteinte des 8 contrats
+event_level["atteint_8_contrats"] = event_level["nb_contrats_total"] >= 8
+
+# Agrégation finale
+kpi_bloc6_bis = (
+    event_level
+    .groupby(["country", "year"])
+    .agg(
+        nb_new_dealers_total=("event_id", "nunique"),
+        nb_new_dealers_8_contracts=("atteint_8_contrats", "sum")
+    )
+    .reset_index()
 )
 
-# Labels
-y_pad = max(df["median_delay"]) * 0.02
-
-for bars, vals in [(bars_2024, df_2024["median_delay"]),
-                   (bars_2025, df_2025["median_delay"])]:
-    for bar, v in zip(bars, vals):
-        ax.text(
-            bar.get_x() + bar.get_width()/2,
-            bar.get_height() + y_pad,
-            f"{int(v)} j",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-            fontweight="bold"
-        )
-
-ax.set_xlabel("Pays")
-ax.set_ylabel("Délai médian (jours)")
-ax.set_title("Délai médian 1ʳᵉ MEL → 8ᵉ contrat — 2024 vs 2025")
-ax.set_xticks(x)
-ax.set_xticklabels(countries, rotation=45, ha="right")
-ax.legend()
-ax.grid(axis="y", alpha=0.3)
-
-plt.tight_layout()
-plt.show()
+kpi_bloc6_bis["taux_atteinte_8_contracts"] = (
+    kpi_bloc6_bis["nb_new_dealers_8_contracts"] /
+    kpi_bloc6_bis["nb_new_dealers_total"]
+)
