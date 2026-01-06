@@ -4,35 +4,34 @@ import pandas as pd
 stock_kpi = stock.copy()
 
 # Sécurité datetime
-stock_kpi["mois_ref"] = pd.to_datetime(stock_kpi["mois_ref"], errors="coerce")
+stock_kpi["date_new_dealer"] = pd.to_datetime(
+    stock_kpi["date_new_dealer"], errors="coerce"
+)
 
-# Année d’analyse (année du mois de suivi)
-stock_kpi["year"] = stock_kpi["mois_ref"].dt.year
+# Année d’analyse = année de déclenchement du New Dealer
+stock_kpi["year"] = stock_kpi["date_new_dealer"].dt.year
 
-# Filtre strict 2024–2025 + hors KA + en suivi
+# Filtre strict 2024–2025 + hors Key Account
 stock_kpi = stock_kpi[
     (stock_kpi["year"].isin([2024, 2025])) &
-    (stock_kpi["is_key_account"] == False) &
-    (stock_kpi["en_suivi"] == True)
+    (stock_kpi["is_key_account"] == False)
 ].copy()
 
-# KPI Bloc 3
-kpi_bloc3 = (
+# Agrégation EVENT-LEVEL sur la fenêtre de suivi
+kpi_bloc4 = (
     stock_kpi
-    .groupby(["country", "year"])
+    .groupby(
+        ["country", "year", "id_apporteur", "event_id"],
+        as_index=False
+    )
     .agg(
         nb_calls_total=("nb_calls_mois", "sum"),
-        nb_new_dealers_suivis=("id_apporteur", "nunique"),
+        montant_finance_total=("montant_finance_mois", "sum"),
     )
-    .reset_index()
 )
 
-# Intensité moyenne
-kpi_bloc3["avg_calls_per_dealer"] = (
-    kpi_bloc3["nb_calls_total"] / kpi_bloc3["nb_new_dealers_suivis"]
-)
-
-# Tri propre
-kpi_bloc3 = kpi_bloc3.sort_values(["country", "year"]).reset_index(drop=True)
-
-Bar chart par pays × année
+# Sécurité : pas de négatif
+kpi_bloc4 = kpi_bloc4[
+    (kpi_bloc4["nb_calls_total"] >= 0) &
+    (kpi_bloc4["montant_finance_total"] >= 0)
+].copy()
