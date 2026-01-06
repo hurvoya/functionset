@@ -1,6 +1,6 @@
 Question métier
 
-Est-ce que la volumétrie de nouveaux dealers évolue entre 2024 et 2025, et quelle part relève des Key Accounts ?
+Parmi les New Dealers réellement suivis, est-ce qu’on recrute plutôt de nouveaux entrants ou qu’on réactive des dealers connus ?
 
 📌 Source
 
@@ -8,28 +8,28 @@ Events
 
 📌 Périmètre
 
-Tous les New Dealers
-
-Key Account inclus
+is_key_account == False
 
 Année = année de date_new_dealer
 
 📊 KPIs (par pays × année)
 
-Nombre total de New Dealers
+Nombre total de New Dealers (hors KA)
 
-Nombre de New Dealers Key Account
+Nombre de First Time New Dealers
 
-Nombre de New Dealers hors Key Account
+Nombre de Known New Dealers
 
-Part (%) Key Account
+Part (%) First Time
 
-Part (%) hors Key Account
+Part (%) Known
 
 📈 Visu recommandée
 
-Bar chart groupé ou empilé
+Bar chart empilé
 
 Axe X = pays
 
-2 barres par pays : 2024 / 2025
+Couleur = typologie
+
+2024 vs 2025 côte à côte
