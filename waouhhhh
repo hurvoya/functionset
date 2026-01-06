@@ -1,10 +1,11 @@
 Question métier
 
-Est-ce qu’on onboarde plus vite les nouveaux apporteurs ?
+Les New Dealers montent-ils en puissance plus ou moins vite ?
+La règle des 8 contrats est-elle pertinente ?
 
 📌 Source
 
-Events
+Stock
 
 📌 Périmètre
 
@@ -12,19 +13,18 @@ is_key_account == False
 
 Année = année de date_new_dealer
 
+Population = dealers ayant atteint 8 contrats
+
 📊 KPIs
 
-Délai (jours) = date_new_dealer − date_creation_apporteur
+Délai (jours) pour atteindre 8 contrats
 
 Moyenne et médiane (par pays × année)
 
+Nombre de dealers atteignant le cap
+
 📈 Visus recommandées
 
-Distributions (histogrammes ou densités)
+Bar chart moyenne / médiane par pays
 
-1 pour 2024
-
-1 pour 2025
-
-bar chart médiane / moyenne par pays
-Lignes de seuil possibles
+Distributions 2024 vs 2025
