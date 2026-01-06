@@ -29,4 +29,3 @@ kpi_bloc6_bis["taux_atteinte_8_contracts"] = (
 
 # sanity check
 assert (kpi_bloc6_bis["taux_atteinte_8_contracts"] <= 1).all()
-
