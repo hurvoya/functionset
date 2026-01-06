@@ -1,5 +1,36 @@
-tmp = events_2425.copy()
-if "date_creation_apporteur" in tmp.columns:
-    tmp["date_creation_apporteur"] = pd.to_datetime(tmp["date_creation_apporteur"], errors="coerce")
-    print("events_2425 avec création < 2024:",
-          (tmp["date_creation_apporteur"] < START).sum())
+import pandas as pd
+
+# Sécurité datetime
+events_kpi = events.copy()
+events_kpi["date_new_dealer"] = pd.to_datetime(events_kpi["date_new_dealer"], errors="coerce")
+
+# Année d’analyse
+events_kpi["year"] = events_kpi["date_new_dealer"].dt.year
+
+# Filtre strict 2024–2025
+events_kpi = events_kpi[events_kpi["year"].isin([2024, 2025])].copy()
+
+# KPI Bloc 1
+kpi_bloc1 = (
+    events_kpi
+    .groupby(["country", "year"])
+    .agg(
+        nb_new_dealers_total=("event_id", "nunique"),
+        nb_new_dealers_ka=("event_id", lambda s: s[events_kpi.loc[s.index, "is_key_account"]].nunique()),
+    )
+    .reset_index()
+)
+
+# Compléments
+kpi_bloc1["nb_new_dealers_non_ka"] = (
+    kpi_bloc1["nb_new_dealers_total"] - kpi_bloc1["nb_new_dealers_ka"]
+)
+
+kpi_bloc1["share_ka"] = (
+    kpi_bloc1["nb_new_dealers_ka"] / kpi_bloc1["nb_new_dealers_total"]
+)
+
+kpi_bloc1["share_non_ka"] = 1 - kpi_bloc1["share_ka"]
+
+# Tri pour lecture facile
+kpi_bloc1 = kpi_bloc1.sort_values(["country", "year"]).reset_index(drop=True)
