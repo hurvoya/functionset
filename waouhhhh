@@ -1,49 +1,31 @@
-import pandas as pd
+Question métier
 
-# Copie de travail
-events_kpi = events.copy()
+Quel est l’effort opérationnel lié aux New Dealers, et comment évolue-t-il entre 2024 et 2025 ?
 
-# Sécurité datetime
-events_kpi["date_new_dealer"] = pd.to_datetime(
-    events_kpi["date_new_dealer"], errors="coerce"
-)
+📌 Source
 
-# Année d’analyse
-events_kpi["year"] = events_kpi["date_new_dealer"].dt.year
+Stock
 
-# Filtre strict 2024–2025
-events_kpi = events_kpi[
-    (events_kpi["year"].isin([2024, 2025])) &
-    (events_kpi["is_key_account"] == False)
-].copy()
+📌 Périmètre
 
-# (Optionnel mais safe) : un type unique par apporteur / année
-events_kpi = (
-    events_kpi
-    .sort_values("date_new_dealer")
-    .drop_duplicates(subset=["country", "year", "id_apporteur"])
-)
+is_key_account == False
 
-# KPI Bloc 2
-kpi_bloc2 = (
-    events_kpi
-    .groupby(["country", "year"])
-    .agg(
-        nb_new_dealers_total=("id_apporteur", "nunique"),
-        nb_first_time=("id_apporteur", lambda s: s[events_kpi.loc[s.index, "new_dealer_type"] == "first_time"].nunique()),
-        nb_known=("id_apporteur", lambda s: s[events_kpi.loc[s.index, "new_dealer_type"] == "known"].nunique()),
-    )
-    .reset_index()
-)
+en_suivi == True
 
-# Parts
-kpi_bloc2["share_first_time"] = (
-    kpi_bloc2["nb_first_time"] / kpi_bloc2["nb_new_dealers_total"]
-)
-kpi_bloc2["share_known"] = (
-    kpi_bloc2["nb_known"] / kpi_bloc2["nb_new_dealers_total"]
-)
+Année = année de mois_ref
 
-# Tri propre
-kpi_bloc2 = kpi_bloc2.sort_values(["country", "year"]).reset_index(drop=True)
+📊 KPIs (par pays × année)
 
+Nombre total de calls
+
+Nombre de New Dealers suivis
+
+Nombre moyen de calls par New Dealer
+
+📈 Visu recommandée
+
+Bar chart groupé
+
+Axe X = pays
+
+2024 vs 2025
