@@ -1,38 +1,22 @@
-import matplotlib.pyplot as plt
-import numpy as np
-
-df = kpi_bloc7A.copy()
+df = kpi_bloc7B.copy()
 
 summary_6m = (
     df.groupby(["country", "year"])
-      .agg(median_contracts_6m=("nb_contrats_6m_from_creation", "median"))
+      .agg(median_contracts_6m=("nb_contrats_6m_from_mel", "median"))
       .reset_index()
 )
 
 countries = summary_6m["country"].unique()
 x = np.arange(len(countries))
-width = 0.35
 
 df_2024 = summary_6m[summary_6m["year"] == 2024].set_index("country")
 df_2025 = summary_6m[summary_6m["year"] == 2025].set_index("country")
 
 fig, ax = plt.subplots(figsize=(13, 6))
 
-bars_2024 = ax.bar(
-    x - width/2,
-    df_2024.loc[countries, "median_contracts_6m"],
-    width,
-    label="2024"
-)
+bars_2024 = ax.bar(x - width/2, df_2024.loc[countries, "median_contracts_6m"], width, label="2024")
+bars_2025 = ax.bar(x + width/2, df_2025.loc[countries, "median_contracts_6m"], width, label="2025")
 
-bars_2025 = ax.bar(
-    x + width/2,
-    df_2025.loc[countries, "median_contracts_6m"],
-    width,
-    label="2025"
-)
-
-# Labels
 for bars, vals in [(bars_2024, df_2024["median_contracts_6m"]),
                    (bars_2025, df_2025["median_contracts_6m"])]:
     for bar, v in zip(bars, vals):
@@ -48,7 +32,7 @@ for bars, vals in [(bars_2024, df_2024["median_contracts_6m"]),
 
 ax.set_xlabel("Pays")
 ax.set_ylabel("Nombre médian de contrats à 6 mois")
-ax.set_title("Production médiane à 6 mois depuis la création du partenaire")
+ax.set_title("Production médiane à 6 mois depuis la 1ʳᵉ mise en loyer")
 ax.set_xticks(x)
 ax.set_xticklabels(countries, rotation=45, ha="right")
 ax.legend()
@@ -56,3 +40,4 @@ ax.grid(axis="y", alpha=0.3)
 
 plt.tight_layout()
 plt.show()
+
