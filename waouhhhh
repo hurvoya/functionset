@@ -1,37 +1,39 @@
-import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 
-def plot_scatter_calls_vs_amount(df, year):
-    df_year = df[df["year"] == year].copy()
+SEUILS = [0, 20_000, 40_000, 60_000, 80_000, 100_000]
 
-    # Cap Y-axis (anti outliers)
-    y_max = df_year["montant_finance_total"].quantile(0.95)
+df = kpi_bloc4.copy()
 
-    plt.figure(figsize=(10, 6))
+# Table résultat
+rows = []
+
+for year in [2024, 2025]:
+    df_year = df[df["year"] == year]
 
     for country in df_year["country"].unique():
-        sub = df_year[df_year["country"] == country]
-        plt.scatter(
-            sub["nb_calls_total"],
-            sub["montant_finance_total"],
-            alpha=0.6,
-            label=country
-        )
+        df_country = df_year[df_year["country"] == country]
 
-    # Règle métier : 8 calls max
-    plt.axvline(
-        x=8,
-        linestyle="--",
-        linewidth=1.5,
-        label="Seuil métier : 8 calls"
-    )
+        calls_total_initial = df_country["nb_calls_total"].sum()
 
-    plt.ylim(0, y_max)
-    plt.xlabel("Nombre total de calls (fenêtre de suivi)")
-    plt.ylabel("Montant financé total (€)")
-    plt.title(f"Calls vs Montant financé — {year} (hors Key Account)")
-    plt.legend()
-    plt.grid(alpha=0.3)
+        for seuil in SEUILS:
+            df_filtered = df_country[
+                df_country["montant_finance_total"] >= seuil
+            ]
 
-    plt.tight_layout()
-    plt.show()
+            calls_conserves = df_filtered["nb_calls_total"].sum()
+
+            pct_calls_conserves = (
+                calls_conserves / calls_total_initial
+                if calls_total_initial > 0 else 0
+            )
+
+            rows.append({
+                "year": year,
+                "country": country,
+                "seuil_montant": seuil,
+                "calls_conserves": calls_conserves,
+                "calls_total_initial": calls_total_initial,
+                "pct_calls_conserves": pct_calls_conserves
+            })
+
+impact_seuils = pd.DataFrame(rows)
