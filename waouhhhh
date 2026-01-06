@@ -1,7 +1,6 @@
 Question métier
 
-Les New Dealers montent-ils en puissance plus ou moins vite ?
-La règle des 8 contrats est-elle pertinente ?
+Est-il plus pertinent de raisonner à partir de la création du dealer ou de la première mise en loyer ?
 
 📌 Source
 
@@ -13,18 +12,22 @@ is_key_account == False
 
 Année = année de date_new_dealer
 
-Population = dealers ayant atteint 8 contrats
+Variable = nombre de contrats (≃ clients)
 
-📊 KPIs
+7A — Depuis la création du partenaire
 
-Délai (jours) pour atteindre 8 contrats
+Start = date_creation_apporteur
 
-Moyenne et médiane (par pays × année)
+Mesure à +6 mois et +12 mois
 
-Nombre de dealers atteignant le cap
+7B — Depuis la première mise en loyer
 
-📈 Visus recommandées
+Start = date_new_dealer
 
-Bar chart moyenne / médiane par pays
+Mesure à +6 mois et +12 mois
+
+📊 KPIs (par pays × année)
+
+Moyenne et médiane du nombre de contrats
 
 Distributions 2024 vs 2025
