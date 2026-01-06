@@ -1,7 +1,21 @@
-df8 = kpi_bloc8.copy()
+summary_bloc8 = (
+    df8
+    .groupby(["country", "year", "dealer_category"])
+    .agg(nb_events=("event_key", "nunique"))
+    .reset_index()
+)
 
-df8["dealer_category"] = "Actif"
-df8.loc[df8["nb_contrats_total"] == 0, "dealer_category"] = "Ultra-silencieux"
-df8.loc[df8["nb_contrats_total"] == 1, "dealer_category"] = "Silencieux"
+# Total par pays/année
+totals = (
+    summary_bloc8
+    .groupby(["country", "year"], as_index=False)
+    .agg(total_events=("nb_events", "sum"))
+)
 
+summary_bloc8 = summary_bloc8.merge(
+    totals,
+    on=["country", "year"],
+    how="left"
+)
 
+summary_bloc8["share"] = summary_bloc8["nb_events"] / summary_bloc8["total_events"]
