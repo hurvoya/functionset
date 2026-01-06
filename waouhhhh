@@ -1,11 +1,10 @@
 Question métier
 
-Pour un niveau de charge donné (calls), quelle valeur financière est générée ?
-Où fixer un seuil pour optimiser charge vs valeur ?
+Est-ce qu’on onboarde plus vite les nouveaux apporteurs ?
 
 📌 Source
 
-Stock (agrégé au niveau event)
+Events
 
 📌 Périmètre
 
@@ -13,24 +12,19 @@ is_key_account == False
 
 Année = année de date_new_dealer
 
-Grain = 1 point = 1 New Dealer Event
+📊 KPIs
 
-Fenêtre = période de suivi (6 mois / 8 contrats)
+Délai (jours) = date_new_dealer − date_creation_apporteur
 
-📊 Variables analysées
-
-X = Nombre total de calls (sur la fenêtre)
-
-Y = Montant financé total (sur la fenêtre)
-
-Couleur = pays
+Moyenne et médiane (par pays × année)
 
 📈 Visus recommandées
 
-1 scatterplot pour 2024
+Distributions (histogrammes ou densités)
 
-1 scatterplot pour 2025
+1 pour 2024
 
-Y-axis capée (quantile, ex. 95 %)
+1 pour 2025
 
+bar chart médiane / moyenne par pays
 Lignes de seuil possibles
