@@ -1,29 +1,10 @@
-import matplotlib.pyplot as plt
-
-df = kpi_bloc6.copy()
-
-countries = df["country"].unique()
-
-for country in countries:
-    plt.figure(figsize=(8, 5))
-
-    for year, alpha in [(2024, 0.6), (2025, 0.6)]:
-        sub = df[(df["country"] == country) & (df["year"] == year)]
-        if sub.empty:
-            continue
-
-        plt.hist(
-            sub["delai_first_mel_to_8th_contract"],
-            bins=25,
-            alpha=alpha,
-            label=str(year),
-            density=True
-        )
-
-    plt.title(f"Délai 1ʳᵉ MEL → 8ᵉ contrat — {country}")
-    plt.xlabel("Délai (jours)")
-    plt.ylabel("Densité")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+summary_bloc6 = (
+    kpi_bloc6
+    .groupby(["country", "year"])
+    .agg(
+        median_delay=("delai_first_mel_to_8th_contract", "median"),
+        mean_delay=("delai_first_mel_to_8th_contract", "mean"),
+        nb_dealers=("event_id", "nunique")
+    )
+    .reset_index()
+)
