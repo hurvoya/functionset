@@ -80,4 +80,40 @@ add_segment_labels(
     df_2025.loc[countries, "nb_new_dealers_non_ka"].values
 )
 add_segment_labels(
-    bars_2025_
+    bars_2025_ka,
+    df_2025.loc[countries, "nb_new_dealers_ka"].values,
+    df_2025.loc[countries, "nb_new_dealers_non_ka"].values
+)
+
+# ---------- Labels TOTAL ----------
+for i, country in enumerate(countries):
+    ax.text(
+        x[i] - width/2,
+        df_2024.loc[country, "nb_new_dealers_total"] + 0.6,
+        str(int(df_2024.loc[country, "nb_new_dealers_total"])),
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        fontweight="bold"
+    )
+    ax.text(
+        x[i] + width/2,
+        df_2025.loc[country, "nb_new_dealers_total"] + 0.6,
+        str(int(df_2025.loc[country, "nb_new_dealers_total"])),
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        fontweight="bold"
+    )
+
+# ---------- Mise en forme ----------
+ax.set_xlabel("Pays")
+ax.set_ylabel("Nombre de nouveaux dealers")
+ax.set_title("Volumétrie des New Dealers — 2024 vs 2025")
+ax.set_xticks(x)
+ax.set_xticklabels(countries, rotation=45, ha="right")
+ax.legend()
+ax.grid(axis="y", alpha=0.3)
+
+plt.tight_layout()
+plt.show()
