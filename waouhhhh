@@ -1,21 +1,126 @@
-summary_bloc8 = (
-    df8
-    .groupby(["country", "year", "dealer_category"])
-    .agg(nb_events=("event_key", "nunique"))
-    .reset_index()
-)
+🎯 Contexte & objectif de l’analyse
 
-# Total par pays/année
-totals = (
-    summary_bloc8
-    .groupby(["country", "year"], as_index=False)
-    .agg(total_events=("nb_events", "sum"))
-)
+Objectif global
 
-summary_bloc8 = summary_bloc8.merge(
-    totals,
-    on=["country", "year"],
-    how="left"
-)
+Mieux comprendre le comportement des New Dealers afin de :
 
-summary_bloc8["share"] = summary_bloc8["nb_events"] / summary_bloc8["total_events"]
+mesurer la charge opérationnelle (calls),
+
+analyser la valeur générée (montant financé),
+
+et évaluer la pertinence des règles de suivi actuelles (6 mois / 8 contrats).
+
+L’analyse vise à comparer 2024 vs 2025, par pays, afin d’identifier :
+
+des évolutions de comportement,
+
+des leviers d’optimisation,
+
+et d’éventuels ajustements de seuils.
+
+🧩 Définition : qu’est-ce qu’un New Dealer ?
+
+Un New Dealer est un apporteur qui :
+
+n’a aucune production active sur les 12 derniers mois,
+(aucun contrat en vie sur cette période)
+
+ET
+
+génère un nouveau contrat mis en loyer (date de MEL).
+
+👉 Cette première mise en loyer déclenche le statut de New Dealer.
+
+🧠 Deux types de New Dealers
+1️⃣ First Time New Dealer
+
+L’apporteur n’a jamais eu de production auparavant
+
+Son tout premier contrat est mis en loyer
+
+2️⃣ Known New Dealer
+
+L’apporteur a déjà eu de la production par le passé
+
+Tous ses contrats sont terminés depuis plus de 12 mois
+
+Une nouvelle mise en loyer relance un nouveau cycle
+
+👉 Ces deux catégories sont distinguées dans les analyses.
+
+🔁 Notion clé : le cycle de New Dealer
+
+Un cycle de New Dealer correspond à :
+
+une période de suivi déclenchée par une première mise en loyer
+après au moins 12 mois sans production.
+
+⚠️ Un même apporteur peut donc :
+
+être New Dealer en 2024,
+
+puis redevenir New Dealer plus tard (ex. en 2025),
+
+si la règle des 12 mois sans production est respectée.
+
+👉 Les analyses opérationnelles (calls, montants, délais) sont faites au niveau du cycle, pas uniquement au niveau de l’apporteur.
+
+📞 Règles de suivi opérationnel (calls)
+
+Lorsqu’un New Dealer est identifié :
+
+1 contrat mis en loyer = 1 call
+
+Le suivi s’applique :
+
+pendant 6 mois maximum
+
+ou jusqu’à 8 contrats, selon le premier seuil atteint
+
+👉 Après atteinte de l’un des deux seuils :
+
+le dealer sort du suivi New Dealer
+
+les contrats suivants ne génèrent plus de calls dans ce cadre
+
+💰 Montant financé
+
+Le montant financé est calculé :
+
+comme la somme des montants des contrats mis en loyer
+
+pendant la fenêtre de suivi du cycle
+
+👉 Il est analysé en lien avec :
+
+le nombre de calls,
+
+afin d’évaluer la rentabilité du dispositif.
+
+🧮 Périmètre de l’analyse
+
+📅 Période étudiée :
+Années 2024 et 2025 uniquement
+
+🌍 Granularité :
+Analyses par pays
+
+🚫 Exclusion des Key Accounts
+(sauf analyse spécifique de volumétrie)
+
+🔍 Population étudiée :
+Cycles de New Dealers identifiés selon les règles ci-dessus
+
+🧠 Pourquoi cette analyse ?
+
+L’enjeu est de répondre à des questions clés :
+
+Quelle est la volumétrie réelle de New Dealers ?
+
+Quelle est la charge opérationnelle associée ?
+
+Quelle valeur est générée en face ?
+
+Les seuils actuels (6 mois / 8 contrats) sont-ils pertinents ?
+
+Peut-on optimiser le dispositif (filtrage, priorisation, seuils) ?
