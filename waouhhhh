@@ -1,40 +1,33 @@
-summary_12m = (
-    df.groupby(["country", "year"])
-      .agg(median_contracts_12m=("nb_contrats_12m_from_creation", "median"))
-      .reset_index()
+import matplotlib.pyplot as plt
+
+# Résumé médiane
+summary_6m = (
+    df7A.groupby(["country", "year"], as_index=False)
+       .agg(median_contracts_6m=("nb_contrats_6m_from_creation", "median"))
 )
 
-countries = summary_12m["country"].unique()
-x = np.arange(len(countries))
+print(summary_6m.head(10))
 
-df_2024 = summary_12m[summary_12m["year"] == 2024].set_index("country")
-df_2025 = summary_12m[summary_12m["year"] == 2025].set_index("country")
+# Pivot pour avoir une table country x year
+pivot = summary_6m.pivot(index="country", columns="year", values="median_contracts_6m").sort_index()
 
-fig, ax = plt.subplots(figsize=(13, 6))
+# Assurer les colonnes 2024/2025 même si absentes
+for y in [2024, 2025]:
+    if y not in pivot.columns:
+        pivot[y] = np.nan
+pivot = pivot[[2024, 2025]]
 
-bars_2024 = ax.bar(x - width/2, df_2024.loc[countries, "median_contracts_12m"], width, label="2024")
-bars_2025 = ax.bar(x + width/2, df_2025.loc[countries, "median_contracts_12m"], width, label="2025")
-
-for bars, vals in [(bars_2024, df_2024["median_contracts_12m"]),
-                   (bars_2025, df_2025["median_contracts_12m"])]:
-    for bar, v in zip(bars, vals):
-        ax.text(
-            bar.get_x() + bar.get_width()/2,
-            bar.get_height() + 0.05,
-            f"{v:.1f}",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-            fontweight="bold"
-        )
-
+# Plot bar chart groupé
+ax = pivot.plot(kind="bar", figsize=(13, 6))
 ax.set_xlabel("Pays")
-ax.set_ylabel("Nombre médian de contrats à 12 mois")
-ax.set_title("Production médiane à 12 mois depuis la création du partenaire")
-ax.set_xticks(x)
-ax.set_xticklabels(countries, rotation=45, ha="right")
-ax.legend()
+ax.set_ylabel("Nombre médian de contrats à 6 mois")
+ax.set_title("Production médiane à 6 mois depuis la création du partenaire (Bloc 7A)")
 ax.grid(axis="y", alpha=0.3)
+ax.legend(title="Année")
+
+# Labels
+for container in ax.containers:
+    ax.bar_label(container, fmt="%.1f", padding=3, fontsize=9, fontweight="bold")
 
 plt.tight_layout()
 plt.show()
