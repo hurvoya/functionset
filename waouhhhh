@@ -1,17 +1,31 @@
-# --- Patch minimal : clé d'event globale ---
-# A faire UNE seule fois après concat de Events et Stock
+df = stock.copy()
+df["year"] = pd.to_datetime(df["date_new_dealer"], errors="coerce").dt.year
 
-events = events.copy()
-stock = stock.copy()
+df = df[
+    (df["year"].isin([2024, 2025])) &
+    (df["is_key_account"] == False)
+].copy()
 
-events["event_key"] = (
-    events["country"].astype(str) + "|" +
-    events["id_apporteur"].astype(str) + "|" +
-    events["event_id"].astype(str)
+# event-level
+event_level = (
+    df.groupby(["country", "year", "event_key"], as_index=False)
+      .agg(nb_contrats_total=("nb_contrats_mois", "sum"))
 )
 
-stock["event_key"] = (
-    stock["country"].astype(str) + "|" +
-    stock["id_apporteur"].astype(str) + "|" +
-    stock["event_id"].astype(str)
+event_level["atteint_8_contrats"] = event_level["nb_contrats_total"] >= 8
+
+kpi_bloc6_bis = (
+    event_level.groupby(["country", "year"])
+    .agg(
+        nb_new_dealers_total=("event_key", "nunique"),
+        nb_new_dealers_8_contracts=("atteint_8_contrats", "sum"),
+    )
+    .reset_index()
 )
+
+kpi_bloc6_bis["taux_atteinte_8_contracts"] = (
+    kpi_bloc6_bis["nb_new_dealers_8_contracts"] / kpi_bloc6_bis["nb_new_dealers_total"]
+)
+
+# sanity check
+assert (kpi_bloc6_bis["taux_atteinte_8_contracts"] <= 1).all()
