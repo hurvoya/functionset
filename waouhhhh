@@ -1,12 +1,11 @@
-# 1) Volumétrie
-print("kpi_bloc7A shape:", kpi_bloc7A.shape)
-print("kpi_bloc7A years:", sorted(kpi_bloc7A["year"].dropna().unique().tolist()) if "year" in kpi_bloc7A.columns else "no year col")
+summary_6m = (
+    kpi_bloc7A.groupby(["country", "year"], as_index=False)
+             .agg(median_6m=("nb_contrats_6m_from_creation", "median"),
+                  mean_6m=("nb_contrats_6m_from_creation", "mean"),
+                  p75_6m=("nb_contrats_6m_from_creation", lambda s: s.quantile(0.75)),
+                  share_ge1=("nb_contrats_6m_from_creation", lambda s: (s >= 1).mean()),
+                  n=("nb_contrats_6m_from_creation", "size"))
+)
 
-# 2) Colonnes clés
-cols_needed = ["country", "year", "nb_contrats_6m_from_creation"]
-print("missing cols:", [c for c in cols_needed if c not in kpi_bloc7A.columns])
-
-# 3) Valeurs manquantes / types
-print(kpi_bloc7A[["nb_contrats_6m_from_creation"]].head())
-print("dtype:", kpi_bloc7A["nb_contrats_6m_from_creation"].dtype)
-print("NaN rate:", kpi_bloc7A["nb_contrats_6m_from_creation"].isna().mean())
+print("Max median_6m:", summary_6m["median_6m"].max())
+summary_6m.sort_values(["median_6m","mean_6m"], ascending=False).head(20)
