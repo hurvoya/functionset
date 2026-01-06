@@ -1,27 +1,26 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Sécurité : tri
 df = kpi_bloc1.sort_values(["country", "year"]).copy()
 
 countries = df["country"].unique()
 x = np.arange(len(countries))
 width = 0.35
 
-# Séparer 2024 / 2025
 df_2024 = df[df["year"] == 2024].set_index("country")
 df_2025 = df[df["year"] == 2025].set_index("country")
 
 fig, ax = plt.subplots(figsize=(12, 6))
 
-# 2024
-ax.bar(
+# --- 2024 ---
+bars_2024_non_ka = ax.bar(
     x - width/2,
     df_2024.loc[countries, "nb_new_dealers_non_ka"],
     width,
     label="2024 - Hors Key Account"
 )
-ax.bar(
+
+bars_2024_ka = ax.bar(
     x - width/2,
     df_2024.loc[countries, "nb_new_dealers_ka"],
     width,
@@ -29,14 +28,15 @@ ax.bar(
     label="2024 - Key Account"
 )
 
-# 2025
-ax.bar(
+# --- 2025 ---
+bars_2025_non_ka = ax.bar(
     x + width/2,
     df_2025.loc[countries, "nb_new_dealers_non_ka"],
     width,
     label="2025 - Hors Key Account"
 )
-ax.bar(
+
+bars_2025_ka = ax.bar(
     x + width/2,
     df_2025.loc[countries, "nb_new_dealers_ka"],
     width,
@@ -44,7 +44,32 @@ ax.bar(
     label="2025 - Key Account"
 )
 
-# Mise en forme
+# --- Ajout des labels (TOTAL au sommet) ---
+for i, country in enumerate(countries):
+    total_2024 = df_2024.loc[country, "nb_new_dealers_total"]
+    total_2025 = df_2025.loc[country, "nb_new_dealers_total"]
+
+    ax.text(
+        x[i] - width/2,
+        total_2024 + 0.5,
+        str(int(total_2024)),
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        fontweight="bold"
+    )
+
+    ax.text(
+        x[i] + width/2,
+        total_2025 + 0.5,
+        str(int(total_2025)),
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        fontweight="bold"
+    )
+
+# --- Mise en forme ---
 ax.set_xlabel("Pays")
 ax.set_ylabel("Nombre de nouveaux dealers")
 ax.set_title("Volumétrie des New Dealers — 2024 vs 2025")
