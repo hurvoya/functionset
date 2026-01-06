@@ -1,33 +1,12 @@
-import matplotlib.pyplot as plt
+# 1) Volumétrie
+print("kpi_bloc7A shape:", kpi_bloc7A.shape)
+print("kpi_bloc7A years:", sorted(kpi_bloc7A["year"].dropna().unique().tolist()) if "year" in kpi_bloc7A.columns else "no year col")
 
-# Résumé médiane
-summary_6m = (
-    df7A.groupby(["country", "year"], as_index=False)
-       .agg(median_contracts_6m=("nb_contrats_6m_from_creation", "median"))
-)
+# 2) Colonnes clés
+cols_needed = ["country", "year", "nb_contrats_6m_from_creation"]
+print("missing cols:", [c for c in cols_needed if c not in kpi_bloc7A.columns])
 
-print(summary_6m.head(10))
-
-# Pivot pour avoir une table country x year
-pivot = summary_6m.pivot(index="country", columns="year", values="median_contracts_6m").sort_index()
-
-# Assurer les colonnes 2024/2025 même si absentes
-for y in [2024, 2025]:
-    if y not in pivot.columns:
-        pivot[y] = np.nan
-pivot = pivot[[2024, 2025]]
-
-# Plot bar chart groupé
-ax = pivot.plot(kind="bar", figsize=(13, 6))
-ax.set_xlabel("Pays")
-ax.set_ylabel("Nombre médian de contrats à 6 mois")
-ax.set_title("Production médiane à 6 mois depuis la création du partenaire (Bloc 7A)")
-ax.grid(axis="y", alpha=0.3)
-ax.legend(title="Année")
-
-# Labels
-for container in ax.containers:
-    ax.bar_label(container, fmt="%.1f", padding=3, fontsize=9, fontweight="bold")
-
-plt.tight_layout()
-plt.show()
+# 3) Valeurs manquantes / types
+print(kpi_bloc7A[["nb_contrats_6m_from_creation"]].head())
+print("dtype:", kpi_bloc7A["nb_contrats_6m_from_creation"].dtype)
+print("NaN rate:", kpi_bloc7A["nb_contrats_6m_from_creation"].isna().mean())
