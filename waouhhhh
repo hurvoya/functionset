@@ -1,30 +1,33 @@
-# Fenêtres temporelles depuis la première MEL
-stock_kpi["end_6m_mel"] = stock_kpi["date_new_dealer"] + DateOffset(months=6)
-stock_kpi["end_12m_mel"] = stock_kpi["date_new_dealer"] + DateOffset(months=12)
+import pandas as pd
 
-# Flags
-stock_kpi["in_6m_mel"] = (
-    (stock_kpi["mois_ref"] >= stock_kpi["date_new_dealer"]) &
-    (stock_kpi["mois_ref"] < stock_kpi["end_6m_mel"])
+# Copie de travail
+stock_kpi = stock.copy()
+
+# Sécurité datetime
+stock_kpi["date_new_dealer"] = pd.to_datetime(
+    stock_kpi["date_new_dealer"], errors="coerce"
 )
 
-stock_kpi["in_12m_mel"] = (
-    (stock_kpi["mois_ref"] >= stock_kpi["date_new_dealer"]) &
-    (stock_kpi["mois_ref"] < stock_kpi["end_12m_mel"])
-)
+# Année d’analyse
+stock_kpi["year"] = stock_kpi["date_new_dealer"].dt.year
 
-# Agrégation EVENT-LEVEL
-kpi_bloc7B = (
+# Filtre strict 2024–2025 + hors Key Account
+stock_kpi = stock_kpi[
+    (stock_kpi["year"].isin([2024, 2025])) &
+    (stock_kpi["is_key_account"] == False)
+].copy()
+
+# Agrégation EVENT-LEVEL sur la fenêtre de suivi
+kpi_bloc8 = (
     stock_kpi
-    .groupby(["country", "year", "id_apporteur", "event_id"], as_index=False)
+    .groupby(
+        ["country", "year", "id_apporteur", "event_id"],
+        as_index=False
+    )
     .agg(
-        nb_contrats_6m_from_mel=(
-            "nb_contrats_mois",
-            lambda s: s[stock_kpi.loc[s.index, "in_6m_mel"]].sum()
-        ),
-        nb_contrats_12m_from_mel=(
-            "nb_contrats_mois",
-            lambda s: s[stock_kpi.loc[s.index, "in_12m_mel"]].sum()
-        ),
+        nb_contrats_total=("nb_contrats_mois", "sum")
     )
 )
+
+# Flag dealer silencieux
+kpi_bloc8["is_silent"] = kpi_bloc8["nb_contrats_total"] == 1
