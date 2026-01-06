@@ -1,10 +1,17 @@
-# combien d'apporteurs ont >1 event la même année ?
-multi_same_year = (
-    events.assign(year=pd.to_datetime(events["date_new_dealer"]).dt.year)
-          .query("year in [2024, 2025]")
-          .groupby(["country", "year", "id_apporteur"])["event_id"].nunique()
-          .reset_index(name="n_events")
-          .query("n_events > 1")
+# --- Patch minimal : clé d'event globale ---
+# A faire UNE seule fois après concat de Events et Stock
+
+events = events.copy()
+stock = stock.copy()
+
+events["event_key"] = (
+    events["country"].astype(str) + "|" +
+    events["id_apporteur"].astype(str) + "|" +
+    events["event_id"].astype(str)
 )
 
-multi_same_year.shape[0], multi_same_year.head()
+stock["event_key"] = (
+    stock["country"].astype(str) + "|" +
+    stock["id_apporteur"].astype(str) + "|" +
+    stock["event_id"].astype(str)
+)
