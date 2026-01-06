@@ -1,56 +1,30 @@
-import pandas as pd
-from pandas.tseries.offsets import DateOffset
+# Fenêtres temporelles depuis la première MEL
+stock_kpi["end_6m_mel"] = stock_kpi["date_new_dealer"] + DateOffset(months=6)
+stock_kpi["end_12m_mel"] = stock_kpi["date_new_dealer"] + DateOffset(months=12)
 
-# Copie de travail
-stock_kpi = stock.copy()
-
-# Sécurité datetime
-stock_kpi["date_creation_apporteur"] = pd.to_datetime(
-    stock_kpi["date_creation_apporteur"], errors="coerce"
-)
-stock_kpi["date_new_dealer"] = pd.to_datetime(
-    stock_kpi["date_new_dealer"], errors="coerce"
-)
-stock_kpi["mois_ref"] = pd.to_datetime(
-    stock_kpi["mois_ref"], errors="coerce"
+# Flags
+stock_kpi["in_6m_mel"] = (
+    (stock_kpi["mois_ref"] >= stock_kpi["date_new_dealer"]) &
+    (stock_kpi["mois_ref"] < stock_kpi["end_6m_mel"])
 )
 
-# Année d’analyse
-stock_kpi["year"] = stock_kpi["date_new_dealer"].dt.year
-
-# Filtre strict 2024–2025 + hors KA
-stock_kpi = stock_kpi[
-    (stock_kpi["year"].isin([2024, 2025])) &
-    (stock_kpi["is_key_account"] == False)
-].copy()
-
-# Fenêtres temporelles
-stock_kpi["end_6m_creation"] = stock_kpi["date_creation_apporteur"] + DateOffset(months=6)
-stock_kpi["end_12m_creation"] = stock_kpi["date_creation_apporteur"] + DateOffset(months=12)
-
-# Flags d’appartenance aux fenêtres
-stock_kpi["in_6m_creation"] = (
-    (stock_kpi["mois_ref"] >= stock_kpi["date_creation_apporteur"]) &
-    (stock_kpi["mois_ref"] < stock_kpi["end_6m_creation"])
-)
-
-stock_kpi["in_12m_creation"] = (
-    (stock_kpi["mois_ref"] >= stock_kpi["date_creation_apporteur"]) &
-    (stock_kpi["mois_ref"] < stock_kpi["end_12m_creation"])
+stock_kpi["in_12m_mel"] = (
+    (stock_kpi["mois_ref"] >= stock_kpi["date_new_dealer"]) &
+    (stock_kpi["mois_ref"] < stock_kpi["end_12m_mel"])
 )
 
 # Agrégation EVENT-LEVEL
-kpi_bloc7A = (
+kpi_bloc7B = (
     stock_kpi
     .groupby(["country", "year", "id_apporteur", "event_id"], as_index=False)
     .agg(
-        nb_contrats_6m_from_creation=(
+        nb_contrats_6m_from_mel=(
             "nb_contrats_mois",
-            lambda s: s[stock_kpi.loc[s.index, "in_6m_creation"]].sum()
+            lambda s: s[stock_kpi.loc[s.index, "in_6m_mel"]].sum()
         ),
-        nb_contrats_12m_from_creation=(
+        nb_contrats_12m_from_mel=(
             "nb_contrats_mois",
-            lambda s: s[stock_kpi.loc[s.index, "in_12m_creation"]].sum()
+            lambda s: s[stock_kpi.loc[s.index, "in_12m_mel"]].sum()
         ),
     )
 )
