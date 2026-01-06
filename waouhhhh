@@ -1,42 +1,52 @@
 import pandas as pd
 
 # Copie de travail
-events_kpi = events.copy()
+stock_kpi = stock.copy()
 
 # Sécurité datetime
-events_kpi["date_new_dealer"] = pd.to_datetime(
-    events_kpi["date_new_dealer"], errors="coerce"
+stock_kpi["date_new_dealer"] = pd.to_datetime(
+    stock_kpi["date_new_dealer"], errors="coerce"
 )
-events_kpi["date_creation_apporteur"] = pd.to_datetime(
-    events_kpi["date_creation_apporteur"], errors="coerce"
+stock_kpi["mois_ref"] = pd.to_datetime(
+    stock_kpi["mois_ref"], errors="coerce"
 )
 
-# Année d’analyse
-events_kpi["year"] = events_kpi["date_new_dealer"].dt.year
+# Année d’analyse = année du déclenchement
+stock_kpi["year"] = stock_kpi["date_new_dealer"].dt.year
 
 # Filtre strict 2024–2025 + hors Key Account
-events_kpi = events_kpi[
-    (events_kpi["year"].isin([2024, 2025])) &
-    (events_kpi["is_key_account"] == False)
+stock_kpi = stock_kpi[
+    (stock_kpi["year"].isin([2024, 2025])) &
+    (stock_kpi["is_key_account"] == False)
 ].copy()
 
-# Unicité dealer / année (sécurité)
-events_kpi = (
-    events_kpi
-    .sort_values("date_new_dealer")
-    .drop_duplicates(subset=["country", "year", "id_apporteur"])
+# On ne garde que les lignes où le cumul atteint au moins 8
+stock_kpi_8 = stock_kpi[stock_kpi["nb_contrats_cum"] >= 8].copy()
+
+# Pour chaque event, on prend la première date où le seuil est atteint
+first_8th = (
+    stock_kpi_8
+    .sort_values("mois_ref")
+    .groupby(["country", "year", "id_apporteur", "event_id"], as_index=False)
+    .first()
 )
 
 # Calcul du délai en jours
-events_kpi["delai_creation_to_first_mel"] = (
-    events_kpi["date_new_dealer"] -
-    events_kpi["date_creation_apporteur"]
+first_8th["delai_first_mel_to_8th_contract"] = (
+    first_8th["mois_ref"] -
+    first_8th["date_new_dealer"]
 ).dt.days
 
-# Nettoyage : garder uniquement les délais cohérents
-kpi_bloc5 = events_kpi[
-    events_kpi["delai_creation_to_first_mel"].notna() &
-    (events_kpi["delai_creation_to_first_mel"] >= 0)
+# Nettoyage cohérence
+kpi_bloc6 = first_8th[
+    first_8th["delai_first_mel_to_8th_contract"].notna() &
+    (first_8th["delai_first_mel_to_8th_contract"] >= 0)
 ][
-    ["country", "year", "id_apporteur", "delai_creation_to_first_mel"]
+    [
+        "country",
+        "year",
+        "id_apporteur",
+        "event_id",
+        "delai_first_mel_to_8th_contract",
+    ]
 ].copy()
