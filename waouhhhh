@@ -1,94 +1,24 @@
-BLOC 1 — Volumétrie New Dealers (avec / sans Key Account)
-📌 Points clés à retenir
+import matplotlib.pyplot as plt
 
-L’analyse distingue les New Dealers hors Key Accounts des Key Accounts, qui ne sont pas soumis au même dispositif de suivi.
+df = impact_seuil.copy()
 
-La volumétrie de New Dealers varie sensiblement selon les pays.
+fig, ax = plt.subplots(figsize=(12, 6))
 
-La comparaison 2024 vs 2025 permet d’identifier une évolution globale du flux d’entrée dans le dispositif.
+for country, g in df.groupby("country"):
+    g = g.sort_values("threshold")
+    ax.plot(
+        g["threshold"],
+        g["share_calls_kept"] * 100,
+        marker="o",
+        label=country
+    )
 
-💡 Cette vue permet de cadrer le volume potentiel de suivi opérationnel avant filtrage.
+ax.set_xlabel("Seuil de montant financé (€)")
+ax.set_ylabel("% de calls conservés")
+ax.set_title("Impact d’un seuil de montant financé sur la charge de calls")
+ax.set_ylim(0, 100)
+ax.grid(alpha=0.3)
+ax.legend(title="Pays")
 
-🟦 BLOC 2 — Typologie des New Dealers
-
-(First Time vs Known – hors Key Accounts)
-
-📌 Points clés à retenir
-
-Les New Dealers sont répartis entre First Time (première production) et Known (retour après 12 mois sans production).
-
-La structure de cette typologie diffère selon les pays.
-
-On observe des variations entre 2024 et 2025, suggérant des dynamiques différentes de recrutement vs réactivation.
-
-💡 Cette distinction est clé pour adapter le niveau d’accompagnement et de contrôle.
-
-🟦 BLOC 3 — Charge opérationnelle (Calls)
-📌 Points clés à retenir
-
-Les calls sont calculés selon la règle métier : 1 contrat = 1 call, plafonné à 8 calls ou 6 mois.
-
-Le volume total de calls est directement lié à la volumétrie de New Dealers.
-
-Le nombre moyen de calls par New Dealer permet d’estimer la charge réelle par cycle de suivi.
-
-💡 Cette analyse permet d’objectiver la charge opérationnelle induite par le dispositif actuel.
-
-🟦 BLOC 4 — Calls vs Montant financé (Scatterplot)
-📌 Points clés à retenir
-
-Chaque point représente un cycle de New Dealer, avec :
-
-en abscisse : le nombre de calls,
-
-en ordonnée : le montant financé sur la fenêtre de suivi.
-
-Le graphe met en évidence des situations de forte charge pour faible valeur.
-
-La comparaison 2024 vs 2025 permet d’évaluer l’évolution du couple charge / valeur.
-
-💡 Cette vue aide à réfléchir à des seuils de montant pour prioriser ou filtrer le suivi.
-
-🟦 BLOC 5 — Délai création partenaire → première mise en loyer
-📌 Points clés à retenir
-
-Le délai mesure le temps entre la création du partenaire et sa première production.
-
-Les distributions montrent une forte hétérogénéité selon les pays.
-
-La comparaison 2024 / 2025 permet d’identifier une éventuelle accélération ou inertie du onboarding.
-
-💡 Ce KPI aide à comprendre quand commence réellement le risque opérationnel.
-
-🟦 BLOC 6 — Délai première mise en loyer → 8ᵉ contrat
-📌 Points clés à retenir
-
-L’analyse porte uniquement sur les New Dealers ayant atteint 8 contrats.
-
-Les délais observés varient fortement selon les pays.
-
-Cela permet de tester la cohérence du plafond “8 contrats” avec la réalité terrain.
-
-💡 Utile pour valider ou ajuster les seuils actuels du dispositif.
-
-🟦 BLOC 6 bis — Taux d’atteinte des 8 contrats
-📌 Points clés à retenir
-
-Seule une minorité de New Dealers atteint le seuil des 8 contrats.
-
-Le taux d’atteinte est relativement stable autour de ~10 % (ordre de grandeur).
-
-Peu de variation marquée entre 2024 et 2025.
-
-💡 Cela questionne la pertinence d’un plafond uniforme pour tous les profils.
-
-🟦 BLOC 7 — Production à 6 / 12 mois (moyenne)
-📌 Points clés à retenir
-
-La moyenne est utilisée car une majorité de New Dealers ne génère pas de production précoce.
-
-À 6 et 12 mois, la production moyenne reste limitée, avec des écarts selon les pays.
-
-Les résultats diffèrent selon que l’on parte de la création ou de la première mise en loyer.
-
-💡 Cette analyse alimente la réflexion sur le point de départ du suivi.
+plt.tight_layout()
+plt.show()
