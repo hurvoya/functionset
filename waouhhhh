@@ -1,33 +1,57 @@
-import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
-# Copie de travail
-stock_kpi = stock.copy()
+# Sécurité : tri
+df = kpi_bloc1.sort_values(["country", "year"]).copy()
 
-# Sécurité datetime
-stock_kpi["date_new_dealer"] = pd.to_datetime(
-    stock_kpi["date_new_dealer"], errors="coerce"
+countries = df["country"].unique()
+x = np.arange(len(countries))
+width = 0.35
+
+# Séparer 2024 / 2025
+df_2024 = df[df["year"] == 2024].set_index("country")
+df_2025 = df[df["year"] == 2025].set_index("country")
+
+fig, ax = plt.subplots(figsize=(12, 6))
+
+# 2024
+ax.bar(
+    x - width/2,
+    df_2024.loc[countries, "nb_new_dealers_non_ka"],
+    width,
+    label="2024 - Hors Key Account"
+)
+ax.bar(
+    x - width/2,
+    df_2024.loc[countries, "nb_new_dealers_ka"],
+    width,
+    bottom=df_2024.loc[countries, "nb_new_dealers_non_ka"],
+    label="2024 - Key Account"
 )
 
-# Année d’analyse
-stock_kpi["year"] = stock_kpi["date_new_dealer"].dt.year
-
-# Filtre strict 2024–2025 + hors Key Account
-stock_kpi = stock_kpi[
-    (stock_kpi["year"].isin([2024, 2025])) &
-    (stock_kpi["is_key_account"] == False)
-].copy()
-
-# Agrégation EVENT-LEVEL sur la fenêtre de suivi
-kpi_bloc8 = (
-    stock_kpi
-    .groupby(
-        ["country", "year", "id_apporteur", "event_id"],
-        as_index=False
-    )
-    .agg(
-        nb_contrats_total=("nb_contrats_mois", "sum")
-    )
+# 2025
+ax.bar(
+    x + width/2,
+    df_2025.loc[countries, "nb_new_dealers_non_ka"],
+    width,
+    label="2025 - Hors Key Account"
+)
+ax.bar(
+    x + width/2,
+    df_2025.loc[countries, "nb_new_dealers_ka"],
+    width,
+    bottom=df_2025.loc[countries, "nb_new_dealers_non_ka"],
+    label="2025 - Key Account"
 )
 
-# Flag dealer silencieux
-kpi_bloc8["is_silent"] = kpi_bloc8["nb_contrats_total"] == 1
+# Mise en forme
+ax.set_xlabel("Pays")
+ax.set_ylabel("Nombre de nouveaux dealers")
+ax.set_title("Volumétrie des New Dealers — 2024 vs 2025")
+ax.set_xticks(x)
+ax.set_xticklabels(countries, rotation=45, ha="right")
+ax.legend()
+ax.grid(axis="y", alpha=0.3)
+
+plt.tight_layout()
+plt.show()
