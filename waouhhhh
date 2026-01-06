@@ -1,25 +1,17 @@
-import matplotlib.pyplot as plt
-
-df = ImpactSize.copy()
-
-# On se limite à 2024-2025
-df = df[df["Year"].isin([2024, 2025])]
-
 fig, ax = plt.subplots(figsize=(12, 6))
 
 for (country, year), g in df.groupby(["Country", "Year"]):
     g = g.sort_values("SeuilMontant")
     ax.plot(
         g["SeuilMontant"],
-        g["PCT_CallsConservé"] * 100,
+        g["CallsConservé"],
         marker="o",
         label=f"{country} - {year}"
     )
 
 ax.set_xlabel("Seuil de montant financé (€)")
-ax.set_ylabel("% de calls conservés")
-ax.set_title("Impact d’un seuil de montant financé sur la charge de calls")
-ax.set_ylim(0, 100)
+ax.set_ylabel("Nombre de calls conservés")
+ax.set_title("Nombre de calls conservés selon le seuil de montant financé")
 ax.grid(alpha=0.3)
 ax.legend(title="Pays / Année")
 
