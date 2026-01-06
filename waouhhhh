@@ -10,9 +10,9 @@ width = 0.35
 df_2024 = df[df["year"] == 2024].set_index("country")
 df_2025 = df[df["year"] == 2025].set_index("country")
 
-fig, ax = plt.subplots(figsize=(12, 6))
+fig, ax = plt.subplots(figsize=(13, 6))
 
-# --- 2024 ---
+# ---------- 2024 ----------
 bars_2024_non_ka = ax.bar(
     x - width/2,
     df_2024.loc[countries, "nb_new_dealers_non_ka"],
@@ -28,7 +28,7 @@ bars_2024_ka = ax.bar(
     label="2024 - Key Account"
 )
 
-# --- 2025 ---
+# ---------- 2025 ----------
 bars_2025_non_ka = ax.bar(
     x + width/2,
     df_2025.loc[countries, "nb_new_dealers_non_ka"],
@@ -44,39 +44,40 @@ bars_2025_ka = ax.bar(
     label="2025 - Key Account"
 )
 
-# --- Ajout des labels (TOTAL au sommet) ---
-for i, country in enumerate(countries):
-    total_2024 = df_2024.loc[country, "nb_new_dealers_total"]
-    total_2025 = df_2025.loc[country, "nb_new_dealers_total"]
+# ---------- Labels internes (KA / non-KA) ----------
+def add_segment_labels(bars, values, bottoms=None):
+    for i, bar in enumerate(bars):
+        if values[i] == 0:
+            continue
+        y = bar.get_height() / 2
+        if bottoms is not None:
+            y += bottoms[i]
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            y,
+            str(int(values[i])),
+            ha="center",
+            va="center",
+            fontsize=8,
+            color="white",
+            fontweight="bold"
+        )
 
-    ax.text(
-        x[i] - width/2,
-        total_2024 + 0.5,
-        str(int(total_2024)),
-        ha="center",
-        va="bottom",
-        fontsize=9,
-        fontweight="bold"
-    )
+# 2024
+add_segment_labels(
+    bars_2024_non_ka,
+    df_2024.loc[countries, "nb_new_dealers_non_ka"].values
+)
+add_segment_labels(
+    bars_2024_ka,
+    df_2024.loc[countries, "nb_new_dealers_ka"].values,
+    df_2024.loc[countries, "nb_new_dealers_non_ka"].values
+)
 
-    ax.text(
-        x[i] + width/2,
-        total_2025 + 0.5,
-        str(int(total_2025)),
-        ha="center",
-        va="bottom",
-        fontsize=9,
-        fontweight="bold"
-    )
-
-# --- Mise en forme ---
-ax.set_xlabel("Pays")
-ax.set_ylabel("Nombre de nouveaux dealers")
-ax.set_title("Volumétrie des New Dealers — 2024 vs 2025")
-ax.set_xticks(x)
-ax.set_xticklabels(countries, rotation=45, ha="right")
-ax.legend()
-ax.grid(axis="y", alpha=0.3)
-
-plt.tight_layout()
-plt.show()
+# 2025
+add_segment_labels(
+    bars_2025_non_ka,
+    df_2025.loc[countries, "nb_new_dealers_non_ka"].values
+)
+add_segment_labels(
+    bars_2025_
