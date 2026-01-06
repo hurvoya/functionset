@@ -1,6 +1,6 @@
 Question métier
 
-Est-il plus pertinent de raisonner à partir de la création du dealer ou de la première mise en loyer ?
+Quelle part des New Dealers ne génère qu’un seul contrat ?
 
 📌 Source
 
@@ -12,22 +12,14 @@ is_key_account == False
 
 Année = année de date_new_dealer
 
-Variable = nombre de contrats (≃ clients)
+📊 KPIs
 
-7A — Depuis la création du partenaire
+% de dealers avec 1 seul contrat
 
-Start = date_creation_apporteur
+Nombre de dealers silencieux
 
-Mesure à +6 mois et +12 mois
+(optionnel) montant moyen associé
 
-7B — Depuis la première mise en loyer
+📈 Visu recommandée
 
-Start = date_new_dealer
-
-Mesure à +6 mois et +12 mois
-
-📊 KPIs (par pays × année)
-
-Moyenne et médiane du nombre de contrats
-
-Distributions 2024 vs 2025
+Bar chart par pays × année
