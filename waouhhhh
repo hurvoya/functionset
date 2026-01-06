@@ -1,24 +1,28 @@
 Question métier
 
-Quelle part des New Dealers ne génère qu’un seul contrat ?
+A-t-on réellement les moyens de contacter les clients ?
 
 📌 Source
 
-Stock
+df ou table contrats suivis
 
 📌 Périmètre
 
-is_key_account == False
+Contrats associés aux New Dealers
 
-Année = année de date_new_dealer
+Années 2024 vs 2025
+
+Par pays
 
 📊 KPIs
 
-% de dealers avec 1 seul contrat
+% contrats avec tel_1
 
-Nombre de dealers silencieux
+% contrats avec tel_2
 
-(optionnel) montant moyen associé
+% contrats avec au moins un téléphone
+
+% contrats sans téléphone
 
 📈 Visu recommandée
 
