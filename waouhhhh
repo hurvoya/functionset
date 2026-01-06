@@ -1,35 +1,49 @@
-Question métier
+import pandas as pd
 
-Parmi les New Dealers réellement suivis, est-ce qu’on recrute plutôt de nouveaux entrants ou qu’on réactive des dealers connus ?
+# Copie de travail
+events_kpi = events.copy()
 
-📌 Source
+# Sécurité datetime
+events_kpi["date_new_dealer"] = pd.to_datetime(
+    events_kpi["date_new_dealer"], errors="coerce"
+)
 
-Events
+# Année d’analyse
+events_kpi["year"] = events_kpi["date_new_dealer"].dt.year
 
-📌 Périmètre
+# Filtre strict 2024–2025
+events_kpi = events_kpi[
+    (events_kpi["year"].isin([2024, 2025])) &
+    (events_kpi["is_key_account"] == False)
+].copy()
 
-is_key_account == False
+# (Optionnel mais safe) : un type unique par apporteur / année
+events_kpi = (
+    events_kpi
+    .sort_values("date_new_dealer")
+    .drop_duplicates(subset=["country", "year", "id_apporteur"])
+)
 
-Année = année de date_new_dealer
+# KPI Bloc 2
+kpi_bloc2 = (
+    events_kpi
+    .groupby(["country", "year"])
+    .agg(
+        nb_new_dealers_total=("id_apporteur", "nunique"),
+        nb_first_time=("id_apporteur", lambda s: s[events_kpi.loc[s.index, "new_dealer_type"] == "first_time"].nunique()),
+        nb_known=("id_apporteur", lambda s: s[events_kpi.loc[s.index, "new_dealer_type"] == "known"].nunique()),
+    )
+    .reset_index()
+)
 
-📊 KPIs (par pays × année)
+# Parts
+kpi_bloc2["share_first_time"] = (
+    kpi_bloc2["nb_first_time"] / kpi_bloc2["nb_new_dealers_total"]
+)
+kpi_bloc2["share_known"] = (
+    kpi_bloc2["nb_known"] / kpi_bloc2["nb_new_dealers_total"]
+)
 
-Nombre total de New Dealers (hors KA)
+# Tri propre
+kpi_bloc2 = kpi_bloc2.sort_values(["country", "year"]).reset_index(drop=True)
 
-Nombre de First Time New Dealers
-
-Nombre de Known New Dealers
-
-Part (%) First Time
-
-Part (%) Known
-
-📈 Visu recommandée
-
-Bar chart empilé
-
-Axe X = pays
-
-Couleur = typologie
-
-2024 vs 2025 côte à côte
