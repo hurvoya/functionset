@@ -1,36 +1,35 @@
-import pandas as pd
+Question métier
 
-# Sécurité datetime
-events_kpi = events.copy()
-events_kpi["date_new_dealer"] = pd.to_datetime(events_kpi["date_new_dealer"], errors="coerce")
+Est-ce que la volumétrie de nouveaux dealers évolue entre 2024 et 2025, et quelle part relève des Key Accounts ?
 
-# Année d’analyse
-events_kpi["year"] = events_kpi["date_new_dealer"].dt.year
+📌 Source
 
-# Filtre strict 2024–2025
-events_kpi = events_kpi[events_kpi["year"].isin([2024, 2025])].copy()
+Events
 
-# KPI Bloc 1
-kpi_bloc1 = (
-    events_kpi
-    .groupby(["country", "year"])
-    .agg(
-        nb_new_dealers_total=("event_id", "nunique"),
-        nb_new_dealers_ka=("event_id", lambda s: s[events_kpi.loc[s.index, "is_key_account"]].nunique()),
-    )
-    .reset_index()
-)
+📌 Périmètre
 
-# Compléments
-kpi_bloc1["nb_new_dealers_non_ka"] = (
-    kpi_bloc1["nb_new_dealers_total"] - kpi_bloc1["nb_new_dealers_ka"]
-)
+Tous les New Dealers
 
-kpi_bloc1["share_ka"] = (
-    kpi_bloc1["nb_new_dealers_ka"] / kpi_bloc1["nb_new_dealers_total"]
-)
+Key Account inclus
 
-kpi_bloc1["share_non_ka"] = 1 - kpi_bloc1["share_ka"]
+Année = année de date_new_dealer
 
-# Tri pour lecture facile
-kpi_bloc1 = kpi_bloc1.sort_values(["country", "year"]).reset_index(drop=True)
+📊 KPIs (par pays × année)
+
+Nombre total de New Dealers
+
+Nombre de New Dealers Key Account
+
+Nombre de New Dealers hors Key Account
+
+Part (%) Key Account
+
+Part (%) hors Key Account
+
+📈 Visu recommandée
+
+Bar chart groupé ou empilé
+
+Axe X = pays
+
+2 barres par pays : 2024 / 2025
