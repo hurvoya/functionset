@@ -1,39 +1,30 @@
-import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
-SEUILS = [0, 20_000, 40_000, 60_000, 80_000, 100_000]
+df = kpi_bloc5.copy()
 
-df = kpi_bloc4.copy()
+countries = df["country"].unique()
 
-# Table résultat
-rows = []
+for country in countries:
+    plt.figure(figsize=(8, 5))
 
-for year in [2024, 2025]:
-    df_year = df[df["year"] == year]
+    for year, alpha in [(2024, 0.6), (2025, 0.6)]:
+        sub = df[(df["country"] == country) & (df["year"] == year)]
+        if sub.empty:
+            continue
 
-    for country in df_year["country"].unique():
-        df_country = df_year[df_year["country"] == country]
+        plt.hist(
+            sub["delai_creation_to_first_mel"],
+            bins=30,
+            alpha=alpha,
+            label=str(year),
+            density=True
+        )
 
-        calls_total_initial = df_country["nb_calls_total"].sum()
-
-        for seuil in SEUILS:
-            df_filtered = df_country[
-                df_country["montant_finance_total"] >= seuil
-            ]
-
-            calls_conserves = df_filtered["nb_calls_total"].sum()
-
-            pct_calls_conserves = (
-                calls_conserves / calls_total_initial
-                if calls_total_initial > 0 else 0
-            )
-
-            rows.append({
-                "year": year,
-                "country": country,
-                "seuil_montant": seuil,
-                "calls_conserves": calls_conserves,
-                "calls_total_initial": calls_total_initial,
-                "pct_calls_conserves": pct_calls_conserves
-            })
-
-impact_seuils = pd.DataFrame(rows)
+    plt.title(f"Délai création → 1ère MEL — {country}")
+    plt.xlabel("Délai (jours)")
+    plt.ylabel("Densité")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
