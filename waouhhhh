@@ -1,31 +1,36 @@
 Question métier
 
-Quel est l’effort opérationnel lié aux New Dealers, et comment évolue-t-il entre 2024 et 2025 ?
+Pour un niveau de charge donné (calls), quelle valeur financière est générée ?
+Où fixer un seuil pour optimiser charge vs valeur ?
 
 📌 Source
 
-Stock
+Stock (agrégé au niveau event)
 
 📌 Périmètre
 
 is_key_account == False
 
-en_suivi == True
+Année = année de date_new_dealer
 
-Année = année de mois_ref
+Grain = 1 point = 1 New Dealer Event
 
-📊 KPIs (par pays × année)
+Fenêtre = période de suivi (6 mois / 8 contrats)
 
-Nombre total de calls
+📊 Variables analysées
 
-Nombre de New Dealers suivis
+X = Nombre total de calls (sur la fenêtre)
 
-Nombre moyen de calls par New Dealer
+Y = Montant financé total (sur la fenêtre)
 
-📈 Visu recommandée
+Couleur = pays
 
-Bar chart groupé
+📈 Visus recommandées
 
-Axe X = pays
+1 scatterplot pour 2024
 
-2024 vs 2025
+1 scatterplot pour 2025
+
+Y-axis capée (quantile, ex. 95 %)
+
+Lignes de seuil possibles
