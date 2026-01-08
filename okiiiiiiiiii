@@ -1,50 +1,11 @@
-def build_stock_v2(df, events):
-    rows = []
+ddef build_follow_v2(stock):
+    follow = (stock.groupby(["id_apporteur", "event_id"], as_index=False)
+                     .agg(
+                         nb_calls_total=("nb_calls", "sum"),
+                         nb_contrats_total=("nb_contrats_eligibles", "sum")
+                     ))
 
-    df = df.sort_values(["id_apporteur", "dte_mel"]).copy()
+    follow["sorti_suivi"] = (follow["nb_contrats_total"] >= 8)
+    follow["en_suivi"] = ~follow["sorti_suivi"]
 
-    for _, ev in events.iterrows():
-        id_ap = ev["id_apporteur"]
-        d0 = ev["dte_new_dealer"]
-        ev_id = ev["event_id"]
-        nd_type = ev["new_dealer_type"]
-
-        # cible = contrats du dealer
-        sub = df[df["id_apporteur"] == id_ap].copy()
-
-        # ne garder que les contrats dans la fenêtre max 6 mois
-        sub_win = sub[(sub["dte_mel"] >= d0) &
-                      (sub["dte_mel"] <= d0 + pd.DateOffset(months=6))]
-
-        nb_contrats_total = 0
-        months = pd.date_range(d0, d0 + pd.DateOffset(months=6), freq="MS")
-
-        for m in months:
-            # contrats du mois m
-            sub_m = sub_win[(sub_win["dte_mel"].dt.year == m.year) &
-                            (sub_win["dte_mel"].dt.month == m.month)]
-
-            nb_calls = len(sub_m)
-            nb_contrats_month = len(sub_m)
-
-            nb_contrats_total += nb_contrats_month
-
-            rows.append({
-                "id_apporteur": id_ap,
-                "event_id": ev_id,
-                "dte_ref": m,
-                "nb_calls": nb_calls,
-                "nb_contrats_eligibles": nb_contrats_month,
-                "call_origin_type": nd_type,
-                "en_suivi": True,
-                "sorti_suivi": False
-            })
-
-            # arrêt si 8 contrats atteints
-            if nb_contrats_total >= 8:
-                break
-
-    stock = pd.DataFrame(rows)
-    return stock
-
-    return stock
+    return follow
