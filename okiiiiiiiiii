@@ -1,24 +1,27 @@
-Bonjour à tous,
+def prepare_base_v2(df, threshold):
+    """
+    Prépare la base :
+    - normalisation dates
+    - filtrage contrats éligibles au threshold
+    - keep only MEL/INS (date MEL obligatoire)
+    """
 
-Le lien vers la documentation des use cases est désormais disponible. En le suivant, vous aurez accès à deux dossiers : **Documentation AI Use Case Name** et **Documentation Analytics Use Case Name**.
-Pour le moment, je vous propose de tester uniquement la partie **Analytics Use Case Name**, la section IA étant encore en cours d’ajustements.
+    df = df.copy()
 
-Dans le dossier *Analytics Use Case Name*, l’objectif est que, pour chaque nouveau use case, vous puissiez simplement copier-coller ce dossier dans le répertoire dédié. Il contient les **six étapes clés d’un projet Analytics** : Framing, Data Preparation, EDA, Dashboard, Pilot et Industrialisation.
-Chaque dossier regroupe les livrables et templates associés pour faciliter le déroulé de chacune de ces phases.
+    # dates
+    df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce")
+    df["dte_creation_v2"] = pd.to_datetime(df["dte_creation_v2"], errors="coerce")
 
-À la racine du dossier, vous trouverez trois documents particulièrement importants :
+    # BU = IBL
+    df["ibl"] = df["ibl"].astype(str)
 
-* **La Checklist Template**, qui sert de feuille de route pour savoir quoi réaliser à chaque étape avant de passer à la suivante.
-* **Le document Rôles & Responsabilités**, pour identifier qui fait quoi et sur quels livrables.
-* **La liste complète des livrables**, avec leur utilité, offrant une vue d’ensemble sur tout ce qui compose un use case.
+    # filtrage threshold strict
+    df = df[df["mtd_total_lot"] > threshold].copy()
 
-Vous trouverez également la **documentation groupe (Word)**, pré-remplie avec les principaux livrables afin de limiter les duplications. Certains éléments devront être ajustés manuellement selon les spécificités du use case, mais l’essentiel est déjà lié aux templates des différentes phases.
+    # On ne garde que les lignes qui ont une MEL valide
+    df = df[~df["dte_mel"].isna()].copy()
 
-Enfin, le **planning** est disponible à la racine. Il comprend :
+    # Tri
+    df = df.sort_values(["id_apporteur", "dte_mel"])
 
-* le *planning initial validé*,
-* et le *planning update*, que nous tiendrons à jour pour donner de la visibilité à l’équipe (Samira, Christelle, etc.).
-
-N’hésitez pas à me faire vos retours après vos premiers tests afin que nous puissions améliorer la structure si nécessaire.
-
-Bonne lecture et bonne prise en main !
+    return df
