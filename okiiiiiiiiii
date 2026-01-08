@@ -1,27 +1,37 @@
-def prepare_base_v2(df, threshold):
-    """
-    Prépare la base :
-    - normalisation dates
-    - filtrage contrats éligibles au threshold
-    - keep only MEL/INS (date MEL obligatoire)
-    """
+def compute_new_dealer_events_v2(df):
+    df = df.sort_values(["id_apporteur", "dte_mel"]).copy()
 
-    df = df.copy()
+    events = []
 
-    # dates
-    df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce")
-    df["dte_creation_v2"] = pd.to_datetime(df["dte_creation_v2"], errors="coerce")
+    for id_apporteur, grp in df.groupby("id_apporteur"):
+        mel_dates = grp["dte_mel"].sort_values().tolist()
 
-    # BU = IBL
-    df["ibl"] = df["ibl"].astype(str)
+        previous_mel = None
+        event_id = 0
 
-    # filtrage threshold strict
-    df = df[df["mtd_total_lot"] > threshold].copy()
+        for d in mel_dates:
+            if previous_mel is None:
+                # FIRST TIME
+                event_id += 1
+                events.append({
+                    "id_apporteur": id_apporteur,
+                    "dte_new_dealer": d,
+                    "new_dealer_type": "first",
+                    "event_id": event_id
+                })
+                previous_mel = d
+            else:
+                # silence > 12 mois ?
+                if (d - previous_mel).days > 365:
+                    event_id += 1
+                    events.append({
+                        "id_apporteur": id_apporteur,
+                        "dte_new_dealer": d,
+                        "new_dealer_type": "known",
+                        "event_id": event_id
+                    })
+                previous_mel = d
 
-    # On ne garde que les lignes qui ont une MEL valide
-    df = df[~df["dte_mel"].isna()].copy()
+    events = pd.DataFrame(events)
 
-    # Tri
-    df = df.sort_values(["id_apporteur", "dte_mel"])
-
-    return df
+    return events
