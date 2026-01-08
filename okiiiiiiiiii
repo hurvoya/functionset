@@ -1,37 +1,48 @@
-def compute_new_dealer_events_v2(df):
+def build_stock_v2(df, events):
+    rows = []
+
     df = df.sort_values(["id_apporteur", "dte_mel"]).copy()
 
-    events = []
+    for _, ev in events.iterrows():
+        id_ap = ev["id_apporteur"]
+        d0 = ev["dte_new_dealer"]
+        ev_id = ev["event_id"]
+        nd_type = ev["new_dealer_type"]
 
-    for id_apporteur, grp in df.groupby("id_apporteur"):
-        mel_dates = grp["dte_mel"].sort_values().tolist()
+        # cible = contrats du dealer
+        sub = df[df["id_apporteur"] == id_ap].copy()
 
-        previous_mel = None
-        event_id = 0
+        # ne garder que les contrats dans la fenêtre max 6 mois
+        sub_win = sub[(sub["dte_mel"] >= d0) &
+                      (sub["dte_mel"] <= d0 + pd.DateOffset(months=6))]
 
-        for d in mel_dates:
-            if previous_mel is None:
-                # FIRST TIME
-                event_id += 1
-                events.append({
-                    "id_apporteur": id_apporteur,
-                    "dte_new_dealer": d,
-                    "new_dealer_type": "first",
-                    "event_id": event_id
-                })
-                previous_mel = d
-            else:
-                # silence > 12 mois ?
-                if (d - previous_mel).days > 365:
-                    event_id += 1
-                    events.append({
-                        "id_apporteur": id_apporteur,
-                        "dte_new_dealer": d,
-                        "new_dealer_type": "known",
-                        "event_id": event_id
-                    })
-                previous_mel = d
+        nb_contrats_total = 0
+        months = pd.date_range(d0, d0 + pd.DateOffset(months=6), freq="MS")
 
-    events = pd.DataFrame(events)
+        for m in months:
+            # contrats du mois m
+            sub_m = sub_win[(sub_win["dte_mel"].dt.year == m.year) &
+                            (sub_win["dte_mel"].dt.month == m.month)]
 
-    return events
+            nb_calls = len(sub_m)
+            nb_contrats_month = len(sub_m)
+
+            nb_contrats_total += nb_contrats_month
+
+            rows.append({
+                "id_apporteur": id_ap,
+                "event_id": ev_id,
+                "dte_ref": m,
+                "nb_calls": nb_calls,
+                "nb_contrats_eligibles": nb_contrats_month,
+                "call_origin_type": nd_type,
+                "en_suivi": True,
+                "sorti_suivi": False
+            })
+
+            # arrêt si 8 contrats atteints
+            if nb_contrats_total >= 8:
+                break
+
+    stock = pd.DataFrame(rows)
+    return stock
