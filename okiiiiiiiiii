@@ -1,11 +1,32 @@
-ddef build_follow_v2(stock):
-    follow = (stock.groupby(["id_apporteur", "event_id"], as_index=False)
-                     .agg(
-                         nb_calls_total=("nb_calls", "sum"),
-                         nb_contrats_total=("nb_contrats_eligibles", "sum")
-                     ))
+def build_final_table(events, follow, df):
+    """
+    df = base filtrée (contrats éligibles)
+    events = events V2
+    follow = follow V2
+    """
 
-    follow["sorti_suivi"] = (follow["nb_contrats_total"] >= 8)
-    follow["en_suivi"] = ~follow["sorti_suivi"]
+    # merge events + follow
+    out = events.merge(follow, on=["id_apporteur", "event_id"], how="left")
 
-    return follow
+    # ajout infos apporteur
+    df_ap = df[["id_apporteur", "lib_apporteur", "ibl", "country", "dte_creation_v2"]].drop_duplicates()
+
+    out = out.merge(df_ap, on="id_apporteur", how="left")
+
+    # colonnes propres
+    out = out[[
+        "country",
+        "ibl",
+        "id_apporteur",
+        "lib_apporteur",
+        "new_dealer_type",
+        "dte_creation_v2",
+        "dte_new_dealer",
+        "nb_calls_total",
+        "nb_contrats_total",
+        "en_suivi",
+        "sorti_suivi",
+        "event_id"
+    ]]
+
+    return out
