@@ -46,3 +46,5 @@ def build_stock_v2(df, events):
 
     stock = pd.DataFrame(rows)
     return stock
+
+    return stock
