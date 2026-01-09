@@ -1,4 +1,4 @@
-def plot_calls_total(df_kpi, title_suffix="Global"):
+def plot_calls_mean(df_kpi, title_suffix="Global"):
     df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
     if df.empty:
         print(f"Aucune donnée pour {title_suffix}")
@@ -6,81 +6,31 @@ def plot_calls_total(df_kpi, title_suffix="Global"):
 
     df["new_dealer_type"] = df["new_dealer_type"].str.lower()
 
-    countries = sorted(df["country"].unique())
-    years = sorted(df["year"].unique())
-    types = sorted(df["new_dealer_type"].unique())
-
-    # affichage “propre”
-    type_display = {"first": "First New Dealer", "known": "Known New Dealer"}
+    fig, ax = plt.subplots(figsize=(10,6))
 
     colors = {"first": "#4c72b0", "known": "#55a868"}
 
-    x = np.arange(len(countries))
-    width = 0.35
+    # pivot pour présentation
+    pivot_df = df.pivot_table(
+        index=["country", "year"],
+        columns="new_dealer_type",
+        values="mean_calls",
+        aggfunc="first"
+    ).fillna(0)
 
-    fig, ax = plt.subplots(figsize=(10,6))
+    pivot_df.plot(
+        kind="bar",
+        color=[colors.get(c, "#999999") for c in pivot_df.columns],
+        ax=ax
+    )
 
-    max_total = 0
+    # labels internes
+    for c in ax.containers:
+        ax.bar_label(c, fmt="%.2f", fontsize=8)
 
-    for i, year in enumerate(years):
-        df_y = df[df["year"] == year]
-
-        offsets = x + (i - (len(years)-1)/2)*width
-
-        bottom = np.zeros(len(countries))
-        total_country_year = np.zeros(len(countries))
-
-        for t in types:
-            vals = []
-
-            for c in countries:
-                v = df_y.loc[
-                    (df_y["country"]==c) &
-                    (df_y["new_dealer_type"]==t),
-                    "nb_calls"
-                ].sum()
-                vals.append(v)
-
-            vals = np.array(vals)
-
-            ax.bar(
-                offsets,
-                vals,
-                width,
-                bottom=bottom,
-                color=colors[t],
-                alpha=0.9,
-                label=f"{type_display[t]} – {year}" if i==0 else None
-            )
-
-            # labels internes
-            for j,v in enumerate(vals):
-                if v>0:
-                    ax.text(offsets[j], bottom[j]+v/2, f"{int(v)}",
-                            ha="center", va="center", color="white", fontsize=8)
-
-            bottom += vals
-            total_country_year += vals
-
-        # total
-        for j,t in enumerate(total_country_year):
-            if t>0:
-                max_total=max(max_total,t)
-                ax.text(offsets[j], t+0.5, f"{int(t)}",
-                        ha="center", va="bottom", fontsize=9, fontweight="bold")
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Nombre de calls")
-    ax.set_title(f"Bloc 3 — Nombre total de calls — {title_suffix}")
+    ax.set_title(f"Bloc 3 — Calls moyens par New Dealer — {title_suffix}")
+    ax.set_ylabel("Calls moyens")
     ax.grid(axis="y", linestyle="--", alpha=0.3)
 
-    handles, labels = ax.get_legend_handles_labels()
-    uniq = {}
-    for h,l in zip(handles,labels):
-        if l not in uniq: uniq[l] = h
-    ax.legend(uniq.values(), uniq.keys(), fontsize=8)
-
-    ax.set_ylim(0, max_total*1.15 if max_total>0 else 1)
     plt.tight_layout()
     plt.show()
