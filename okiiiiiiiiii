@@ -1,34 +1,12 @@
-def eighth_call_date(series):
-    # si < 8 calls, retourne NaT
-    if len(series) >= 8:
-        return series.iloc[7]  # 8e élément
-    else:
-        return pd.NaT
-
-agg_delay = (
-    calls_b6
-    .groupby(["country", "ibl", "id_apporteur", "event_id"], as_index=False)
+kpi_bloc6_delay_ibl = (
+    agg_delay
+    .groupby(["year", "country", "ibl"], as_index=False)
     .agg(
-        first_call_date=("dte_new_dealer", "first"),   # date du new dealer
-        eighth_call_date=("dte_mel", eighth_call_date),
-        nb_calls=("dte_mel", "size"),
+        mean_delay_days=("delay_days", "mean"),
+        median_delay_days=("delay_days", "median"),
+        nb_dealers_8=("id_apporteur", "nunique"),
     )
 )
 
-# Garder uniquement ceux qui ont bien atteint 8 MEL
-agg_delay = agg_delay[agg_delay["eighth_call_date"].notna()].copy()
-
-# Délai en jours entre 1ʳᵉ et 8ᵉ MEL
-agg_delay["delay_days"] = (
-    agg_delay["eighth_call_date"] - agg_delay["first_call_date"]
-).dt.days
-
-# Nettoyage sécurité
-agg_delay = agg_delay[
-    agg_delay["delay_days"].notna() &
-    (agg_delay["delay_days"] >= 0)
-].copy()
-
-# Année de détection
-agg_delay["year"] = agg_delay["first_call_date"].dt.year
-agg_delay = agg_delay[agg_delay["year"].isin([2024, 2025])].copy()
+kpi_bloc6_delay_ibl["mean_delay_days"] = kpi_bloc6_delay_ibl["mean_delay_days"].round(1)
+kpi_bloc6_delay_ibl["median_delay_days"] = kpi_bloc6_delay_ibl["median_delay_days"].round(1)
