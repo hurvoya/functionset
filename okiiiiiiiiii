@@ -1,48 +1,68 @@
-import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
 
-# Base hors key account
-calls_b4 = calls[~calls["is_key_account"]].copy()
-calls_b4["year"] = calls_b4["dte_mel"].dt.year
+def plot_pct_calls_par_pays(impact_df, year, ibl_scope="GLOBAL"):
+    """
+    impact_df : impact_seuil_country
+    year      : 2024 ou 2025
+    ibl_scope : "GLOBAL", "ELS", "TLS"
+    """
 
-# Seuils à tester
-seuils = [0, 20000, 40000, 60000, 80000, 100000]
-
-# Totaux initiaux par year / country / ibl
-base_totaux = (
-    calls_b4
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(
-        calls_total=("id_contract", "count"),
-    )
-)
-
-impact_rows = []
-
-for s in seuils:
-    calls_s = calls_b4[calls_b4["mtd_total_lot"] > s].copy()
-
-    agg_s = (
-        calls_s
-        .groupby(["year", "country", "ibl"], as_index=False)
-        .agg(
-            calls_conserves=("id_contract", "count"),
+    df = impact_df[impact_df["year"] == year].copy()
+    if ibl_scope != "GLOBAL":
+        df = df[df["ibl"] == ibl_scope].copy()
+    else:
+        # GLOBAL = on agrège ELS+TLS par pays / seuil
+        df = (
+            df.groupby(["year", "country", "seuil_montant"], as_index=False)
+            .agg(
+                calls_total=("calls_total", "sum"),
+                calls_conserves=("calls_conserves", "sum"),
+            )
         )
-    )
+        df["pct_calls_conserves"] = (
+            df["calls_conserves"] /
+            df["calls_total"].replace(0, np.nan)
+        )
 
-    df_s = base_totaux.merge(
-        agg_s,
-        on=["year", "country", "ibl"],
-        how="left"
-    )
+    if df.empty:
+        print(f"Aucune donnée pour year={year}, ibl_scope={ibl_scope}")
+        return
 
-    df_s["calls_conserves"] = df_s["calls_conserves"].fillna(0)
-    df_s["seuil_montant"] = s
-    df_s["pct_calls_conserves"] = (
-        df_s["calls_conserves"] /
-        df_s["calls_total"].replace(0, np.nan)
-    )
+    if ibl_scope != "GLOBAL":
+        # pct déjà calculé par pays/ibl/seuil
+        pass
 
-    impact_rows.append(df_s)
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-impact_seuil_country = pd.concat(impact_rows, ignore_index=True)
+    # une couleur par pays
+    countries = sorted(df["country"].unique())
+    cmap = plt.cm.get_cmap("tab10", len(countries))
+
+    for i, c in enumerate(countries):
+        sub = df[df["country"] == c].sort_values("seuil_montant")
+        x = sub["seuil_montant"].values
+        y = (sub["pct_calls_conserves"] * 100).values
+
+        ax.plot(x, y, marker="o", label=c, color=cmap(i))
+
+        # labels au-dessus des points
+        for xi, yi in zip(x, y):
+            if not np.isnan(yi):
+                ax.text(
+                    xi,
+                    yi + 1,
+                    f"{yi:.1f}%",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+
+    scope = "Global (ELS+TLS)" if ibl_scope == "GLOBAL" else f"IBL = {ibl_scope}"
+    ax.set_title(f"Impact seuil – % calls conservés – {scope} – {year}")
+    ax.set_xlabel("Seuil montant (EUR)")
+    ax.set_ylabel("% de calls conservés")
+    ax.grid(True, linestyle="--", alpha=0.3)
+    ax.legend(title="Pays", fontsize=8)
+
+    plt.tight_layout()
+    plt.show()
