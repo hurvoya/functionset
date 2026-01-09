@@ -1,4 +1,4 @@
-def plot_impact_seuil_pct(impact_df, ibl_scope="ELS"):
+def plot_impact_seuil_n(impact_df, ibl_scope="ELS"):
     df = impact_df[impact_df["ibl"] == ibl_scope].copy()
     if df.empty:
         print(f"Aucune donnée pour IBL = {ibl_scope}")
@@ -10,18 +10,18 @@ def plot_impact_seuil_pct(impact_df, ibl_scope="ELS"):
         sub = df[df["year"] == year].sort_values("seuil_montant")
         ax.plot(
             sub["seuil_montant"],
-            sub["pct_calls_conserves"] * 100,
+            sub["calls_conserves"],
             marker="o",
             label=str(year),
         )
 
         # labels sur les points
-        for x, y in zip(sub["seuil_montant"], sub["pct_calls_conserves"] * 100):
-            ax.text(x, y + 1, f"{y:.1f}%", ha="center", va="bottom", fontsize=8)
+        for x, y in zip(sub["seuil_montant"], sub["calls_conserves"]):
+            ax.text(x, y + 1, f"{int(y)}", ha="center", va="bottom", fontsize=8)
 
     ax.set_xlabel("Seuil montant (EUR)")
-    ax.set_ylabel("% de calls conservés")
-    ax.set_title(f"Bloc 4 – Impact seuil (en %) – IBL = {ibl_scope}")
+    ax.set_ylabel("Nombre de calls conservés")
+    ax.set_title(f"Bloc 4 – Impact seuil (en volume) – IBL = {ibl_scope}")
     ax.grid(True, linestyle="--", alpha=0.3)
     ax.legend(title="Année")
 
