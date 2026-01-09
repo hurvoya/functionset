@@ -1,62 +1,57 @@
-def build_stock_v2(df, events):
+def compute_new_dealer_events_v2(df_prep):
     """
-    df : df_contrats_eligibles (filtré au threshold, avec dte_mel)
-    events : new dealers détectés par compute_new_dealer_events_v2
+    df_prep : contrats éligibles (> threshold), avec au moins
+              id_apporteur, dte_mel, country, ibl, is_key_account, dte_creation_v2
 
-    Retourne un df 'stock' avec :
-    - 1 ligne par mois de suivi et par event_id
-    - nb_calls et nb_contrats_eligibles par mois
-    - arrêt du suivi à 8 contrats ou après 6 mois
+    Règle :
+    - FIRST : premier contrat éligible de l'histoire du dealer
+    - KNOWN : contrat éligible après >12 mois sans MEL éligible
     """
 
-    rows = []
+    df = df_prep.sort_values(["id_apporteur", "dte_mel", "id_contract"]).copy()
 
-    df = df.sort_values(["id_apporteur", "dte_mel"]).copy()
-    # mois de la mise en loyer
-    df["mois_mel"] = df["dte_mel"].dt.to_period("M")
+    events = []
+    for id_apporteur, grp in df.groupby("id_apporteur"):
+        previous_mel = None
+        event_id = 0
 
-    for _, ev in events.iterrows():
-        id_ap = ev["id_apporteur"]
-        d0 = ev["dte_new_dealer"]
-        event_id = ev["event_id"]
-        new_dealer_type = ev["new_dealer_type"]
+        for _, row in grp.iterrows():
+            d = row["dte_mel"]
 
-        # tous les contrats de ce dealer
-        sub = df[df["id_apporteur"] == id_ap].copy()
+            if previous_mel is None:
+                # FIRST
+                event_id += 1
+                events.append(
+                    {
+                        "id_apporteur": id_apporteur,
+                        "event_id": event_id,
+                        "dte_new_dealer": d,
+                        "new_dealer_type": "first",
+                        "country": row["country"],
+                        "ibl": row["ibl"],
+                        "is_key_account": row["is_key_account"],
+                        "dte_creation_apporteur": row["dte_creation_v2"],
+                    }
+                )
+                previous_mel = d
+            else:
+                # silence > 12 mois ?
+                if (d - previous_mel).days > 365:
+                    event_id += 1
+                    events.append(
+                        {
+                            "id_apporteur": id_apporteur,
+                            "event_id": event_id,
+                            "dte_new_dealer": d,
+                            "new_dealer_type": "known",
+                            "country": row["country"],
+                            "ibl": row["ibl"],
+                            "is_key_account": row["is_key_account"],
+                            "dte_creation_apporteur": row["dte_creation_v2"],
+                        }
+                    )
+                previous_mel = d
 
-        # on détermine les 6 mois de suivi : mois de d0 + 5 mois
-        mois_start = d0.to_period("M")
-        mois_periods = pd.period_range(start=mois_start, periods=6, freq="M")
+    events = pd.DataFrame(events)
+    return events
 
-        nb_contrats_cum = 0
-
-        for mois in mois_periods:
-            # contrats du mois courant
-            sub_m = sub[sub["dte_mel"].dt.to_period("M") == mois]
-
-            nb_contrats_mois = len(sub_m)
-            nb_calls_mois = nb_contrats_mois  # 1 contrat = 1 call
-
-            nb_contrats_cum += nb_contrats_mois
-
-            dte_ref = mois.to_timestamp("M")  # fin de mois (stock au dernier jour du mois)
-
-            rows.append(
-                {
-                    "id_apporteur": id_ap,
-                    "event_id": event_id,
-                    "dte_ref": dte_ref,
-                    "nb_calls": nb_calls_mois,
-                    "nb_contrats_eligibles": nb_contrats_mois,
-                    "call_origin_type": new_dealer_type,
-                    "en_suivi": True,   # on considère qu'il est en suivi sur les mois créés
-                    "sorti_suivi": False,
-                }
-            )
-
-            # on arrête dès qu'on atteint 8 contrats cumulés
-            if nb_contrats_cum >= 8:
-                break
-
-    stock = pd.DataFrame(rows)
-    return stock
