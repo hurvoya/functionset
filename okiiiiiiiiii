@@ -1,10 +1,64 @@
-# 1) Global (ELS + TLS)
-plot_bloc5_delay(kpi_bloc5_global, title_suffix="Global (ELS + TLS)")
+def plot_typology_newdealers(kpi_df, title_suffix="Global"):
+    df = kpi_df.copy()
+    if df.empty:
+        print(f"No data for {title_suffix}")
+        return
+    
+    # Tri propre
+    df = df.sort_values(["country", "year", "new_dealer_type"])
 
-# 2) ELS
-kpi_bloc5_els = kpi_bloc5_ibl[kpi_bloc5_ibl["ibl"] == "ELS"].drop(columns=["ibl"])
-plot_bloc5_delay(kpi_bloc5_els, title_suffix="IBL = ELS")
+    # X = pays
+    countries = sorted(df["country"].unique())
+    x = np.arange(len(countries))
+    width = 0.35
 
-# 3) TLS
-kpi_bloc5_tls = kpi_bloc5_ibl[kpi_bloc5_ibl["ibl"] == "TLS"].drop(columns=["ibl"])
-plot_bloc5_delay(kpi_bloc5_tls, title_suffix="IBL = TLS")
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    colors = {
+        2024: "#4c72b0",  # bleu
+        2025: "#55a868",  # vert
+    }
+
+    max_val = 0
+    years = sorted(df["year"].unique())
+
+    for i, year in enumerate(years):
+        df_y = df[df["year"] == year].groupby("country")["nb_new_dealers"].sum()
+        df_y = df_y.reindex(countries).fillna(0)
+
+        offsets = x + (i - (len(years)-1)/2) * width
+
+        bars = ax.bar(
+            offsets,
+            df_y.values,
+            width,
+            color=colors.get(year, "#999999"),
+            alpha=0.9,
+            label=str(year)
+        )
+
+        # Labels manuels
+        for bx, v in zip(offsets, df_y.values):
+            if v > 0:
+                ax.text(
+                    bx,
+                    v + max(df_y.values)*0.02,
+                    f"{int(v)}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+                max_val = max(max_val, v)
+
+    # Mise en forme finale
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Number of New Dealers")
+    ax.set_title(f"New Dealers – First vs Known Distribution ({title_suffix})")
+    ax.legend(title="Year")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 1)
+
+    plt.tight_layout()
+    plt.show()
