@@ -1,19 +1,13 @@
-# Global (ELS + TLS)
-plot_bloc6_rate(kpi_bloc6_rate_global, "Global (ELS + TLS)")
+df6 = calls.copy()
 
-# ELS seulement
-plot_bloc6_rate(
-    kpi_bloc6_rate_ibl[kpi_bloc6_rate_ibl["ibl"] == "ELS"].drop(columns=["ibl"]),
-    "IBL = ELS"
-)
+# Exclure Key Accounts
+df6 = df6[~df6["is_key_account"]].copy()
 
-# TLS seulement
-plot_bloc6_rate(
-    kpi_bloc6_rate_ibl[kpi_bloc6_rate_ibl["ibl"] == "TLS"].drop(columns=["ibl"]),
-    "IBL = TLS"
-)
+# Garder uniquement les calls valides
+df6 = df6[df6["dte_mel"].notna() & df6["dte_new_dealer"].notna()].copy()
 
-    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 5)
+# Année de détection
+df6["year"] = df6["dte_new_dealer"].dt.year
 
-    plt.tight_layout()
-    plt.show()
+# Focus sur 2024–2025
+df6 = df6[df6["year"].isin([2024, 2025])].copy()
