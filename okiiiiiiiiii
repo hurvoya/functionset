@@ -1,181 +1,34 @@
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_calls_mean_stacked(kpi_calls_mean, title_suffix="Global"):
-    """
-    Stacked bar chart :
-      - X = countries
-      - For each country: 2 bars (2024, 2025)
-      - Each bar = stacked (First + Known)
+# Copie de base
+stock_b6 = stock.copy()
 
-    Labels :
-      - Inside First segment  : average calls (First)
-      - Inside Known segment  : average calls (Known)
-      - On top of each stack  : TRUE global average (weighted)
-    """
+# Exclure Key Accounts
+stock_b6 = stock_b6[~stock_b6["is_key_account"]].copy()
 
-    df = kpi_calls_mean.copy()
-    df = df[df["year"].isin([2024, 2025])]
-    if df.empty:
-        print(f"No data for {title_suffix}")
-        return
+# Année de détection (année de la 1ère MEL)
+stock_b6["year"] = stock_b6["dte_new_dealer"].dt.year
 
-    # Normalise le type
-    df["new_dealer_type"] = df["new_dealer_type"].str.lower().str.strip()
-    df["nd_type_norm"] = np.where(
-        df["new_dealer_type"].str.contains("first"),
-        "first",
-        "known"
-    )
+# Limite sur 2024-2025
+stock_b6 = stock_b6[stock_b6["year"].isin([2024, 2025])].copy()
 
-    df = df[df["nd_type_norm"].isin(["first", "known"])]
+# On cible les lignes où le dealer a au moins 8 contrats cumulés
+reach8_raw = stock_b6[stock_b6["nb_contracts_cum"] >= 8].copy()
 
-    countries = sorted(df["country"].unique())
-    years = [y for y in [2024, 2025] if y in df["year"].unique()]
+# On prend la première fois où il atteint >= 8 contrats
+reach8 = (
+    reach8_raw
+    .sort_values(["country", "ibl", "id_apporteur", "event_id", "month_ref"])
+    .groupby(["country", "ibl", "id_apporteur", "event_id"], as_index=False)
+    .first()
+)
 
-    if not years:
-        print(f"No 2024/2025 data for {title_suffix}")
-        return
+# Délai en jours entre 1ère MEL (new dealer) et 8ᵉ MEL (mois où nb_contracts_cum>=8)
+reach8["delay_days"] = (
+    reach8["month_ref"] - reach8["dte_new_dealer"]
+).dt.days
 
-    # Palette
-    colors = {
-        (2024, "first"): "#345b8c",  # dark blue
-        (2024, "known"): "#7ea2d5",  # light blue
-        (2025, "first"): "#2f7d53",  # dark green
-        (2025, "known"): "#8dc79a",  # light green
-    }
-
-    x = np.arange(len(countries))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    max_val = 0.0
-    legend_done = set()
-
-    for i, year in enumerate(years):
-        year_df = df[df["year"] == year]
-        offsets = x + (i - 0.5) * width
-
-        first_means = []
-        known_means = []
-        global_means = []
-
-        for c in countries:
-            sub = year_df[year_df["country"] == c]
-
-            # First
-            sub_f = sub[sub["nd_type_norm"] == "first"]
-            if not sub_f.empty:
-                f_mean = sub_f["mean_calls"].iloc[0]
-                f_n = sub_f["nb_dealers"].iloc[0]
-            else:
-                f_mean = 0.0
-                f_n = 0
-
-            # Known
-            sub_k = sub[sub["nd_type_norm"] == "known"]
-            if not sub_k.empty:
-                k_mean = sub_k["mean_calls"].iloc[0]
-                k_n = sub_k["nb_dealers"].iloc[0]
-            else:
-                k_mean = 0.0
-                k_n = 0
-
-            # Moyenne globale pondérée (si au moins 1 dealer)
-            if (f_n + k_n) > 0:
-                glob_mean = (f_mean * f_n + k_mean * k_n) / (f_n + k_n)
-            else:
-                glob_mean = np.nan
-
-            first_means.append(f_mean)
-            known_means.append(k_mean)
-            global_means.append(glob_mean)
-
-        first_means = np.array(first_means)
-        known_means = np.array(known_means)
-        global_means = np.array(global_means)
-        totals_for_height = first_means + known_means  # pour la hauteur de la barre
-
-        # Barres First
-        label_first = f"{year} – First"
-        p1 = ax.bar(
-            offsets,
-            first_means,
-            width,
-            color=colors.get((year, "first"), "#999999"),
-            label=label_first if label_first not in legend_done else None
-        )
-        legend_done.add(label_first)
-
-        # Barres Known (empilées)
-        label_known = f"{year} – Known"
-        p2 = ax.bar(
-            offsets,
-            known_means,
-            width,
-            bottom=first_means,
-            color=colors.get((year, "known"), "#bbbbbb"),
-            label=label_known if label_known not in legend_done else None
-        )
-        legend_done.add(label_known)
-
-        # Met à jour le max pour l'axe Y
-        if len(totals_for_height) > 0:
-            max_val = max(
-                max_val,
-                np.nanmax(totals_for_height),
-                np.nanmax(global_means[np.isfinite(global_means)]) if np.any(np.isfinite(global_means)) else 0
-            )
-
-        # 🔹 Labels : First, Known, Global
-        for bx, f_mean, k_mean, glob_mean in zip(offsets, first_means, known_means, global_means):
-            # label First
-            if f_mean > 0:
-                ax.text(
-                    bx,
-                    f_mean / 2.0,
-                    f"{f_mean:.2f}",
-                    ha="center",
-                    va="center",
-                    fontsize=9,
-                    color="white",
-                    fontweight="bold",
-                )
-
-            # label Known
-            if k_mean > 0:
-                ax.text(
-                    bx,
-                    f_mean + k_mean / 2.0,
-                    f"{k_mean:.2f}",
-                    ha="center",
-                    va="center",
-                    fontsize=9,
-                    color="white",
-                    fontweight="bold",
-                )
-
-            # label Global tout en haut
-            if not np.isnan(glob_mean):
-                top = f_mean + k_mean
-                ax.text(
-                    bx,
-                    top + max(top * 0.05, 0.05),
-                    f"{glob_mean:.2f}",
-                    ha="center",
-                    va="bottom",
-                    fontsize=9,
-                    fontweight="bold",
-                )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Average calls per new dealer")
-    ax.set_title(f"Average Calls per New Dealer – First vs Known (stacked) ({title_suffix})")
-    ax.grid(axis="y", linestyle="--", alpha=0.3)
-
-    ax.legend(title="Year – New dealer type", fontsize=8)
-    ax.set_ylim(0, max_val * 1.25 if max_val > 0 else 1)
-
-    plt.tight_layout()
-    plt.show()
+# On enlève les délais négatifs au cas où (données bizarres)
+reach8 = reach8[reach8["delay_days"].notna() & (reach8["delay_days"] >= 0)].copy()
