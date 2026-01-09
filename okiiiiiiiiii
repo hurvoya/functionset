@@ -1,53 +1,36 @@
-import pandas as pd
-import numpy as np
+def plot_calls_mean(df_kpi, title_suffix="Global"):
+    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
+    if df.empty:
+        print(f"Aucune donnée pour {title_suffix}")
+        return
 
-# copie
-calls_b3 = calls.copy()
+    df["new_dealer_type"] = df["new_dealer_type"].str.lower()
 
-# on enlève les key accounts
-calls_b3 = calls_b3[~calls_b3["is_key_account"]].copy()
+    fig, ax = plt.subplots(figsize=(10,6))
 
-# normalisation type
-calls_b3["new_dealer_type"] = calls_b3["new_dealer_type"].str.lower()
+    colors = {"first": "#4c72b0", "known": "#55a868"}
 
-# année
-calls_b3["year"] = calls_b3["dte_mel"].dt.year
+    # pivot pour présentation
+    pivot_df = df.pivot_table(
+        index=["country", "year"],
+        columns="new_dealer_type",
+        values="mean_calls",
+        aggfunc="first"
+    ).fillna(0)
 
-# ---- KPI 1 : Nombre total de calls par type (first / known) ----
-kpi_calls_total = (
-    calls_b3
-    .groupby(["year", "country", "ibl", "new_dealer_type"], as_index=False)
-    .agg(nb_calls=("id_contract", "count"))
-)
-
-tot = (
-    kpi_calls_total
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(nb_calls_total=("nb_calls", "sum"))
-)
-
-kpi_calls_total = kpi_calls_total.merge(
-    tot, on=["year", "country", "ibl"], how="left"
-)
-
-kpi_calls_total["pct"] = (
-    kpi_calls_total["nb_calls"] /
-    kpi_calls_total["nb_calls_total"].replace(0, np.nan)
-)
-
-# ---- KPI 2 : Calls moyens par new dealer ----
-dealer_call_load = (
-    calls_b3
-    .groupby(["year", "country", "ibl", "id_apporteur", "new_dealer_type"], as_index=False)
-    .agg(nb_calls=("id_contract", "count"))
-)
-
-kpi_calls_mean = (
-    dealer_call_load
-    .groupby(["year", "country", "ibl", "new_dealer_type"], as_index=False)
-    .agg(
-        mean_calls=("nb_calls", "mean"),
-        median_calls=("nb_calls", "median"),
-        nb_dealers=("id_apporteur", "nunique"),
+    pivot_df.plot(
+        kind="bar",
+        color=[colors.get(c, "#999999") for c in pivot_df.columns],
+        ax=ax
     )
-)
+
+    # labels internes
+    for c in ax.containers:
+        ax.bar_label(c, fmt="%.2f", fontsize=8)
+
+    ax.set_title(f"Bloc 3 — Calls moyens par New Dealer — {title_suffix}")
+    ax.set_ylabel("Calls moyens")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
