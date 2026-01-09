@@ -1,5 +1,5 @@
-# Délai en jours entre la MEL et la date new dealer
-df6["delay_days"] = (df6["dte_mel"] - df6["dte_new_dealer"]).dt.days
-
-# Garder uniquement les calls dans la fenêtre 0–183 jours
-df6_6m = df6[(df6["delay_days"] >= 0) & (df6["delay_days"] <= 183)].copy()
+contracts_per_dealer_6m = (
+    df6_6m
+    .groupby(["country", "ibl", "id_apporteur", "event_id", "year"], as_index=False)
+    .agg(nb_contracts_6m=("id_contract", "nunique"))
+)
