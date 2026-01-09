@@ -1,12 +1,43 @@
-for year in [2024, 2025]:
-    # GLOBAL
-    plot_pct_calls_par_pays(impact_seuil_country, year=year, ibl_scope="GLOBAL")
-    plot_nb_calls_par_pays(impact_seuil_country, year=year, ibl_scope="GLOBAL")
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-    # ELS
-    plot_pct_calls_par_pays(impact_seuil_country, year=year, ibl_scope="ELS")
-    plot_nb_calls_par_pays(impact_seuil_country, year=year, ibl_scope="ELS")
+# Copie de base
+events_b5 = events.copy()
 
-    # TLS
-    plot_pct_calls_par_pays(impact_seuil_country, year=year, ibl_scope="TLS")
-    plot_nb_calls_par_pays(impact_seuil_country, year=year, ibl_scope="TLS")
+# Exclure les Key Accounts
+events_b5 = events_b5[~events_b5["is_key_account"]].copy()
+
+# Normalisation du type
+events_b5["new_dealer_type"] = events_b5["new_dealer_type"].str.lower().str.strip()
+
+# Ne garder que les First New Dealers
+events_b5 = events_b5[events_b5["new_dealer_type"] == "first"].copy()
+
+# Année de détection
+events_b5["year"] = events_b5["dte_new_dealer"].dt.year
+
+# Délai en jours entre création et 1ère MEL
+events_b5["delay_days"] = (
+    events_b5["dte_new_dealer"] - events_b5["dte_creation_apporteur"]
+).dt.days
+
+# On garde uniquement les années 2024-2025 (normalement déjà le cas via pipeline)
+events_b5 = events_b5[events_b5["year"].isin([2024, 2025])].copy()
+
+# On enlève les délais négatifs ou NA (au cas où)
+events_b5 = events_b5[events_b5["delay_days"].notna() & (events_b5["delay_days"] >= 0)]
+
+# KPI bloc 5 : moyenne et médiane par pays / année
+kpi_bloc5 = (
+    events_b5
+    .groupby(["year", "country"], as_index=False)
+    .agg(
+        delay_mean_days=("delay_days", "mean"),
+        delay_median_days=("delay_days", "median"),
+        nb_dealers=("id_apporteur", "nunique"),
+    )
+)
+
+# Pour lisibilité, on peut arrondir la moyenne
+kpi_bloc5["delay_mean_days"] = kpi_bloc5["delay_mean_days"].round(1)
