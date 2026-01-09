@@ -1,117 +1,12 @@
-import matplotlib.pyplot as plt
-import numpy as np
+# GLOBAL
+plot_bloc2_typologie(kpi_bloc2_global, title_suffix="Global (ELS + TLS)")
 
-def plot_bloc2_typologie(df_kpi, title_suffix="Global"):
-    """
-    df_kpi doit contenir :
-      year, country, new_dealer_type, nb_new_dealers, pct
-    """
+# ELS
+kpi_bloc2_els = kpi_bloc2_ibl[kpi_bloc2_ibl["ibl"] == "ELS"].copy()
+kpi_bloc2_els = kpi_bloc2_els.drop(columns=["ibl"])
+plot_bloc2_typologie(kpi_bloc2_els, title_suffix="IBL = ELS")
 
-    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
-    if df.empty:
-        print(f"Aucune donnée pour {title_suffix}")
-        return
-
-    df = df.sort_values(["country", "year", "new_dealer_type"])
-
-    countries = df["country"].unique()
-    years = sorted(df["year"].unique())
-    types = ["First New Dealer", "Known New Dealer"]
-
-    x = np.arange(len(countries))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # palette douce (bleu pour First, vert pour Known)
-    colors = {
-        "First New Dealer": "#4c72b0",  # bleu
-        "Known New Dealer": "#55a868",  # vert
-    }
-
-    max_total = 0
-
-    for i, year in enumerate(years):
-        df_y = df[df["year"] == year].set_index(["country", "new_dealer_type"]).reindex(
-            [(c, t) for c in countries for t in types]
-        ).reset_index()
-
-        # valeurs par type
-        vals_first = df_y[df_y["new_dealer_type"] == "First New Dealer"]["nb_new_dealers"].fillna(0).values
-        vals_known = df_y[df_y["new_dealer_type"] == "Known New Dealer"]["nb_new_dealers"].fillna(0).values
-
-        offsets = x + (i - (len(years)-1)/2) * width
-
-        # First
-        bar_first = ax.bar(
-            offsets,
-            vals_first,
-            width,
-            label=f"First - {year}" if i == 0 else None,
-            color=colors["First New Dealer"],
-            alpha=0.9,
-        )
-
-        # Known empilé
-        bar_known = ax.bar(
-            offsets,
-            vals_known,
-            width,
-            bottom=vals_first,
-            label=f"Known - {year}" if i == 0 else None,
-            color=colors["Known New Dealer"],
-            alpha=0.9,
-        )
-
-        # Labels internes + total
-        for j, (vf, vk) in enumerate(zip(vals_first, vals_known)):
-            total = vf + vk
-            if total > 0:
-                max_total = max(max_total, total)
-
-                # Label First
-                if vf > 0:
-                    ax.text(
-                        offsets[j],
-                        vf / 2,
-                        f"{int(vf)}",
-                        ha="center",
-                        va="center",
-                        fontsize=8,
-                        color="white",
-                    )
-
-                # Label Known
-                if vk > 0:
-                    ax.text(
-                        offsets[j],
-                        vf + vk / 2,
-                        f"{int(vk)}",
-                        ha="center",
-                        va="center",
-                        fontsize=8,
-                        color="white",
-                    )
-
-                # Total
-                ax.text(
-                    offsets[j],
-                    total + 0.5,
-                    f"{int(total)}",
-                    ha="center",
-                    va="bottom",
-                    fontsize=9,
-                    fontweight="bold",
-                )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Nombre de New Dealers (hors Key Accounts)")
-    ax.set_title(f"Bloc 2 — Typologie New Dealers (First vs Known) — {title_suffix}")
-    ax.legend()
-    ax.grid(axis="y", linestyle="--", alpha=0.3)
-
-    ax.set_ylim(0, max_total * 1.15)
-
-    plt.tight_layout()
-    plt.show()
+# TLS
+kpi_bloc2_tls = kpi_bloc2_ibl[kpi_bloc2_ibl["ibl"] == "TLS"].copy()
+kpi_bloc2_tls = kpi_bloc2_tls.drop(columns=["ibl"])
+plot_bloc2_typologie(kpi_bloc2_tls, title_suffix="IBL = TLS")
