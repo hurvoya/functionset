@@ -1,42 +1,29 @@
-# base hors KA avec année
-calls_b4 = calls[~calls["is_key_account"]].copy()
-calls_b4["year"] = calls_b4["dte_mel"].dt.year
+def plot_impact_seuil_pct(impact_df, ibl_scope="ELS"):
+    df = impact_df[impact_df["ibl"] == ibl_scope].copy()
+    if df.empty:
+        print(f"Aucune donnée pour IBL = {ibl_scope}")
+        return
 
-# liste de seuils à tester (en euros)
-seuils = [0, 20000, 40000, 60000, 80000, 100000]
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-# total initial par year / ibl (tous seuils confondus)
-base_total = (
-    calls_b4
-    .groupby(["year", "ibl"], as_index=False)
-    .agg(calls_total=("id_contract", "count"))
-)
+    for year in sorted(df["year"].unique()):
+        sub = df[df["year"] == year].sort_values("seuil_montant")
+        ax.plot(
+            sub["seuil_montant"],
+            sub["pct_calls_conserves"] * 100,
+            marker="o",
+            label=str(year),
+        )
 
-# boucle sur les seuils
-impact_rows = []
+        # labels sur les points
+        for x, y in zip(sub["seuil_montant"], sub["pct_calls_conserves"] * 100):
+            ax.text(x, y + 1, f"{y:.1f}%", ha="center", va="bottom", fontsize=8)
 
-for s in seuils:
-    calls_s = calls_b4[calls_b4["mtd_total_lot"] > s].copy()
+    ax.set_xlabel("Seuil montant (EUR)")
+    ax.set_ylabel("% de calls conservés")
+    ax.set_title(f"Bloc 4 – Impact seuil (en %) – IBL = {ibl_scope}")
+    ax.grid(True, linestyle="--", alpha=0.3)
+    ax.legend(title="Année")
 
-    agg_s = (
-        calls_s
-        .groupby(["year", "ibl"], as_index=False)
-        .agg(calls_conserves=("id_contract", "count"))
-    )
-
-    df_s = base_total.merge(
-        agg_s,
-        on=["year", "ibl"],
-        how="left"
-    )
-
-    df_s["calls_conserves"] = df_s["calls_conserves"].fillna(0)
-    df_s["seuil_montant"] = s
-    df_s["pct_calls_conserves"] = (
-        df_s["calls_conserves"] /
-        df_s["calls_total"].replace(0, np.nan)
-    )
-
-    impact_rows.append(df_s)
-
-impact_seuil = pd.concat(impact_rows, ignore_index=True)
+    plt.tight_layout()
+    plt.show()
