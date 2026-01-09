@@ -1,25 +1,34 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+def eighth_call_date(series):
+    # si < 8 calls, retourne NaT
+    if len(series) >= 8:
+        return series.iloc[7]  # 8e élément
+    else:
+        return pd.NaT
 
-calls_b6 = calls.copy()
+agg_delay = (
+    calls_b6
+    .groupby(["country", "ibl", "id_apporteur", "event_id"], as_index=False)
+    .agg(
+        first_call_date=("dte_new_dealer", "first"),   # date du new dealer
+        eighth_call_date=("dte_mel", eighth_call_date),
+        nb_calls=("dte_mel", "size"),
+    )
+)
 
-# Exclure les Key Accounts
-calls_b6 = calls_b6[~calls_b6["is_key_account"]].copy()
+# Garder uniquement ceux qui ont bien atteint 8 MEL
+agg_delay = agg_delay[agg_delay["eighth_call_date"].notna()].copy()
 
-# Sécurité : garder uniquement les lignes avec dates utiles
-calls_b6 = calls_b6[
-    calls_b6["dte_mel"].notna() &
-    calls_b6["dte_new_dealer"].notna()
+# Délai en jours entre 1ʳᵉ et 8ᵉ MEL
+agg_delay["delay_days"] = (
+    agg_delay["eighth_call_date"] - agg_delay["first_call_date"]
+).dt.days
+
+# Nettoyage sécurité
+agg_delay = agg_delay[
+    agg_delay["delay_days"].notna() &
+    (agg_delay["delay_days"] >= 0)
 ].copy()
 
-# Année de détection = année de la date new dealer
-calls_b6["year"] = calls_b6["dte_new_dealer"].dt.year
-
-# Focaliser sur 2024–2025
-calls_b6 = calls_b6[calls_b6["year"].isin([2024, 2025])].copy()
-
-# Tri pour être sûr que les MEL sont dans l’ordre
-calls_b6 = calls_b6.sort_values(
-    ["country", "ibl", "id_apporteur", "event_id", "dte_mel"]
-)
+# Année de détection
+agg_delay["year"] = agg_delay["first_call_date"].dt.year
+agg_delay = agg_delay[agg_delay["year"].isin([2024, 2025])].copy()
