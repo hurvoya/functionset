@@ -1,3 +1,48 @@
-for ibl_scope in ["ELS", "TLS"]:
-    plot_pct_calls_conserves(impact_seuil, ibl_scope)
-    plot_nb_calls_conserves(impact_seuil, ibl_scope)
+import pandas as pd
+import numpy as np
+
+# Base hors key account
+calls_b4 = calls[~calls["is_key_account"]].copy()
+calls_b4["year"] = calls_b4["dte_mel"].dt.year
+
+# Seuils à tester
+seuils = [0, 20000, 40000, 60000, 80000, 100000]
+
+# Totaux initiaux par year / country / ibl
+base_totaux = (
+    calls_b4
+    .groupby(["year", "country", "ibl"], as_index=False)
+    .agg(
+        calls_total=("id_contract", "count"),
+    )
+)
+
+impact_rows = []
+
+for s in seuils:
+    calls_s = calls_b4[calls_b4["mtd_total_lot"] > s].copy()
+
+    agg_s = (
+        calls_s
+        .groupby(["year", "country", "ibl"], as_index=False)
+        .agg(
+            calls_conserves=("id_contract", "count"),
+        )
+    )
+
+    df_s = base_totaux.merge(
+        agg_s,
+        on=["year", "country", "ibl"],
+        how="left"
+    )
+
+    df_s["calls_conserves"] = df_s["calls_conserves"].fillna(0)
+    df_s["seuil_montant"] = s
+    df_s["pct_calls_conserves"] = (
+        df_s["calls_conserves"] /
+        df_s["calls_total"].replace(0, np.nan)
+    )
+
+    impact_rows.append(df_s)
+
+impact_seuil_country = pd.concat(impact_rows, ignore_index=True)
