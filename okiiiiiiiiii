@@ -1,10 +1,25 @@
-evt_dates = events[["country", "id_apporteur", "event_id", "dte_new_dealer"]].copy()
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-stock = stock.merge(
-    evt_dates,
-    on=["country", "id_apporteur", "event_id"],
-    how="left"
+calls_b6 = calls.copy()
+
+# Exclure les Key Accounts
+calls_b6 = calls_b6[~calls_b6["is_key_account"]].copy()
+
+# Sécurité : garder uniquement les lignes avec dates utiles
+calls_b6 = calls_b6[
+    calls_b6["dte_mel"].notna() &
+    calls_b6["dte_new_dealer"].notna()
+].copy()
+
+# Année de détection = année de la date new dealer
+calls_b6["year"] = calls_b6["dte_new_dealer"].dt.year
+
+# Focaliser sur 2024–2025
+calls_b6 = calls_b6[calls_b6["year"].isin([2024, 2025])].copy()
+
+# Tri pour être sûr que les MEL sont dans l’ordre
+calls_b6 = calls_b6.sort_values(
+    ["country", "ibl", "id_apporteur", "event_id", "dte_mel"]
 )
-
-
-stock["dte_new_dealer"].isna().sum()
