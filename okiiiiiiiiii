@@ -11,7 +11,7 @@ def plot_calls_mean_stacked(kpi_calls_mean, title_suffix="Global"):
     Labels :
       - Inside First segment  : average calls (First)
       - Inside Known segment  : average calls (Known)
-      - On top of each stack  : total average (First + Known)
+      - On top of each stack  : TRUE global average (weighted)
     """
 
     df = kpi_calls_mean.copy()
@@ -20,7 +20,7 @@ def plot_calls_mean_stacked(kpi_calls_mean, title_suffix="Global"):
         print(f"No data for {title_suffix}")
         return
 
-    # Normalize type
+    # Normalise le type
     df["new_dealer_type"] = df["new_dealer_type"].str.lower().str.strip()
     df["nd_type_norm"] = np.where(
         df["new_dealer_type"].str.contains("first"),
@@ -31,9 +31,13 @@ def plot_calls_mean_stacked(kpi_calls_mean, title_suffix="Global"):
     df = df[df["nd_type_norm"].isin(["first", "known"])]
 
     countries = sorted(df["country"].unique())
-    years = [2024, 2025]
+    years = [y for y in [2024, 2025] if y in df["year"].unique()]
 
-    # Colors (harmonized palette)
+    if not years:
+        print(f"No 2024/2025 data for {title_suffix}")
+        return
+
+    # Palette
     colors = {
         (2024, "first"): "#345b8c",  # dark blue
         (2024, "known"): "#7ea2d5",  # light blue
@@ -45,95 +49,119 @@ def plot_calls_mean_stacked(kpi_calls_mean, title_suffix="Global"):
     width = 0.35
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    max_val = 0
-
+    max_val = 0.0
     legend_done = set()
 
     for i, year in enumerate(years):
+        year_df = df[df["year"] == year]
         offsets = x + (i - 0.5) * width
 
-        first_vals = []
-        known_vals = []
+        first_means = []
+        known_means = []
+        global_means = []
 
         for c in countries:
-            v_first = df.loc[
-                (df["country"] == c) &
-                (df["year"] == year) &
-                (df["nd_type_norm"] == "first"),
-                "mean_calls"
-            ].mean()
+            sub = year_df[year_df["country"] == c]
 
-            v_known = df.loc[
-                (df["country"] == c) &
-                (df["year"] == year) &
-                (df["nd_type_norm"] == "known"),
-                "mean_calls"
-            ].mean()
+            # First
+            sub_f = sub[sub["nd_type_norm"] == "first"]
+            if not sub_f.empty:
+                f_mean = sub_f["mean_calls"].iloc[0]
+                f_n = sub_f["nb_dealers"].iloc[0]
+            else:
+                f_mean = 0.0
+                f_n = 0
 
-            first_vals.append(0 if np.isnan(v_first) else v_first)
-            known_vals.append(0 if np.isnan(v_known) else v_known)
+            # Known
+            sub_k = sub[sub["nd_type_norm"] == "known"]
+            if not sub_k.empty:
+                k_mean = sub_k["mean_calls"].iloc[0]
+                k_n = sub_k["nb_dealers"].iloc[0]
+            else:
+                k_mean = 0.0
+                k_n = 0
 
-        first_vals = np.array(first_vals)
-        known_vals = np.array(known_vals)
-        totals = first_vals + known_vals
+            # Moyenne globale pondérée (si au moins 1 dealer)
+            if (f_n + k_n) > 0:
+                glob_mean = (f_mean * f_n + k_mean * k_n) / (f_n + k_n)
+            else:
+                glob_mean = np.nan
 
-        # First layer
+            first_means.append(f_mean)
+            known_means.append(k_mean)
+            global_means.append(glob_mean)
+
+        first_means = np.array(first_means)
+        known_means = np.array(known_means)
+        global_means = np.array(global_means)
+        totals_for_height = first_means + known_means  # pour la hauteur de la barre
+
+        # Barres First
         label_first = f"{year} – First"
         p1 = ax.bar(
             offsets,
-            first_vals,
+            first_means,
             width,
-            color=colors[(year, "first")],
+            color=colors.get((year, "first"), "#999999"),
             label=label_first if label_first not in legend_done else None
         )
         legend_done.add(label_first)
 
-        # Known layer (stacked)
+        # Barres Known (empilées)
         label_known = f"{year} – Known"
         p2 = ax.bar(
             offsets,
-            known_vals,
+            known_means,
             width,
-            bottom=first_vals,
-            color=colors[(year, "known")],
+            bottom=first_means,
+            color=colors.get((year, "known"), "#bbbbbb"),
             label=label_known if label_known not in legend_done else None
         )
         legend_done.add(label_known)
 
-        max_val = max(max_val, totals.max() if len(totals) else 0)
+        # Met à jour le max pour l'axe Y
+        if len(totals_for_height) > 0:
+            max_val = max(
+                max_val,
+                np.nanmax(totals_for_height),
+                np.nanmax(global_means[np.isfinite(global_means)]) if np.any(np.isfinite(global_means)) else 0
+            )
 
-        # 🔹 Labels internes + total
-        for bx, f, k, tot in zip(offsets, first_vals, known_vals, totals):
-            if f > 0:
-                # label First (au centre du segment First)
+        # 🔹 Labels : First, Known, Global
+        for bx, f_mean, k_mean, glob_mean in zip(offsets, first_means, known_means, global_means):
+            # label First
+            if f_mean > 0:
                 ax.text(
                     bx,
-                    f / 2,
-                    f"{f:.2f}",
+                    f_mean / 2.0,
+                    f"{f_mean:.2f}",
                     ha="center",
                     va="center",
                     fontsize=9,
                     color="white",
                     fontweight="bold",
                 )
-            if k > 0:
-                # label Known (au centre du segment Known)
+
+            # label Known
+            if k_mean > 0:
                 ax.text(
                     bx,
-                    f + k / 2,
-                    f"{k:.2f}",
+                    f_mean + k_mean / 2.0,
+                    f"{k_mean:.2f}",
                     ha="center",
                     va="center",
                     fontsize=9,
                     color="white",
                     fontweight="bold",
                 )
-            if tot > 0:
-                # label total (tout en haut)
+
+            # label Global tout en haut
+            if not np.isnan(glob_mean):
+                top = f_mean + k_mean
                 ax.text(
                     bx,
-                    tot + max(tot * 0.03, 0.05),
-                    f"{tot:.2f}",
+                    top + max(top * 0.05, 0.05),
+                    f"{glob_mean:.2f}",
                     ha="center",
                     va="bottom",
                     fontsize=9,
