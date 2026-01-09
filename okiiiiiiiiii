@@ -1,14 +1,29 @@
-# agg_delay = new dealers ayant atteint 8 MEL (déjà calculé)
-# calls_b6 = les calls filtrés
-# events = liste des new dealers (tous, même ceux qui n’ont pas atteint 8)
+kpi_bloc6_rate_global = (
+    events_b6
+    .groupby(["year", "country"], as_index=False)
+    .agg(nb_new_dealers=("id_apporteur", "nunique"))
+)
 
-events_b6 = events.copy()
+# Nombre de dealers ayant atteint 8 MEL
+reach8_count_global = (
+    agg_delay
+    .groupby(["year", "country"], as_index=False)
+    .agg(nb_reached_8=("id_apporteur", "nunique"))
+)
 
-# Exclure les Key Accounts
-events_b6 = events_b6[~events_b6["is_key_account"]].copy()
+# Merge + calcul du taux
+kpi_bloc6_rate_global = kpi_bloc6_rate_global.merge(
+    reach8_count_global,
+    on=["year", "country"],
+    how="left"
+)
 
-# Année de détection
-events_b6["year"] = events_b6["dte_new_dealer"].dt.year
+kpi_bloc6_rate_global["nb_reached_8"] = kpi_bloc6_rate_global["nb_reached_8"].fillna(0).astype(int)
 
-# Focaliser sur 2024–2025
-events_b6 = events_b6[events_b6["year"].isin([2024, 2025])]
+# Taux %
+kpi_bloc6_rate_global["pct_reached_8"] = (
+    kpi_bloc6_rate_global["nb_reached_8"] /
+    kpi_bloc6_rate_global["nb_new_dealers"]
+) * 100
+
+kpi_bloc6_rate_global["pct_reached_8"] = kpi_bloc6_rate_global["pct_reached_8"].round(1)
