@@ -1,126 +1,20 @@
-import numpy as np
-import matplotlib.pyplot as plt
+# Global
+plot_bloc1_volume(
+    kpi_bloc1_global,
+    title_suffix="Global (ELS + TLS)",
+)
 
-def plot_bloc1_volume(df_kpi, title_suffix="Global"):
-    """
-    df_kpi :
-      colonnes attendues :
-        year, country,
-        nb_new_dealers_non_key,
-        nb_new_dealers_key
+# ELS
+kpi_bloc1_els = kpi_bloc1_ibl[kpi_bloc1_ibl["ibl"] == "ELS"].copy()
+plot_bloc1_volume(
+    kpi_bloc1_els.drop(columns=["ibl"]),
+    title_suffix="IBL = ELS",
+)
 
-    Graphique :
-      - barres empilées (non key + key)
-      - 1 groupe de barres par pays
-      - 1 barre par année (2024, 2025) dans chaque groupe
-      - couleur distincte par (type, année)
-      - labels à l’intérieur de chaque segment + total en haut
-    """
+# TLS
+kpi_bloc1_tls = kpi_bloc1_ibl[kpi_bloc1_ibl["ibl"] == "TLS"].copy()
+plot_bloc1_volume(
+    kpi_bloc1_tls.drop(columns=["ibl"]),
+    title_suffix="IBL = TLS",
+)
 
-    # On garde uniquement 2024-2025 au cas où
-    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
-    if df.empty:
-        print(f"Aucune donnée pour {title_suffix}")
-        return
-
-    df = df.sort_values(["country", "year"])
-    countries = df["country"].unique()
-    years = sorted(df["year"].unique())
-
-    x = np.arange(len(countries))
-    width = 0.35  # largeur des barres pour chaque année
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Couleurs : dégradé de bleu pour non key, vert pour key
-    cmap_non_key = plt.cm.Blues
-    cmap_key = plt.cm.Greens
-    colors_non_key = cmap_non_key(np.linspace(0.5, 0.9, len(years)))
-    colors_key = cmap_key(np.linspace(0.5, 0.9, len(years)))
-
-    max_total = 0
-
-    for i, year in enumerate(years):
-        df_y = df[df["year"] == year].set_index("country").reindex(countries).reset_index()
-
-        non_key_vals = df_y["nb_new_dealers_non_key"].fillna(0).values
-        key_vals = df_y["nb_new_dealers_key"].fillna(0).values
-
-        offsets = x + (i - (len(years) - 1) / 2) * width
-
-        # Barres non key
-        bar_non_key = ax.bar(
-            offsets,
-            non_key_vals,
-            width,
-            label=f"Non Key {year}",
-            color=colors_non_key[i],
-            alpha=0.9,
-        )
-
-        # Barres key empilées
-        bar_key = ax.bar(
-            offsets,
-            key_vals,
-            width,
-            bottom=non_key_vals,
-            label=f"Key {year}",
-            color=colors_key[i],
-            alpha=0.9,
-        )
-
-        # Labels internes + total
-        for bx, nk, k in zip(offsets, non_key_vals, key_vals):
-            total = nk + k
-            if total <= 0:
-                continue
-
-            max_total = max(max_total, total)
-
-            # Label interne Non Key (si > 0)
-            if nk > 0:
-                ax.text(
-                    bx,
-                    nk / 2,
-                    f"{int(nk)}",
-                    ha="center",
-                    va="center",
-                    fontsize=8,
-                    color="white",
-                )
-
-            # Label interne Key (si > 0)
-            if k > 0:
-                ax.text(
-                    bx,
-                    nk + k / 2,
-                    f"{int(k)}",
-                    ha="center",
-                    va="center",
-                    fontsize=8,
-                    color="white",
-                )
-
-            # Label total en haut, en gras
-            ax.text(
-                bx,
-                total + 0.5,
-                f"{int(total)}",
-                ha="center",
-                va="bottom",
-                fontsize=9,
-                fontweight="bold",
-            )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Nombre de New Dealers")
-    ax.set_title(f"Bloc 1 – Volumétrie New Dealers (Key vs Non Key) – {title_suffix}")
-    ax.legend()
-    ax.grid(axis="y", linestyle="--", alpha=0.3)
-
-    # Petit espace au-dessus du max pour aérer les labels
-    ax.set_ylim(0, max_total * 1.15)
-
-    plt.tight_layout()
-    plt.show()
