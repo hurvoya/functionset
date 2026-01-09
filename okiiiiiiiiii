@@ -1,27 +1,3 @@
-def plot_nb_calls_conserves(impact_df, ibl_scope="ELS"):
-    df = impact_df[impact_df["ibl"] == ibl_scope].copy()
-    if df.empty:
-        print(f"Aucune donnée pour IBL = {ibl_scope}")
-        return
-
-    fig, ax = plt.subplots(figsize=(8,6))
-
-    for year in sorted(df["year"].unique()):
-        sub = df[df["year"] == year].sort_values("seuil_montant")
-        x = sub["seuil_montant"]
-        y = sub["calls_conserves"]
-
-        ax.plot(x, y, marker="o", label=str(year))
-
-        # labels
-        for xi, yi in zip(x, y):
-            ax.text(xi, yi + 0.5, f"{int(yi)}", ha="center", va="bottom", fontsize=8)
-
-    ax.set_xlabel("Seuil montant (EUR)")
-    ax.set_ylabel("Nombre de calls conservés")
-    ax.set_title(f"Impact seuil – nombre de calls conservés – IBL = {ibl_scope}")
-    ax.grid(True, linestyle="--", alpha=0.3)
-    ax.legend(title="Année")
-
-    plt.tight_layout()
-    plt.show()
+for ibl_scope in ["ELS", "TLS"]:
+    plot_pct_calls_conserves(impact_seuil, ibl_scope)
+    plot_nb_calls_conserves(impact_seuil, ibl_scope)
