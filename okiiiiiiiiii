@@ -1,49 +1,13 @@
-def plot_contracts_6m(kpi6, title_suffix="Global"):
-    df = kpi6.copy()
-    df = df[df["year"].isin([2024, 2025])]
-    if df.empty:
-        print(f"No data for {title_suffix}")
-        return
+plot_contracts_6m(kpi6_global, "Global (ELS + TLS)")
 
-    df = df.sort_values(["country", "year"])
 
-    countries = sorted(df["country"].unique())
-    years = sorted(df["year"].unique())
+plot_contracts_6m(
+    kpi6_ibl[kpi6_ibl["ibl"] == "ELS"].drop(columns=["ibl"]),
+    "IBL = ELS"
+)
 
-    x = np.arange(len(countries))
-    width = 0.35
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    colors = {2024: "#345b8c", 2025: "#2f7d53"}
-
-    max_val = 0
-
-    for i, year in enumerate(years):
-        df_y = df[df["year"] == year].set_index("country").reindex(countries).reset_index()
-        vals = df_y["mean_contracts_6m"].fillna(0).values
-        offsets = x + (i - (len(years)-1)/2) * width
-
-        bars = ax.bar(offsets, vals, width, color=colors[year], label=str(year))
-
-        for bx, v in zip(offsets, vals):
-            if v > 0:
-                ax.text(
-                    bx, v + max(v * 0.03, 0.05),
-                    f"{v:.2f}",
-                    ha="center", va="bottom",
-                    fontsize=9, fontweight="bold"
-                )
-            max_val = max(max_val, v)
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Average number of contracts (6 months)")
-    ax.set_title(f"Average Contracts within 6 Months ({title_suffix})")
-    ax.legend(title="Year")
-    ax.grid(axis="y", linestyle="--", alpha=0.3)
-
-    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 1)
-
-    plt.tight_layout()
-    plt.show()
+plot_contracts_6m(
+    kpi6_ibl[kpi6_ibl["ibl"] == "TLS"].drop(columns=["ibl"]),
+    "IBL = TLS"
+)
