@@ -1,132 +1,76 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
-def plot_calls_total(kpi_calls_total, title_suffix="Global"):
+def plot_calls_mean(kpi_calls_mean, title_suffix="Global"):
     """
-    kpi_calls_total doit contenir :
+    kpi_calls_mean doit contenir :
       - year
       - country
-      - new_dealer_type ('first' / 'known' ou similaire)
-      - nb_calls
-
-    On trace des barres empilées First / Known,
-    avec couleurs différentes par année (2024/2025).
+      - new_dealer_type
+      - mean_calls
     """
 
-    df = kpi_calls_total.copy()
+    df = kpi_calls_mean.copy()
     df = df[df["year"].isin([2024, 2025])]
     if df.empty:
         print(f"No data for {title_suffix}")
         return
 
-    # Normalisation du type
-    t = df["new_dealer_type"].str.lower().str.strip()
-    df["nd_type_norm"] = np.where(t.str.contains("first"), "first", "known")
+    df["new_dealer_type"] = df["new_dealer_type"].str.lower().str.strip()
+    df["nd_type_norm"] = np.where(
+        df["new_dealer_type"].str.contains("first"),
+        "first",
+        "known"
+    )
 
-    df = df.sort_values(["country", "year", "nd_type_norm"])
+    # pivot (country, year) x type
+    pivot_df = df.pivot_table(
+        index=["country", "year"],
+        columns="nd_type_norm",
+        values="mean_calls",
+        aggfunc="first"
+    ).fillna(0)
 
-    countries = sorted(df["country"].unique())
-    years = sorted(df["year"].unique())  # normalement [2024, 2025]
-    types = ["first", "known"]
-
-    x = np.arange(len(countries))
-    width = 0.35
+    # tri pour un ordre stable
+    pivot_df = pivot_df.sort_index()
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Palette harmonisée (même logique que bloc 1 & 2)
+    # Couleurs par type
     colors = {
-        (2024, "first"): "#345b8c",   # dark blue
-        (2024, "known"): "#7ea2d5",   # light blue
-        (2025, "first"): "#2f7d53",   # dark green
-        (2025, "known"): "#8dc79a",   # light green
+        "first": "#345b8c",  # dark blue
+        "known": "#2f7d53",  # dark green
     }
 
-    label_names = {
-        "first": "First New Dealer",
-        "known": "Known New Dealer",
-    }
+    pivot_df.plot(
+        kind="bar",
+        ax=ax,
+        color=[colors.get(c, "#999999") for c in pivot_df.columns],
+    )
 
-    legend_items = {}
-    max_total = 0
-
-    for i, year in enumerate(years):
-        df_y = df[df["year"] == year]
-
-        # valeurs par pays et par type
-        vals_by_type = {t: [] for t in types}
-        for c in countries:
-            sub_c = df_y[df_y["country"] == c]
-            for t_norm in types:
-                v = sub_c.loc[sub_c["nd_type_norm"] == t_norm, "nb_calls"].sum()
-                vals_by_type[t_norm].append(v)
-
-        offsets = x + (i - (len(years)-1)/2) * width
-        bottom = np.zeros(len(countries))
-        totals_year = np.zeros(len(countries))
-
-        for t_norm in types:
-            vals = np.array(vals_by_type[t_norm])
-            col = colors.get((year, t_norm), "#999999")
-            label = f"{year} – {label_names[t_norm]}"
-
-            bars = ax.bar(
-                offsets,
-                vals,
-                width,
-                bottom=bottom,
-                color=col,
-                alpha=0.9,
-            )
-
-            # Ajout dans la légende sans doublons
-            if label not in legend_items:
-                legend_items[label] = bars
-
-            # Labels internes dans chaque segment
-            for bx, btm, v in zip(offsets, bottom, vals):
-                if v > 0:
-                    ax.text(
-                        bx,
-                        btm + v / 2,
-                        f"{int(v)}",
-                        ha="center",
-                        va="center",
-                        fontsize=10,
-                        color="white",
-                        fontweight="bold",
-                    )
-
-            bottom += vals
-            totals_year += vals
-
-        # Total par barre (First+Known)
-        for bx, tot in zip(offsets, totals_year):
-            if tot > 0:
-                max_total = max(max_total, tot)
+    # Labels internes dans les barres
+    for container in ax.containers:
+        for bar in container:
+            height = bar.get_height()
+            if height > 0:
                 ax.text(
-                    bx,
-                    tot + max(tot * 0.03, 0.5),
-                    f"{int(tot)}",
+                    bar.get_x() + bar.get_width() / 2,
+                    height / 2,
+                    f"{height:.2f}",
                     ha="center",
-                    va="bottom",
+                    va="center",
                     fontsize=9,
+                    color="white",
                     fontweight="bold",
                 )
 
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Number of calls")
-    ax.set_title(f"Calls – Total Volume by New Dealer Type ({title_suffix})")
+    ax.set_ylabel("Average calls per new dealer")
+    ax.set_title(f"Calls – Average per New Dealer by Type ({title_suffix})")
     ax.grid(axis="y", linestyle="--", alpha=0.3)
 
-    ax.legend(
-        legend_items.values(),
-        legend_items.keys(),
-        title="Year – Type",
-        fontsize=8,
-    )
+    # Légende propre
+    label_map = {"first": "First New Dealer", "known": "Known New Dealer"}
+    handles, labels = ax.get_legend_handles_labels()
+    new_labels = [label_map.get(l, l) for l in labels]
+    ax.legend(handles, new_labels, title="New dealer type", fontsize=8)
 
-    ax.set_ylim(0, max_total * 1.20 if max_total > 0 else 1)
     plt.tight_layout()
     plt.show()
+
