@@ -1,12 +1,133 @@
-# GLOBAL
-plot_bloc2_typologie(kpi_bloc2_global, title_suffix="Global (ELS + TLS)")
+import numpy as np
+import matplotlib.pyplot as plt
 
-# ELS
-kpi_bloc2_els = kpi_bloc2_ibl[kpi_bloc2_ibl["ibl"] == "ELS"].copy()
-kpi_bloc2_els = kpi_bloc2_els.drop(columns=["ibl"])
-plot_bloc2_typologie(kpi_bloc2_els, title_suffix="IBL = ELS")
+def plot_bloc2_typologie(df_kpi, title_suffix="Global"):
+    """
+    df_kpi doit contenir :
+      - year
+      - country
+      - new_dealer_type (ex: 'first', 'known')
+      - nb_new_dealers
 
-# TLS
-kpi_bloc2_tls = kpi_bloc2_ibl[kpi_bloc2_ibl["ibl"] == "TLS"].copy()
-kpi_bloc2_tls = kpi_bloc2_tls.drop(columns=["ibl"])
-plot_bloc2_typologie(kpi_bloc2_tls, title_suffix="IBL = TLS")
+    On trace :
+      - barres empilées First / Known
+      - 2 années (2024, 2025) côte à côte par pays
+    """
+
+    # Filtre années
+    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
+    if df.empty:
+        print(f"Aucune donnée pour {title_suffix}")
+        return
+
+    # Normalisation du type (au cas où)
+    df["new_dealer_type"] = df["new_dealer_type"].str.lower().str.strip()
+
+    df = df.sort_values(["country", "year", "new_dealer_type"])
+
+    countries = sorted(df["country"].unique())
+    years = sorted(df["year"].unique())
+    types = sorted(df["new_dealer_type"].unique())  # typiquement ['first', 'known']
+
+    # mapping pour affichage
+    type_display = {
+        "first": "First New Dealer",
+        "known": "Known New Dealer"
+    }
+
+    # couleurs par type
+    colors = {
+        "first": "#4c72b0",  # bleu
+        "known": "#55a868",  # vert
+    }
+
+    x = np.arange(len(countries))
+    width = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    max_total = 0
+
+    for i, year in enumerate(years):
+        df_y = df[df["year"] == year].copy()
+
+        # positions des barres pour cette année
+        offsets = x + (i - (len(years) - 1) / 2) * width
+
+        # baseline pour empiler (First + Known)
+        bottom = np.zeros(len(countries))
+        total_year_country = np.zeros(len(countries))
+
+        for t in types:
+            vals = []
+            for c in countries:
+                val = df_y.loc[
+                    (df_y["country"] == c) &
+                    (df_y["new_dealer_type"] == t),
+                    "nb_new_dealers"
+                ].sum()
+                vals.append(val)
+            vals = np.array(vals)
+
+            if vals.sum() == 0:
+                continue
+
+            bars = ax.bar(
+                offsets,
+                vals,
+                width,
+                bottom=bottom,
+                color=colors.get(t, "#888888"),
+                alpha=0.9,
+                label=f"{type_display.get(t, t.capitalize())} – {year}" if i == 0 else None,
+            )
+
+            # labels internes
+            for j, v in enumerate(vals):
+                if v > 0:
+                    ax.text(
+                        offsets[j],
+                        bottom[j] + v / 2,
+                        f"{int(v)}",
+                        ha="center",
+                        va="center",
+                        fontsize=8,
+                        color="white",
+                    )
+
+            bottom += vals
+            total_year_country += vals
+
+        # total par pays pour cette année
+        for j, tot in enumerate(total_year_country):
+            if tot > 0:
+                max_total = max(max_total, tot)
+                ax.text(
+                    offsets[j],
+                    tot + 0.5,
+                    f"{int(tot)}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                    fontweight="bold",
+                )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Nombre de New Dealers (hors Key Accounts)")
+    ax.set_title(f"Bloc 2 — Typologie New Dealers (First vs Known) — {title_suffix}")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    # légende : on veut une entrée par type+année (mais matplotlib gère les doublons)
+    handles, labels = ax.get_legend_handles_labels()
+    # dédoublonner proprement
+    uniq = {}
+    for h, l in zip(handles, labels):
+        if l not in uniq:
+            uniq[l] = h
+    ax.legend(uniq.values(), uniq.keys(), fontsize=8)
+
+    ax.set_ylim(0, max_total * 1.15 if max_total > 0 else 1)
+
+    plt.tight_layout()
+    plt.show()
