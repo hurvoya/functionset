@@ -1,57 +1,50 @@
-def compute_new_dealer_events_v2(df_prep):
+def build_calls_v2(df_prep, events):
     """
-    df_prep : contrats éligibles (> threshold), avec au moins
-              id_apporteur, dte_mel, country, ibl, is_key_account, dte_creation_v2
+    df_prep : base contrats éligibles (> threshold)
+    events  : new dealers (compute_new_dealer_events_v2)
 
-    Règle :
-    - FIRST : premier contrat éligible de l'histoire du dealer
-    - KNOWN : contrat éligible après >12 mois sans MEL éligible
+    Retour :
+    df_calls : 1 ligne = 1 call (1 contrat éligible dans la fenêtre de suivi)
     """
 
     df = df_prep.sort_values(["id_apporteur", "dte_mel", "id_contract"]).copy()
+    rows = []
 
-    events = []
-    for id_apporteur, grp in df.groupby("id_apporteur"):
-        previous_mel = None
-        event_id = 0
+    # on parcourt les events par dealer
+    for id_apporteur, grp_ev in events.groupby("id_apporteur"):
+        sub = df[df["id_apporteur"] == id_apporteur].copy()
 
-        for _, row in grp.iterrows():
-            d = row["dte_mel"]
+        for _, ev in grp_ev.sort_values("dte_new_dealer").iterrows():
+            d0 = ev["dte_new_dealer"]
+            event_id = ev["event_id"]
 
-            if previous_mel is None:
-                # FIRST
-                event_id += 1
-                events.append(
+            # fenêtre de 6 mois
+            d_fin = d0 + pd.DateOffset(months=6)
+
+            sub_win = sub[(sub["dte_mel"] >= d0) & (sub["dte_mel"] <= d_fin)].copy()
+            sub_win = sub_win.sort_values(["dte_mel", "id_contract"])
+
+            nb_contrats = 0
+            for _, c in sub_win.iterrows():
+                if nb_contrats >= 8:
+                    break
+
+                rows.append(
                     {
+                        "id_contract": c["id_contract"],
                         "id_apporteur": id_apporteur,
                         "event_id": event_id,
-                        "dte_new_dealer": d,
-                        "new_dealer_type": "first",
-                        "country": row["country"],
-                        "ibl": row["ibl"],
-                        "is_key_account": row["is_key_account"],
-                        "dte_creation_apporteur": row["dte_creation_v2"],
+                        "dte_new_dealer": d0,
+                        "dte_mel": c["dte_mel"],
+                        "mtd_total_lot": c["mtd_total_lot"],
+                        "country": c["country"],
+                        "ibl": c["ibl"],
+                        "new_dealer_type": ev["new_dealer_type"],
+                        "dte_creation_apporteur": ev["dte_creation_apporteur"],
+                        "is_key_account": c["is_key_account"],
                     }
                 )
-                previous_mel = d
-            else:
-                # silence > 12 mois ?
-                if (d - previous_mel).days > 365:
-                    event_id += 1
-                    events.append(
-                        {
-                            "id_apporteur": id_apporteur,
-                            "event_id": event_id,
-                            "dte_new_dealer": d,
-                            "new_dealer_type": "known",
-                            "country": row["country"],
-                            "ibl": row["ibl"],
-                            "is_key_account": row["is_key_account"],
-                            "dte_creation_apporteur": row["dte_creation_v2"],
-                        }
-                    )
-                previous_mel = d
+                nb_contrats += 1
 
-    events = pd.DataFrame(events)
-    return events
-
+    df_calls = pd.DataFrame(rows)
+    return df_calls
