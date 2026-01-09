@@ -1,50 +1,38 @@
-def build_calls_v2(df_prep, events):
+def build_stock_v2(df_calls):
     """
-    df_prep : base contrats éligibles (> threshold)
-    events  : new dealers (compute_new_dealer_events_v2)
+    df_calls : issu de build_calls_v2
 
     Retour :
-    df_calls : 1 ligne = 1 call (1 contrat éligible dans la fenêtre de suivi)
+    stock : 1 ligne = 1 mois de suivi pour un event_id
     """
 
-    df = df_prep.sort_values(["id_apporteur", "dte_mel", "id_contract"]).copy()
-    rows = []
+    df = df_calls.copy()
+    df["mois"] = df["dte_mel"].dt.to_period("M")
+    df["dte_ref"] = df["mois"].dt.to_timestamp("M")  # fin de mois
 
-    # on parcourt les events par dealer
-    for id_apporteur, grp_ev in events.groupby("id_apporteur"):
-        sub = df[df["id_apporteur"] == id_apporteur].copy()
+    stock = (
+        df.groupby(
+            [
+                "country",
+                "ibl",
+                "id_apporteur",
+                "event_id",
+                "new_dealer_type",
+                "dte_creation_apporteur",
+                "is_key_account",
+                "dte_ref",
+            ],
+            as_index=False,
+        )
+        .agg(
+            nb_calls=("id_contract", "count"),
+            nb_contrats_eligibles=("id_contract", "count"),
+        )
+    )
 
-        for _, ev in grp_ev.sort_values("dte_new_dealer").iterrows():
-            d0 = ev["dte_new_dealer"]
-            event_id = ev["event_id"]
+    # par définition, si on a une ligne, l'event est en suivi pour ce mois-là
+    stock["en_suivi"] = True
+    stock["sorti_suivi"] = False
 
-            # fenêtre de 6 mois
-            d_fin = d0 + pd.DateOffset(months=6)
+    return stock
 
-            sub_win = sub[(sub["dte_mel"] >= d0) & (sub["dte_mel"] <= d_fin)].copy()
-            sub_win = sub_win.sort_values(["dte_mel", "id_contract"])
-
-            nb_contrats = 0
-            for _, c in sub_win.iterrows():
-                if nb_contrats >= 8:
-                    break
-
-                rows.append(
-                    {
-                        "id_contract": c["id_contract"],
-                        "id_apporteur": id_apporteur,
-                        "event_id": event_id,
-                        "dte_new_dealer": d0,
-                        "dte_mel": c["dte_mel"],
-                        "mtd_total_lot": c["mtd_total_lot"],
-                        "country": c["country"],
-                        "ibl": c["ibl"],
-                        "new_dealer_type": ev["new_dealer_type"],
-                        "dte_creation_apporteur": ev["dte_creation_apporteur"],
-                        "is_key_account": c["is_key_account"],
-                    }
-                )
-                nb_contrats += 1
-
-    df_calls = pd.DataFrame(rows)
-    return df_calls
