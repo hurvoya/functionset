@@ -1,5 +1,12 @@
-# Délai en jours entre la MEL et la date new dealer
-df6["delay_days"] = (df6["dte_mel"] - df6["dte_new_dealer"]).dt.days
+kpi6_global = (
+    contracts_per_dealer_6m
+    .groupby(["country", "year"], as_index=False)
+    .agg(
+        mean_contracts_6m=("nb_contracts_6m", "mean"),
+        median_contracts_6m=("nb_contracts_6m", "median"),
+        nb_new_dealers=("id_apporteur", "nunique")
+    )
+)
 
-# Garder uniquement les calls dans la fenêtre 0–183 jours
-df6_6m = df6[(df6["delay_days"] >= 0) & (df6["delay_days"] <= 183)].copy()
+kpi6_global["mean_contracts_6m"] = kpi6_global["mean_contracts_6m"].round(2)
+kpi6_global["median_contracts_6m"] = kpi6_global["median_contracts_6m"].round(2)
