@@ -1,50 +1,85 @@
-import pandas as pd
-import numpy as np
+def plot_bloc1_volume(df_kpi, title_suffix="Global", is_global=True):
+    """
+    df_kpi :
+      - global : colonnes [year, country, nb_new_dealers_non_key, nb_new_dealers_key]
+      - ibl    : colonnes [year, country, ibl, nb_new_dealers_non_key, nb_new_dealers_key]
+    is_global :
+      - True  => on ignore ibl
+      - False => df_kpi déjà filtré sur une seule ibl
+    """
 
-# On travaille sur une copie pour éviter les surprises
-events_b1 = events.copy()
+    # On prend uniquement 2024-2025 au cas où
+    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
+    if df.empty:
+        print(f"Aucune donnée pour {title_suffix}")
+        return
 
-# Année de détection new dealer
-events_b1["year"] = events_b1["dte_new_dealer"].dt.year
+    # Pour l'affichage : tri des pays
+    df = df.sort_values(["country", "year"])
 
-# --- KPI par pays + IBL ---
-kpi_bloc1_ibl = (
-    events_b1
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(
-        nb_new_dealers=("id_apporteur", "nunique"),
-        nb_new_dealers_key=("is_key_account", "sum"),
-    )
-)
+    # On pivot pour avoir une structure par pays / année
+    # x = pays, 2 barres par pays (2024, 2025) empilées (non key + key)
+    countries = df["country"].unique()
+    years = sorted(df["year"].unique())
 
-kpi_bloc1_ibl["nb_new_dealers_non_key"] = (
-    kpi_bloc1_ibl["nb_new_dealers"] - kpi_bloc1_ibl["nb_new_dealers_key"]
-)
+    x = np.arange(len(countries))
+    width = 0.35  # largeur d'une barre
 
-kpi_bloc1_ibl["pct_key"] = (
-    kpi_bloc1_ibl["nb_new_dealers_key"] /
-    kpi_bloc1_ibl["nb_new_dealers"].replace(0, np.nan)
-)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-kpi_bloc1_ibl["pct_non_key"] = 1 - kpi_bloc1_ibl["pct_key"]
+    # On gère les deux années séparément
+    for i, year in enumerate(years):
+        df_y = df[df["year"] == year]
 
-# --- KPI global (ELS + TLS regroupés) ---
-kpi_bloc1_global = (
-    events_b1
-    .groupby(["year", "country"], as_index=False)
-    .agg(
-        nb_new_dealers=("id_apporteur", "nunique"),
-        nb_new_dealers_key=("is_key_account", "sum"),
-    )
-)
+        # aligner dans le même ordre de pays
+        df_y = df_y.set_index("country").reindex(countries).reset_index()
 
-kpi_bloc1_global["nb_new_dealers_non_key"] = (
-    kpi_bloc1_global["nb_new_dealers"] - kpi_bloc1_global["nb_new_dealers_key"]
-)
+        # valeurs
+        non_key_vals = df_y["nb_new_dealers_non_key"].fillna(0).values
+        key_vals = df_y["nb_new_dealers_key"].fillna(0).values
 
-kpi_bloc1_global["pct_key"] = (
-    kpi_bloc1_global["nb_new_dealers_key"] /
-    kpi_bloc1_global["nb_new_dealers"].replace(0, np.nan)
-)
+        # position des barres
+        offsets = x + (i - (len(years)-1)/2) * width
 
-kpi_bloc1_global["pct_non_key"] = 1 - kpi_bloc1_global["pct_key"]
+        # barres non key
+        bar_non_key = ax.bar(
+            offsets,
+            non_key_vals,
+            width,
+            label=f"Non Key - {year}" if i == 0 else None,
+            color="#4c72b0",
+            alpha=0.8,
+        )
+        # barres key (empilées)
+        bar_key = ax.bar(
+            offsets,
+            key_vals,
+            width,
+            bottom=non_key_vals,
+            label=f"Key - {year}" if i == 0 else None,
+            color="#55a868",
+            alpha=0.8,
+        )
+
+        # labels sur le sommet (total ND)
+        for bx, nk, k in zip(offsets, non_key_vals, key_vals):
+            total = nk + k
+            if total > 0:
+                ax.text(
+                    bx,
+                    total + 0.5,
+                    f"{int(total)}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Nombre de New Dealers")
+    ax.set_title(f"Bloc 1 – Volumétrie New Dealers (Key vs Non Key) – {title_suffix}")
+    ax.legend()
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
