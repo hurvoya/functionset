@@ -1,29 +1,32 @@
-kpi_bloc6_rate_global = (
-    events_b6
-    .groupby(["year", "country"], as_index=False)
+events_b6_ibl = events_b6.copy()
+agg_delay_ibl = agg_delay[["country", "ibl", "id_apporteur", "event_id", "year"]].copy()
+
+# Nombre total de new dealers par pays/IBL/année
+total_ibl = (
+    events_b6_ibl
+    .groupby(["year", "country", "ibl"], as_index=False)
     .agg(nb_new_dealers=("id_apporteur", "nunique"))
 )
 
-# Nombre de dealers ayant atteint 8 MEL
-reach8_count_global = (
-    agg_delay
-    .groupby(["year", "country"], as_index=False)
+# Nombre ayant atteint 8 MEL
+reach8_ibl = (
+    agg_delay_ibl
+    .groupby(["year", "country", "ibl"], as_index=False)
     .agg(nb_reached_8=("id_apporteur", "nunique"))
 )
 
-# Merge + calcul du taux
-kpi_bloc6_rate_global = kpi_bloc6_rate_global.merge(
-    reach8_count_global,
-    on=["year", "country"],
+kpi_bloc6_rate_ibl = total_ibl.merge(
+    reach8_ibl,
+    on=["year", "country", "ibl"],
     how="left"
 )
 
-kpi_bloc6_rate_global["nb_reached_8"] = kpi_bloc6_rate_global["nb_reached_8"].fillna(0).astype(int)
+kpi_bloc6_rate_ibl["nb_reached_8"] = kpi_bloc6_rate_ibl["nb_reached_8"].fillna(0).astype(int)
 
 # Taux %
-kpi_bloc6_rate_global["pct_reached_8"] = (
-    kpi_bloc6_rate_global["nb_reached_8"] /
-    kpi_bloc6_rate_global["nb_new_dealers"]
+kpi_bloc6_rate_ibl["pct_reached_8"] = (
+    kpi_bloc6_rate_ibl["nb_reached_8"] /
+    kpi_bloc6_rate_ibl["nb_new_dealers"]
 ) * 100
 
-kpi_bloc6_rate_global["pct_reached_8"] = kpi_bloc6_rate_global["pct_reached_8"].round(1)
+kpi_bloc6_rate_ibl["pct_reached_8"] = kpi_bloc6_rate_ibl["pct_reached_8"].round(1)
