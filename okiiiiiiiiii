@@ -1,14 +1,113 @@
-# Labels internes pour chaque segment (First / Known)
-for bx, btm, v in zip(offsets, bottom - vals, vals):
-    if v > 0:
-        ax.text(
-            bx,
-            btm + v / 2,
-            f"{int(v)}",
-            ha="center",
-            va="center",
-            fontsize=8,
-            color="white",
-            fontweight="bold",
-        )
+def plot_bloc1_key_vs_nonkey(df_kpi, title_suffix="Global"):
+    df = df_kpi.copy()
+    df = df[df["year"].isin([2024, 2025])]
 
+    if df.empty:
+        print(f"No data for {title_suffix}")
+        return
+
+    df = df.sort_values(["country", "year", "is_key_account"])
+
+    countries = sorted(df["country"].unique())
+    years = sorted(df["year"].unique())
+    types = [0, 1]   # 0 = Non-Key, 1 = Key
+
+    x = np.arange(len(countries))
+    width = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Palette harmonisée (même que bloc 2)
+    colors = {
+        (2024, 0): "#345b8c",   # bleu foncé = 2024 Non-Key
+        (2024, 1): "#2f7d53",   # vert foncé = 2024 Key
+        (2025, 0): "#7ea2d5",   # bleu clair = 2025 Non-Key
+        (2025, 1): "#8dc79a",   # vert clair = 2025 Key
+    }
+
+    legend_items = {}
+    max_val = 0
+
+    for i, year in enumerate(years):
+        df_y = df[df["year"] == year]
+
+        # valeurs par pays, par type
+        values_by_type = {t: [] for t in types}
+        for c in countries:
+            sub_c = df_y[df_y["country"] == c]
+            for t in types:
+                v = sub_c.loc[sub_c["is_key_account"] == t, "nb_new_dealers"].sum()
+                values_by_type[t].append(v)
+
+        offsets = x + (i - (len(years)-1)/2) * width
+        bottom = np.zeros(len(countries))
+        total_year = np.zeros(len(countries))
+
+        for t in types:
+            vals = np.array(values_by_type[t])
+            col = colors[(year, t)]
+            label = f"{year} – {'Key' if t==1 else 'Non-Key'}"
+
+            bars = ax.bar(
+                offsets,
+                vals,
+                width,
+                bottom=bottom,
+                color=col,
+                alpha=0.9,
+            )
+
+            if label not in legend_items:
+                legend_items[label] = bars
+
+            # Labels internes (même style que Bloc 2)
+            for bx, btm, v in zip(offsets, bottom, vals):
+                if v > 0:
+                    ax.text(
+                        bx,
+                        btm + v/2,
+                        f"{int(v)}",
+                        ha="center",
+                        va="center",
+                        fontsize=10,
+                        color="white",
+                        fontweight="bold"
+                    )
+
+            bottom += vals
+            total_year += vals
+
+        # Total par barre
+        for bx, tot in zip(offsets, total_year):
+            if tot > 0:
+                max_val = max(max_val, tot)
+                ax.text(
+                    bx,
+                    tot + max(tot*0.03, 0.5),
+                    f"{int(tot)}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                    fontweight="bold"
+                )
+
+    # Mise en forme finale
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Number of New Dealers")
+
+    # Titre EN ANGLAIS comme demandé
+    ax.set_title(f"New Dealers – Key vs Non-Key Distribution ({title_suffix})")
+
+    ax.legend(
+        legend_items.values(),
+        legend_items.keys(),
+        title="Year – Type",
+        fontsize=8
+    )
+
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 1)
+
+    plt.tight_layout()
+    plt.show()
