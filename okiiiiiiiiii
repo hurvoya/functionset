@@ -1,36 +1,11 @@
-def plot_calls_mean(df_kpi, title_suffix="Global"):
-    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
-    if df.empty:
-        print(f"Aucune donnée pour {title_suffix}")
-        return
+# --- GLOBAL ---
+plot_calls_total(kpi_calls_total, "Global")
+plot_calls_mean(kpi_calls_mean, "Global")
 
-    df["new_dealer_type"] = df["new_dealer_type"].str.lower()
+# --- ELS ---
+plot_calls_total(kpi_calls_total[kpi_calls_total["ibl"]=="ELS"], "IBL = ELS")
+plot_calls_mean(kpi_calls_mean[kpi_calls_mean["ibl"]=="ELS"], "IBL = ELS")
 
-    fig, ax = plt.subplots(figsize=(10,6))
-
-    colors = {"first": "#4c72b0", "known": "#55a868"}
-
-    # pivot pour présentation
-    pivot_df = df.pivot_table(
-        index=["country", "year"],
-        columns="new_dealer_type",
-        values="mean_calls",
-        aggfunc="first"
-    ).fillna(0)
-
-    pivot_df.plot(
-        kind="bar",
-        color=[colors.get(c, "#999999") for c in pivot_df.columns],
-        ax=ax
-    )
-
-    # labels internes
-    for c in ax.containers:
-        ax.bar_label(c, fmt="%.2f", fontsize=8)
-
-    ax.set_title(f"Bloc 3 — Calls moyens par New Dealer — {title_suffix}")
-    ax.set_ylabel("Calls moyens")
-    ax.grid(axis="y", linestyle="--", alpha=0.3)
-
-    plt.tight_layout()
-    plt.show()
+# --- TLS ---
+plot_calls_total(kpi_calls_total[kpi_calls_total["ibl"]=="TLS"], "IBL = TLS")
+plot_calls_mean(kpi_calls_mean[kpi_calls_mean["ibl"]=="TLS"], "IBL = TLS")
