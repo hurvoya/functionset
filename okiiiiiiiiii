@@ -1,34 +1,10 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+evt_dates = events[["country", "id_apporteur", "event_id", "dte_new_dealer"]].copy()
 
-# Copie de base
-stock_b6 = stock.copy()
-
-# Exclure Key Accounts
-stock_b6 = stock_b6[~stock_b6["is_key_account"]].copy()
-
-# Année de détection (année de la 1ère MEL)
-stock_b6["year"] = stock_b6["dte_new_dealer"].dt.year
-
-# Limite sur 2024-2025
-stock_b6 = stock_b6[stock_b6["year"].isin([2024, 2025])].copy()
-
-# On cible les lignes où le dealer a au moins 8 contrats cumulés
-reach8_raw = stock_b6[stock_b6["nb_contracts_cum"] >= 8].copy()
-
-# On prend la première fois où il atteint >= 8 contrats
-reach8 = (
-    reach8_raw
-    .sort_values(["country", "ibl", "id_apporteur", "event_id", "month_ref"])
-    .groupby(["country", "ibl", "id_apporteur", "event_id"], as_index=False)
-    .first()
+stock = stock.merge(
+    evt_dates,
+    on=["country", "id_apporteur", "event_id"],
+    how="left"
 )
 
-# Délai en jours entre 1ère MEL (new dealer) et 8ᵉ MEL (mois où nb_contracts_cum>=8)
-reach8["delay_days"] = (
-    reach8["month_ref"] - reach8["dte_new_dealer"]
-).dt.days
 
-# On enlève les délais négatifs au cas où (données bizarres)
-reach8 = reach8[reach8["delay_days"].notna() & (reach8["delay_days"] >= 0)].copy()
+stock["dte_new_dealer"].isna().sum()
