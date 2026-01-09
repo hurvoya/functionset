@@ -3,33 +3,23 @@ import numpy as np
 
 # copie
 calls_b3 = calls.copy()
-events_b3 = events.copy()
 
-# exclude key accounts
+# on enlève les key accounts
 calls_b3 = calls_b3[~calls_b3["is_key_account"]].copy()
-events_b3 = events_b3[~events_b3["is_key_account"]].copy()
-
-# join to retrieve new_dealer_type
-calls_b3 = calls_b3.merge(
-    events_b3[["id_apporteur", "event_id", "new_dealer_type", "country", "ibl"]],
-    on=["id_apporteur", "event_id"],
-    how="left"
-)
 
 # normalisation type
 calls_b3["new_dealer_type"] = calls_b3["new_dealer_type"].str.lower()
 
-# extract year
+# année
 calls_b3["year"] = calls_b3["dte_mel"].dt.year
 
-# ---- KPI 1 : Nombre total de calls par type ----
+# ---- KPI 1 : Nombre total de calls par type (first / known) ----
 kpi_calls_total = (
     calls_b3
     .groupby(["year", "country", "ibl", "new_dealer_type"], as_index=False)
     .agg(nb_calls=("id_contract", "count"))
 )
 
-# totals for percent if needed
 tot = (
     kpi_calls_total
     .groupby(["year", "country", "ibl"], as_index=False)
@@ -39,13 +29,13 @@ tot = (
 kpi_calls_total = kpi_calls_total.merge(
     tot, on=["year", "country", "ibl"], how="left"
 )
+
 kpi_calls_total["pct"] = (
-    kpi_calls_total["nb_calls"] / 
+    kpi_calls_total["nb_calls"] /
     kpi_calls_total["nb_calls_total"].replace(0, np.nan)
 )
 
 # ---- KPI 2 : Calls moyens par new dealer ----
-# compute number of calls per dealer
 dealer_call_load = (
     calls_b3
     .groupby(["year", "country", "ibl", "id_apporteur", "new_dealer_type"], as_index=False)
@@ -58,6 +48,6 @@ kpi_calls_mean = (
     .agg(
         mean_calls=("nb_calls", "mean"),
         median_calls=("nb_calls", "median"),
-        nb_dealers=("id_apporteur", "nunique")
+        nb_dealers=("id_apporteur", "nunique"),
     )
 )
