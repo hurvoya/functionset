@@ -1,6 +1,6 @@
-kpi_bloc6_delay_ibl = (
+kpi_bloc6_delay_global = (
     agg_delay
-    .groupby(["year", "country", "ibl"], as_index=False)
+    .groupby(["year", "country"], as_index=False)
     .agg(
         mean_delay_days=("delay_days", "mean"),
         median_delay_days=("delay_days", "median"),
@@ -8,5 +8,5 @@ kpi_bloc6_delay_ibl = (
     )
 )
 
-kpi_bloc6_delay_ibl["mean_delay_days"] = kpi_bloc6_delay_ibl["mean_delay_days"].round(1)
-kpi_bloc6_delay_ibl["median_delay_days"] = kpi_bloc6_delay_ibl["median_delay_days"].round(1)
+kpi_bloc6_delay_global["mean_delay_days"] = kpi_bloc6_delay_global["mean_delay_days"].round(1)
+kpi_bloc6_delay_global["median_delay_days"] = kpi_bloc6_delay_global["median_delay_days"].round(1)
