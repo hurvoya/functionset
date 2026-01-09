@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
-
-def plot_pct_calls_par_pays(impact_df, year, ibl_scope="GLOBAL"):
+def plot_nb_calls_par_pays(impact_df, year, ibl_scope="GLOBAL"):
     """
     impact_df : impact_seuil_country
     year      : 2024 ou 2025
@@ -11,7 +9,7 @@ def plot_pct_calls_par_pays(impact_df, year, ibl_scope="GLOBAL"):
     if ibl_scope != "GLOBAL":
         df = df[df["ibl"] == ibl_scope].copy()
     else:
-        # GLOBAL = on agrège ELS+TLS par pays / seuil
+        # GLOBAL = agrégation ELS+TLS
         df = (
             df.groupby(["year", "country", "seuil_montant"], as_index=False)
             .agg(
@@ -19,48 +17,37 @@ def plot_pct_calls_par_pays(impact_df, year, ibl_scope="GLOBAL"):
                 calls_conserves=("calls_conserves", "sum"),
             )
         )
-        df["pct_calls_conserves"] = (
-            df["calls_conserves"] /
-            df["calls_total"].replace(0, np.nan)
-        )
 
     if df.empty:
         print(f"Aucune donnée pour year={year}, ibl_scope={ibl_scope}")
         return
 
-    if ibl_scope != "GLOBAL":
-        # pct déjà calculé par pays/ibl/seuil
-        pass
-
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    # une couleur par pays
     countries = sorted(df["country"].unique())
     cmap = plt.cm.get_cmap("tab10", len(countries))
 
     for i, c in enumerate(countries):
         sub = df[df["country"] == c].sort_values("seuil_montant")
         x = sub["seuil_montant"].values
-        y = (sub["pct_calls_conserves"] * 100).values
+        y = sub["calls_conserves"].values
 
         ax.plot(x, y, marker="o", label=c, color=cmap(i))
 
-        # labels au-dessus des points
         for xi, yi in zip(x, y):
-            if not np.isnan(yi):
-                ax.text(
-                    xi,
-                    yi + 1,
-                    f"{yi:.1f}%",
-                    ha="center",
-                    va="bottom",
-                    fontsize=8,
-                )
+            ax.text(
+                xi,
+                yi + 0.5,
+                f"{int(yi)}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
 
     scope = "Global (ELS+TLS)" if ibl_scope == "GLOBAL" else f"IBL = {ibl_scope}"
-    ax.set_title(f"Impact seuil – % calls conservés – {scope} – {year}")
+    ax.set_title(f"Impact seuil – nb calls conservés – {scope} – {year}")
     ax.set_xlabel("Seuil montant (EUR)")
-    ax.set_ylabel("% de calls conservés")
+    ax.set_ylabel("Nombre de calls conservés")
     ax.grid(True, linestyle="--", alpha=0.3)
     ax.legend(title="Pays", fontsize=8)
 
