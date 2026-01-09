@@ -1,20 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_calls_mean(kpi_calls_mean, title_suffix="Global"):
+def plot_calls_mean_stacked(kpi_calls_mean, title_suffix="Global"):
     """
-    kpi_calls_mean doit contenir :
-      - year
-      - country
-      - new_dealer_type
-      - mean_calls
-      - (optionnel) ibl pour filtrer avant l'appel
-
-    Graphique :
+    Stacked bar chart :
       - X = pays
-      - 4 barres max par pays :
-          2024-First, 2024-Known, 2025-First, 2025-Known
-      - couleurs harmonisées bleu/vert
+      - Par pays : 2 barres (2024, 2025)
+      - Chaque barre = stacked :
+          First + Known
     """
 
     df = kpi_calls_mean.copy()
@@ -23,7 +16,7 @@ def plot_calls_mean(kpi_calls_mean, title_suffix="Global"):
         print(f"No data for {title_suffix}")
         return
 
-    # Normalisation du type
+    # Normalisation
     df["new_dealer_type"] = df["new_dealer_type"].str.lower().str.strip()
     df["nd_type_norm"] = np.where(
         df["new_dealer_type"].str.contains("first"),
@@ -31,98 +24,94 @@ def plot_calls_mean(kpi_calls_mean, title_suffix="Global"):
         "known"
     )
 
-    # On limite aux types “first/known”
     df = df[df["nd_type_norm"].isin(["first", "known"])]
 
-    # Pays et années
     countries = sorted(df["country"].unique())
-    years = sorted(df["year"].unique())          # normalement [2024, 2025]
-    types = ["first", "known"]
+    years = [2024, 2025]
 
-    # On prépare toutes les combinaisons year/type dans un ordre stable
-    combos = []
-    for y in years:
-        for t in types:
-            combos.append((y, t))
-
-    # Palette : 4 couleurs (mêmes que Bloc 1/2/3 total)
+    # Palette
     colors = {
-        (2024, "first"): "#345b8c",   # dark blue
-        (2024, "known"): "#7ea2d5",   # light blue
-        (2025, "first"): "#2f7d53",   # dark green
-        (2025, "known"): "#8dc79a",   # light green
-    }
-
-    # mapping pour la légende
-    combo_label = {
-        (2024, "first"): "2024 – First New Dealer",
-        (2024, "known"): "2024 – Known New Dealer",
-        (2025, "first"): "2025 – First New Dealer",
-        (2025, "known"): "2025 – Known New Dealer",
+        (2024, "first"): "#345b8c",
+        (2024, "known"): "#7ea2d5",
+        (2025, "first"): "#2f7d53",
+        (2025, "known"): "#8dc79a",
     }
 
     x = np.arange(len(countries))
-    width = 0.18  # 4 barres par pays
+    width = 0.35
 
     fig, ax = plt.subplots(figsize=(12, 6))
     max_val = 0
-    legend_done = set()
 
-    for i, (year, tnorm) in enumerate(combos):
-        # valeurs pour cette combinaison
-        vals = []
+    for i, year in enumerate(years):
+        offsets = x + (i - 0.5) * width
+
+        # valeurs
+        first_vals = []
+        known_vals = []
+
         for c in countries:
-            v = df.loc[
+            # moyenne par pays/année/type
+            v_first = df.loc[
                 (df["country"] == c) &
                 (df["year"] == year) &
-                (df["nd_type_norm"] == tnorm),
+                (df["nd_type_norm"] == "first"),
                 "mean_calls"
-            ].mean()  # moyenne au cas où plusieurs lignes (normalement 1)
-            if np.isnan(v):
-                v = 0.0
-            vals.append(v)
+            ].mean()
 
-        vals = np.array(vals)
+            v_known = df.loc[
+                (df["country"] == c) &
+                (df["year"] == year) &
+                (df["nd_type_norm"] == "known"),
+                "mean_calls"
+            ].mean()
 
-        offsets = x + (i - (len(combos)-1)/2) * width
-        col = colors.get((year, tnorm), "#999999")
-        label = combo_label.get((year, tnorm), f"{year} – {tnorm.capitalize()}")
+            first_vals.append(0 if np.isnan(v_first) else v_first)
+            known_vals.append(0 if np.isnan(v_known) else v_known)
 
-        bars = ax.bar(
+        first_vals = np.array(first_vals)
+        known_vals = np.array(known_vals)
+
+        # First layer
+        p1 = ax.bar(
             offsets,
-            vals,
+            first_vals,
             width,
-            color=col,
-            alpha=0.9,
-            label=label if label not in legend_done else None,
+            color=colors[(year, "first")],
+            label=f"{year} – First" if i == 0 else None
         )
 
-        legend_done.add(label)
+        # Known layer (stacked)
+        p2 = ax.bar(
+            offsets,
+            known_vals,
+            width,
+            bottom=first_vals,
+            color=colors[(year, "known")],
+            label=f"{year} – Known" if i == 0 else None
+        )
 
-        # labels internes
-        for bx, v in zip(offsets, vals):
-            if v > 0:
+        max_val = max(max_val, (first_vals + known_vals).max())
+
+        # Labels internes
+        for bx, f, k in zip(offsets, first_vals, known_vals):
+            total = f + k
+            if total > 0:
                 ax.text(
-                    bx,
-                    v / 2,
-                    f"{v:.2f}",
-                    ha="center",
-                    va="center",
-                    fontsize=9,
-                    color="white",
-                    fontweight="bold",
+                    bx, total/2,
+                    f"{total:.2f}",
+                    ha="center", va="center",
+                    color="white", fontsize=9, fontweight="bold"
                 )
-                max_val = max(max_val, v)
 
     ax.set_xticks(x)
     ax.set_xticklabels(countries)
     ax.set_ylabel("Average calls per new dealer")
-    ax.set_title(f"Calls – Average per New Dealer by Type and Year ({title_suffix})")
+    ax.set_title(f"Average Calls per New Dealer – Stacked by Type and Year ({title_suffix})")
+
+    ax.legend(title="Year – New Dealer Type")
     ax.grid(axis="y", linestyle="--", alpha=0.3)
-
-    ax.legend(title="Year – New dealer type", fontsize=8)
-
-    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 1)
+    ax.set_ylim(0, max_val * 1.25)
 
     plt.tight_layout()
     plt.show()
