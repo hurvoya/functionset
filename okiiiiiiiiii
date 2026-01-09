@@ -1,55 +1,12 @@
-def plot_nb_calls_par_pays(impact_df, year, ibl_scope="GLOBAL"):
-    """
-    impact_df : impact_seuil_country
-    year      : 2024 ou 2025
-    ibl_scope : "GLOBAL", "ELS", "TLS"
-    """
+for year in [2024, 2025]:
+    # GLOBAL
+    plot_pct_calls_par_pays(impact_seuil_country, year=year, ibl_scope="GLOBAL")
+    plot_nb_calls_par_pays(impact_seuil_country, year=year, ibl_scope="GLOBAL")
 
-    df = impact_df[impact_df["year"] == year].copy()
-    if ibl_scope != "GLOBAL":
-        df = df[df["ibl"] == ibl_scope].copy()
-    else:
-        # GLOBAL = agrégation ELS+TLS
-        df = (
-            df.groupby(["year", "country", "seuil_montant"], as_index=False)
-            .agg(
-                calls_total=("calls_total", "sum"),
-                calls_conserves=("calls_conserves", "sum"),
-            )
-        )
+    # ELS
+    plot_pct_calls_par_pays(impact_seuil_country, year=year, ibl_scope="ELS")
+    plot_nb_calls_par_pays(impact_seuil_country, year=year, ibl_scope="ELS")
 
-    if df.empty:
-        print(f"Aucune donnée pour year={year}, ibl_scope={ibl_scope}")
-        return
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    countries = sorted(df["country"].unique())
-    cmap = plt.cm.get_cmap("tab10", len(countries))
-
-    for i, c in enumerate(countries):
-        sub = df[df["country"] == c].sort_values("seuil_montant")
-        x = sub["seuil_montant"].values
-        y = sub["calls_conserves"].values
-
-        ax.plot(x, y, marker="o", label=c, color=cmap(i))
-
-        for xi, yi in zip(x, y):
-            ax.text(
-                xi,
-                yi + 0.5,
-                f"{int(yi)}",
-                ha="center",
-                va="bottom",
-                fontsize=8,
-            )
-
-    scope = "Global (ELS+TLS)" if ibl_scope == "GLOBAL" else f"IBL = {ibl_scope}"
-    ax.set_title(f"Impact seuil – nb calls conservés – {scope} – {year}")
-    ax.set_xlabel("Seuil montant (EUR)")
-    ax.set_ylabel("Nombre de calls conservés")
-    ax.grid(True, linestyle="--", alpha=0.3)
-    ax.legend(title="Pays", fontsize=8)
-
-    plt.tight_layout()
-    plt.show()
+    # TLS
+    plot_pct_calls_par_pays(impact_seuil_country, year=year, ibl_scope="TLS")
+    plot_nb_calls_par_pays(impact_seuil_country, year=year, ibl_scope="TLS")
