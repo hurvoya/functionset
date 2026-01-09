@@ -1,20 +1,59 @@
-# Global
-plot_bloc1_volume(
-    kpi_bloc1_global,
-    title_suffix="Global (ELS + TLS)",
+import pandas as pd
+import numpy as np
+
+# --- copie DF ---
+events_b2 = events.copy()
+
+# Exclusion des Key Accounts
+events_b2 = events_b2[~events_b2["is_key_account"]].copy()
+
+# Année
+events_b2["year"] = events_b2["dte_new_dealer"].dt.year
+
+# Agrégation First / Known
+kpi_bloc2_ibl = (
+    events_b2
+    .groupby(["year", "country", "ibl", "new_dealer_type"], as_index=False)
+    .agg(
+        nb_new_dealers=("id_apporteur", "nunique"),
+    )
 )
 
-# ELS
-kpi_bloc1_els = kpi_bloc1_ibl[kpi_bloc1_ibl["ibl"] == "ELS"].copy()
-plot_bloc1_volume(
-    kpi_bloc1_els.drop(columns=["ibl"]),
-    title_suffix="IBL = ELS",
+# Totaux pour pourcentages
+totaux = (
+    kpi_bloc2_ibl
+    .groupby(["year", "country", "ibl"], as_index=False)
+    .agg(nb_total=("nb_new_dealers", "sum"))
 )
 
-# TLS
-kpi_bloc1_tls = kpi_bloc1_ibl[kpi_bloc1_ibl["ibl"] == "TLS"].copy()
-plot_bloc1_volume(
-    kpi_bloc1_tls.drop(columns=["ibl"]),
-    title_suffix="IBL = TLS",
+# Fusion totals
+kpi_bloc2_ibl = kpi_bloc2_ibl.merge(
+    totaux, on=["year", "country", "ibl"], how="left"
 )
 
+# Pourcentage par type
+kpi_bloc2_ibl["pct"] = (
+    kpi_bloc2_ibl["nb_new_dealers"] /
+    kpi_bloc2_ibl["nb_total"].replace(0, np.nan)
+)
+
+# Version globale (ELS + TLS)
+kpi_bloc2_global = (
+    events_b2
+    .groupby(["year", "country", "new_dealer_type"], as_index=False)
+    .agg(
+        nb_new_dealers=("id_apporteur", "nunique"),
+    )
+)
+totaux_global = (
+    kpi_bloc2_global
+    .groupby(["year", "country"], as_index=False)
+    .agg(nb_total=("nb_new_dealers", "sum"))
+)
+kpi_bloc2_global = kpi_bloc2_global.merge(
+    totaux_global, on=["year", "country"], how="left"
+)
+kpi_bloc2_global["pct"] = (
+    kpi_bloc2_global["nb_new_dealers"] /
+    kpi_bloc2_global["nb_total"].replace(0, np.nan)
+)
