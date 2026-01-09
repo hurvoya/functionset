@@ -1,87 +1,95 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_bloc1_volume(df_kpi, title_suffix="Global"):
+def plot_calls_total(kpi_calls_total, title_suffix="Global"):
     """
-    df_kpi : doit contenir
+    kpi_calls_total doit contenir :
       - year
       - country
-      - nb_new_dealers_non_key
-      - nb_new_dealers_key
+      - new_dealer_type ('first' / 'known' ou similaire)
+      - nb_calls
+
+    On trace des barres empilées First / Known,
+    avec couleurs différentes par année (2024/2025).
     """
 
-    # Filtre 2024–2025
-    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
+    df = kpi_calls_total.copy()
+    df = df[df["year"].isin([2024, 2025])]
     if df.empty:
         print(f"No data for {title_suffix}")
         return
 
-    df = df.sort_values(["country", "year"])
+    # Normalisation du type
+    t = df["new_dealer_type"].str.lower().str.strip()
+    df["nd_type_norm"] = np.where(t.str.contains("first"), "first", "known")
 
-    countries = df["country"].unique()
-    years = sorted(df["year"].unique())
+    df = df.sort_values(["country", "year", "nd_type_norm"])
+
+    countries = sorted(df["country"].unique())
+    years = sorted(df["year"].unique())  # normalement [2024, 2025]
+    types = ["first", "known"]
+
     x = np.arange(len(countries))
     width = 0.35
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Palette harmonisée avec le bloc 2 :
-    # 2024 = foncé, 2025 = clair
+    # Palette harmonisée (même logique que bloc 1 & 2)
     colors = {
-        (2024, "non_key"): "#345b8c",   # bleu foncé
-        (2024, "key"):     "#2f7d53",   # vert foncé
-        (2025, "non_key"): "#7ea2d5",   # bleu clair
-        (2025, "key"):     "#8dc79a",   # vert clair
+        (2024, "first"): "#345b8c",   # dark blue
+        (2024, "known"): "#7ea2d5",   # light blue
+        (2025, "first"): "#2f7d53",   # dark green
+        (2025, "known"): "#8dc79a",   # light green
+    }
+
+    label_names = {
+        "first": "First New Dealer",
+        "known": "Known New Dealer",
     }
 
     legend_items = {}
     max_total = 0
 
     for i, year in enumerate(years):
-        df_y = df[df["year"] == year].set_index("country").reindex(countries).reset_index()
+        df_y = df[df["year"] == year]
 
-        non_key_vals = df_y["nb_new_dealers_non_key"].fillna(0).values
-        key_vals     = df_y["nb_new_dealers_key"].fillna(0).values
+        # valeurs par pays et par type
+        vals_by_type = {t: [] for t in types}
+        for c in countries:
+            sub_c = df_y[df_y["country"] == c]
+            for t_norm in types:
+                v = sub_c.loc[sub_c["nd_type_norm"] == t_norm, "nb_calls"].sum()
+                vals_by_type[t_norm].append(v)
 
-        offsets = x + (i - (len(years) - 1) / 2) * width
+        offsets = x + (i - (len(years)-1)/2) * width
+        bottom = np.zeros(len(countries))
+        totals_year = np.zeros(len(countries))
 
-        # Barre Non-Key
-        bars_non = ax.bar(
-            offsets,
-            non_key_vals,
-            width,
-            color=colors[(year, "non_key")],
-            alpha=0.9,
-        )
-        label_non = f"{year} – Non-Key"
-        if label_non not in legend_items:
-            legend_items[label_non] = bars_non
+        for t_norm in types:
+            vals = np.array(vals_by_type[t_norm])
+            col = colors.get((year, t_norm), "#999999")
+            label = f"{year} – {label_names[t_norm]}"
 
-        # Barre Key (empilée)
-        bars_key = ax.bar(
-            offsets,
-            key_vals,
-            width,
-            bottom=non_key_vals,
-            color=colors[(year, "key")],
-            alpha=0.9,
-        )
-        label_key = f"{year} – Key"
-        if label_key not in legend_items:
-            legend_items[label_key] = bars_key
+            bars = ax.bar(
+                offsets,
+                vals,
+                width,
+                bottom=bottom,
+                color=col,
+                alpha=0.9,
+            )
 
-        # Labels internes + total
-        for bx, nk, k in zip(offsets, non_key_vals, key_vals):
-            total = nk + k
-            if total > 0:
-                max_total = max(max_total, total)
+            # Ajout dans la légende sans doublons
+            if label not in legend_items:
+                legend_items[label] = bars
 
-                # label Non-Key (au centre de la partie bleue)
-                if nk > 0:
+            # Labels internes dans chaque segment
+            for bx, btm, v in zip(offsets, bottom, vals):
+                if v > 0:
                     ax.text(
                         bx,
-                        nk / 2,
-                        f"{int(nk)}",
+                        btm + v / 2,
+                        f"{int(v)}",
                         ha="center",
                         va="center",
                         fontsize=10,
@@ -89,24 +97,17 @@ def plot_bloc1_volume(df_kpi, title_suffix="Global"):
                         fontweight="bold",
                     )
 
-                # label Key (au centre de la partie verte)
-                if k > 0:
-                    ax.text(
-                        bx,
-                        nk + k / 2,
-                        f"{int(k)}",
-                        ha="center",
-                        va="center",
-                        fontsize=10,
-                        color="white",
-                        fontweight="bold",
-                    )
+            bottom += vals
+            totals_year += vals
 
-                # total en haut
+        # Total par barre (First+Known)
+        for bx, tot in zip(offsets, totals_year):
+            if tot > 0:
+                max_total = max(max_total, tot)
                 ax.text(
                     bx,
-                    total + max(total * 0.03, 0.5),
-                    f"{int(total)}",
+                    tot + max(tot * 0.03, 0.5),
+                    f"{int(tot)}",
                     ha="center",
                     va="bottom",
                     fontsize=9,
@@ -115,14 +116,10 @@ def plot_bloc1_volume(df_kpi, title_suffix="Global"):
 
     ax.set_xticks(x)
     ax.set_xticklabels(countries)
-    ax.set_ylabel("Number of New Dealers")
-
-    # Titre en anglais, sans "Bloc 1"
-    ax.set_title(f"New Dealers – Key vs Non-Key Distribution ({title_suffix})")
-
+    ax.set_ylabel("Number of calls")
+    ax.set_title(f"Calls – Total Volume by New Dealer Type ({title_suffix})")
     ax.grid(axis="y", linestyle="--", alpha=0.3)
 
-    # Légende propre
     ax.legend(
         legend_items.values(),
         legend_items.keys(),
@@ -131,6 +128,5 @@ def plot_bloc1_volume(df_kpi, title_suffix="Global"):
     )
 
     ax.set_ylim(0, max_total * 1.20 if max_total > 0 else 1)
-
     plt.tight_layout()
     plt.show()
