@@ -1,12 +1,68 @@
-kpi_bloc6_delay_global = (
-    agg_delay
-    .groupby(["year", "country"], as_index=False)
-    .agg(
-        mean_delay_days=("delay_days", "mean"),
-        median_delay_days=("delay_days", "median"),
-        nb_dealers_8=("id_apporteur", "nunique"),
-    )
-)
+def plot_bloc6_delay(kpi_b6_delay, title_suffix="Global"):
+    df = kpi_b6_delay.copy()
+    df = df[df["year"].isin([2024, 2025])]
+    if df.empty:
+        print(f"No data for {title_suffix}")
+        return
 
-kpi_bloc6_delay_global["mean_delay_days"] = kpi_bloc6_delay_global["mean_delay_days"].round(1)
-kpi_bloc6_delay_global["median_delay_days"] = kpi_bloc6_delay_global["median_delay_days"].round(1)
+    df = df.sort_values(["country", "year"])
+
+    countries = sorted(df["country"].unique())
+    years = sorted(df["year"].unique())  # normalement [2024, 2025]
+
+    x = np.arange(len(countries))
+    width = 0.35
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    colors = {
+        2024: "#345b8c",  # dark blue
+        2025: "#2f7d53",  # dark green
+    }
+
+    max_val = 0
+
+    for i, year in enumerate(years):
+        df_y = (
+            df[df["year"] == year]
+            .set_index("country")
+            .reindex(countries)
+            .reset_index()
+        )
+
+        vals = df_y["mean_delay_days"].fillna(0).values
+        offsets = x + (i - (len(years) - 1) / 2) * width
+
+        bars = ax.bar(
+            offsets,
+            vals,
+            width,
+            color=colors.get(year, "#999999"),
+            alpha=0.9,
+            label=str(year),
+        )
+
+        for bx, v in zip(offsets, vals):
+            if v > 0:
+                ax.text(
+                    bx,
+                    v + max(v * 0.03, 1),
+                    f"{v:.1f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                    fontweight="bold",
+                )
+                max_val = max(max_val, v)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Average delay to 8ᵗʰ MEL (days)")
+    ax.set_title(f"Average Delay from 1ˢᵗ to 8ᵗʰ MEL ({title_suffix})")
+    ax.legend(title="Year")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 1)
+
+    plt.tight_layout()
+    plt.show()
