@@ -1,56 +1,60 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+def plot_bloc5_delay(df_kpi, title_suffix="Global"):
+    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
+    if df.empty:
+        print(f"Aucune donnée pour {title_suffix}")
+        return
 
-# Base
-events_b5 = events.copy()
+    df = df.sort_values(["country", "year"])
 
-# Exclure Key Accounts
-events_b5 = events_b5[~events_b5["is_key_account"]].copy()
+    countries = sorted(df["country"].unique())
+    years = sorted(df["year"].unique())
 
-# Normaliser le type
-events_b5["new_dealer_type"] = events_b5["new_dealer_type"].str.lower().str.strip()
+    x = np.arange(len(countries))
+    width = 0.35
 
-# Garder uniquement les First New Dealers
-events_b5 = events_b5[events_b5["new_dealer_type"] == "first"].copy()
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-# Année de détection
-events_b5["year"] = events_b5["dte_new_dealer"].dt.year
+    colors = {
+        2024: "#4c72b0",  # bleu
+        2025: "#55a868",  # vert
+    }
 
-# Délai en jours entre création et 1ère MEL
-events_b5["delay_days"] = (
-    events_b5["dte_new_dealer"] - events_b5["dte_creation_apporteur"]
-).dt.days
+    max_val = 0
 
-# Filtrer 2024-2025
-events_b5 = events_b5[events_b5["year"].isin([2024, 2025])].copy()
+    for i, year in enumerate(years):
+        df_y = df[df["year"] == year].set_index("country").reindex(countries).reset_index()
+        vals = df_y["delay_mean_days"].fillna(0).values
+        offsets = x + (i - (len(years) - 1) / 2) * width
 
-# Enlever les cas bizarres
-events_b5 = events_b5[
-    events_b5["delay_days"].notna() &
-    (events_b5["delay_days"] >= 0)
-].copy()
+        bars = ax.bar(
+            offsets,
+            vals,
+            width,
+            label=str(year),
+            color=colors.get(year, "#888888"),
+            alpha=0.9,
+        )
 
-# --- KPI par pays & IBL ---
-kpi_bloc5_ibl = (
-    events_b5
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(
-        delay_mean_days=("delay_days", "mean"),
-        delay_median_days=("delay_days", "median"),
-        nb_dealers=("id_apporteur", "nunique"),
-    )
-)
-kpi_bloc5_ibl["delay_mean_days"] = kpi_bloc5_ibl["delay_mean_days"].round(1)
+        for bx, v in zip(offsets, vals):
+            if v > 0:
+                ax.text(
+                    bx,
+                    v + 1,
+                    f"{v:.1f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+                max_val = max(max_val, v)
 
-# --- KPI global (ELS + TLS combinés) ---
-kpi_bloc5_global = (
-    events_b5
-    .groupby(["year", "country"], as_index=False)
-    .agg(
-        delay_mean_days=("delay_days", "mean"),
-        delay_median_days=("delay_days", "median"),
-        nb_dealers=("id_apporteur", "nunique"),
-    )
-)
-kpi_bloc5_global["delay_mean_days"] = kpi_bloc5_global["delay_mean_days"].round(1)
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Délai moyen (jours)")
+    ax.set_title(f"Bloc 5 — Délai moyen création → 1ère MEL (First ND, hors KA) — {title_suffix}")
+    ax.legend(title="Année")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    ax.set_ylim(0, max_val * 1.15 if max_val > 0 else 1)
+
+    plt.tight_layout()
+    plt.show()
