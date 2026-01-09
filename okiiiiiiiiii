@@ -1,29 +1,10 @@
-def plot_impact_seuil_n(impact_df, ibl_scope="ELS"):
-    df = impact_df[impact_df["ibl"] == ibl_scope].copy()
-    if df.empty:
-        print(f"Aucune donnée pour IBL = {ibl_scope}")
-        return
+# Scatterplots (calls vs montant)
+for year in [2024, 2025]:
+    plot_scatter_calls_vs_montant(dealer_activity, year=year, ibl_scope="GLOBAL")
+    plot_scatter_calls_vs_montant(dealer_activity, year=year, ibl_scope="ELS")
+    plot_scatter_calls_vs_montant(dealer_activity, year=year, ibl_scope="TLS")
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    for year in sorted(df["year"].unique()):
-        sub = df[df["year"] == year].sort_values("seuil_montant")
-        ax.plot(
-            sub["seuil_montant"],
-            sub["calls_conserves"],
-            marker="o",
-            label=str(year),
-        )
-
-        # labels sur les points
-        for x, y in zip(sub["seuil_montant"], sub["calls_conserves"]):
-            ax.text(x, y + 1, f"{int(y)}", ha="center", va="bottom", fontsize=8)
-
-    ax.set_xlabel("Seuil montant (EUR)")
-    ax.set_ylabel("Nombre de calls conservés")
-    ax.set_title(f"Bloc 4 – Impact seuil (en volume) – IBL = {ibl_scope}")
-    ax.grid(True, linestyle="--", alpha=0.3)
-    ax.legend(title="Année")
-
-    plt.tight_layout()
-    plt.show()
+# Impact seuil (par IBL)
+for ibl_scope in ["ELS", "TLS"]:
+    plot_impact_seuil_pct(impact_seuil, ibl_scope=ibl_scope)
+    plot_impact_seuil_n(impact_seuil, ibl_scope=ibl_scope)
