@@ -1,32 +1,67 @@
-events_b6_ibl = events_b6.copy()
-agg_delay_ibl = agg_delay[["country", "ibl", "id_apporteur", "event_id", "year"]].copy()
+def plot_bloc6_rate(kpi_rate, title_suffix="Global"):
+    df = kpi_rate.copy()
+    df = df[df["year"].isin([2024, 2025])]
+    if df.empty:
+        print(f"No data for {title_suffix}")
+        return
 
-# Nombre total de new dealers par pays/IBL/année
-total_ibl = (
-    events_b6_ibl
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(nb_new_dealers=("id_apporteur", "nunique"))
-)
+    df = df.sort_values(["country", "year"])
 
-# Nombre ayant atteint 8 MEL
-reach8_ibl = (
-    agg_delay_ibl
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(nb_reached_8=("id_apporteur", "nunique"))
-)
+    countries = sorted(df["country"].unique())
+    years = sorted(df["year"].unique())
 
-kpi_bloc6_rate_ibl = total_ibl.merge(
-    reach8_ibl,
-    on=["year", "country", "ibl"],
-    how="left"
-)
+    x = np.arange(len(countries))
+    width = 0.35
 
-kpi_bloc6_rate_ibl["nb_reached_8"] = kpi_bloc6_rate_ibl["nb_reached_8"].fillna(0).astype(int)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-# Taux %
-kpi_bloc6_rate_ibl["pct_reached_8"] = (
-    kpi_bloc6_rate_ibl["nb_reached_8"] /
-    kpi_bloc6_rate_ibl["nb_new_dealers"]
-) * 100
+    colors = {
+        2024: "#345b8c",  # bleu foncé
+        2025: "#2f7d53",  # vert foncé
+    }
 
-kpi_bloc6_rate_ibl["pct_reached_8"] = kpi_bloc6_rate_ibl["pct_reached_8"].round(1)
+    max_val = 0
+
+    for i, year in enumerate(years):
+        df_y = (
+            df[df["year"] == year]
+            .set_index("country")
+            .reindex(countries)
+            .reset_index()
+        )
+
+        vals = df_y["pct_reached_8"].fillna(0).values
+        offsets = x + (i - (len(years) - 1) / 2) * width
+
+        bars = ax.bar(
+            offsets,
+            vals,
+            width,
+            color=colors.get(year, "#999999"),
+            alpha=0.9,
+            label=str(year),
+        )
+
+        for bx, v in zip(offsets, vals):
+            ax.text(
+                bx,
+                v + max(v * 0.03, 1),
+                f"{v:.1f}%",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                fontweight="bold",
+            )
+            max_val = max(max_val, v)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Rate of reaching 8 MELs (%)")
+    ax.set_title(f"Rate of Reaching 8 MELs ({title_suffix})")
+    ax.legend(title="Year")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    ax.set_ylim(0, max_val * 1.20 if max_val > 0 else 5)
+
+    plt.tight_layout()
+    plt.show()
