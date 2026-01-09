@@ -1,13 +1,5 @@
-df6 = calls.copy()
+# Délai en jours entre la MEL et la date new dealer
+df6["delay_days"] = (df6["dte_mel"] - df6["dte_new_dealer"]).dt.days
 
-# Exclure Key Accounts
-df6 = df6[~df6["is_key_account"]].copy()
-
-# Garder uniquement les calls valides
-df6 = df6[df6["dte_mel"].notna() & df6["dte_new_dealer"].notna()].copy()
-
-# Année de détection
-df6["year"] = df6["dte_new_dealer"].dt.year
-
-# Focus sur 2024–2025
-df6 = df6[df6["year"].isin([2024, 2025])].copy()
+# Garder uniquement les calls dans la fenêtre 0–183 jours
+df6_6m = df6[(df6["delay_days"] >= 0) & (df6["delay_days"] <= 183)].copy()
