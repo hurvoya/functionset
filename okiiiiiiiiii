@@ -1,10 +1,14 @@
-# Global (ELS + TLS)
-plot_bloc6_delay(kpi_bloc6_delay_global, "Global (ELS + TLS)")
+# agg_delay = new dealers ayant atteint 8 MEL (déjà calculé)
+# calls_b6 = les calls filtrés
+# events = liste des new dealers (tous, même ceux qui n’ont pas atteint 8)
 
-# ELS
-kpi_bloc6_delay_els = kpi_bloc6_delay_ibl[kpi_bloc6_delay_ibl["ibl"] == "ELS"].drop(columns=["ibl"])
-plot_bloc6_delay(kpi_bloc6_delay_els, "IBL = ELS")
+events_b6 = events.copy()
 
-# TLS
-kpi_bloc6_delay_tls = kpi_bloc6_delay_ibl[kpi_bloc6_delay_ibl["ibl"] == "TLS"].drop(columns=["ibl"])
-plot_bloc6_delay(kpi_bloc6_delay_tls, "IBL = TLS")
+# Exclure les Key Accounts
+events_b6 = events_b6[~events_b6["is_key_account"]].copy()
+
+# Année de détection
+events_b6["year"] = events_b6["dte_new_dealer"].dt.year
+
+# Focaliser sur 2024–2025
+events_b6 = events_b6[events_b6["year"].isin([2024, 2025])]
