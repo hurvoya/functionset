@@ -1,10 +1,48 @@
-# Scatterplots (calls vs montant)
-for year in [2024, 2025]:
-    plot_scatter_calls_vs_montant(dealer_activity, year=year, ibl_scope="GLOBAL")
-    plot_scatter_calls_vs_montant(dealer_activity, year=year, ibl_scope="ELS")
-    plot_scatter_calls_vs_montant(dealer_activity, year=year, ibl_scope="TLS")
+import pandas as pd
+import numpy as np
 
-# Impact seuil (par IBL)
-for ibl_scope in ["ELS", "TLS"]:
-    plot_impact_seuil_pct(impact_seuil, ibl_scope=ibl_scope)
-    plot_impact_seuil_n(impact_seuil, ibl_scope=ibl_scope)
+# Base hors key account
+calls_b4 = calls[~calls["is_key_account"]].copy()
+calls_b4["year"] = calls_b4["dte_mel"].dt.year
+
+# Seuils à tester
+seuils = [0, 20000, 40000, 60000, 80000, 100000]
+
+# Totaux initiaux
+base_totaux = (
+    calls_b4
+    .groupby(["year", "ibl"], as_index=False)
+    .agg(
+        calls_total=("id_contract", "count"),
+    )
+)
+
+impact_rows = []
+
+for s in seuils:
+    calls_s = calls_b4[calls_b4["mtd_total_lot"] > s]
+
+    agg_s = (
+        calls_s
+        .groupby(["year", "ibl"], as_index=False)
+        .agg(
+            calls_conserves=("id_contract", "count"),
+        )
+    )
+
+    df_s = base_totaux.merge(
+        agg_s,
+        on=["year", "ibl"],
+        how="left"
+    )
+
+    df_s["calls_conserves"].fillna(0, inplace=True)
+    df_s["seuil_montant"] = s
+    df_s["pct_calls_conserves"] = (
+        df_s["calls_conserves"] /
+        df_s["calls_total"].replace(0, np.nan)
+    )
+
+    impact_rows.append(df_s)
+
+impact_seuil = pd.concat(impact_rows, ignore_index=True)
