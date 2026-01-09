@@ -1,61 +1,50 @@
-def build_dealer_stock_pipeline_v2(df_initial, threshold):
-    """
-    Pipeline complet V2 :
-    - prépare la base contrats éligibles
-    - détecte les new dealers
-    - construit les calls (1 ligne = 1 call)
-    - construit le stock mensuel
-    - construit la table follow
-    - construit la table finale
+import pandas as pd
+import numpy as np
 
-    Tous les DFs retournés (sauf df_prep) sont filtrés sur 2024–2025.
-    """
+# On travaille sur une copie pour éviter les surprises
+events_b1 = events.copy()
 
-    # 1. base filtrée au threshold, IBL nettoyé, is_key_account calculé
-    df_prep = prepare_base_v2(df_initial, threshold)
+# Année de détection new dealer
+events_b1["year"] = events_b1["dte_new_dealer"].dt.year
 
-    # 2. events new dealer (sur tout l'historique éligible)
-    events_full = compute_new_dealer_events_v2(df_prep)
+# --- KPI par pays + IBL ---
+kpi_bloc1_ibl = (
+    events_b1
+    .groupby(["year", "country", "ibl"], as_index=False)
+    .agg(
+        nb_new_dealers=("id_apporteur", "nunique"),
+        nb_new_dealers_key=("is_key_account", "sum"),
+    )
+)
 
-    # filtre events sur 2024-2025 (date de détection new dealer)
-    events = events_full[
-        events_full["dte_new_dealer"].dt.year.isin([2024, 2025])
-    ].copy()
+kpi_bloc1_ibl["nb_new_dealers_non_key"] = (
+    kpi_bloc1_ibl["nb_new_dealers"] - kpi_bloc1_ibl["nb_new_dealers_key"]
+)
 
-    # 3. calls (1 ligne = 1 contrat éligible dans la fenêtre)
-    # on utilise df_prep complet mais seulement les events filtrés 2024-2025
-    df_calls_full = build_calls_v2(df_prep, events)
+kpi_bloc1_ibl["pct_key"] = (
+    kpi_bloc1_ibl["nb_new_dealers_key"] /
+    kpi_bloc1_ibl["nb_new_dealers"].replace(0, np.nan)
+)
 
-    # filtre des calls sur 2024-2025 (date de mise en loyer)
-    df_calls = df_calls_full[
-        df_calls_full["dte_mel"].dt.year.isin([2024, 2025])
-    ].copy()
+kpi_bloc1_ibl["pct_non_key"] = 1 - kpi_bloc1_ibl["pct_key"]
 
-    # 4. stock mensuel (agrégé à partir de df_calls filtré)
-    stock_full = build_stock_v2(df_calls)
-    # ici dte_ref est déjà une date de fin de mois
-    stock = stock_full[
-        stock_full["dte_ref"].dt.year.isin([2024, 2025])
-    ].copy()
+# --- KPI global (ELS + TLS regroupés) ---
+kpi_bloc1_global = (
+    events_b1
+    .groupby(["year", "country"], as_index=False)
+    .agg(
+        nb_new_dealers=("id_apporteur", "nunique"),
+        nb_new_dealers_key=("is_key_account", "sum"),
+    )
+)
 
-    # 5. follow (résumé par event à partir de df_calls filtré)
-    follow_full = build_follow_v2(df_calls)
-    # dte_new_dealer est déjà dans follow, donc on filtre aussi au cas où
-    follow = follow_full[
-        follow_full["dte_new_dealer"].dt.year.isin([2024, 2025])
-    ].copy()
+kpi_bloc1_global["nb_new_dealers_non_key"] = (
+    kpi_bloc1_global["nb_new_dealers"] - kpi_bloc1_global["nb_new_dealers_key"]
+)
 
-    # 6. final (table à envoyer aux pays)
-    final_full = build_final_table_v2(follow)
-    # final est déjà limité à 2024-2025 via follow, mais on sécurise
-    final = final_full[
-        final_full["dte_new_dealer"].dt.year.isin([2024, 2025])
-    ].copy()
+kpi_bloc1_global["pct_key"] = (
+    kpi_bloc1_global["nb_new_dealers_key"] /
+    kpi_bloc1_global["nb_new_dealers"].replace(0, np.nan)
+)
 
-    # 7. filtre hors key account sur la table finale (comme tu le voulais)
-    final = final[~final["is_key_account"]].copy()
-
-    return df_prep, events, df_calls, stock, follow, final
-
-
-    return follow
+kpi_bloc1_global["pct_non_key"] = 1 - kpi_bloc1_global["pct_key"]
