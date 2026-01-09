@@ -1,19 +1,45 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+def plot_scatter_calls_vs_montant(df_dealers, year, ibl_scope="GLOBAL"):
+    """
+    df_dealers : dealer_activity filtré comme il faut
+    year       : 2024 ou 2025
+    ibl_scope  : "GLOBAL", "ELS", "TLS"
+    """
 
-# base hors key accounts
-calls_b4 = calls[~calls["is_key_account"]].copy()
+    df = df_dealers[df_dealers["year"] == year].copy()
+    if ibl_scope != "GLOBAL":
+        df = df[df["ibl"] == ibl_scope].copy()
 
-# année
-calls_b4["year"] = calls_b4["dte_mel"].dt.year
+    if df.empty:
+        print(f"Aucune donnée pour year={year}, ibl_scope={ibl_scope}")
+        return
 
-# agrégation par dealer / pays / IBL / année
-dealer_activity = (
-    calls_b4
-    .groupby(["year", "country", "ibl", "id_apporteur"], as_index=False)
-    .agg(
-        nb_calls=("id_contract", "count"),
-        montant_total=("mtd_total_lot", "sum"),
-    )
-)
+    # montant en k€
+    df["montant_k"] = df["montant_total"] / 1000.0
+
+    # couleur par pays
+    countries = sorted(df["country"].unique())
+    cmap = plt.cm.get_cmap("tab10", len(countries))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    for i, c in enumerate(countries):
+        sub = df[df["country"] == c]
+        ax.scatter(
+            sub["nb_calls"],
+            sub["montant_k"],
+            alpha=0.7,
+            s=35,
+            color=cmap(i),
+            label=c,
+            edgecolors="none",
+        )
+
+    ax.set_xlabel("Nombre de calls (par dealer)")
+    ax.set_ylabel("Montant total financé (k€)")
+    scope = "Global (ELS+TLS)" if ibl_scope == "GLOBAL" else f"IBL = {ibl_scope}"
+    ax.set_title(f"Bloc 4 – Scatter calls vs montant – {scope} – {year}")
+    ax.grid(True, linestyle="--", alpha=0.3)
+    ax.legend(title="Pays", fontsize=8)
+
+    plt.tight_layout()
+    plt.show()
