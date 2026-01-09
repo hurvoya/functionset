@@ -1,6 +1,6 @@
-kpi6_global = (
+kpi6_ibl = (
     contracts_per_dealer_6m
-    .groupby(["country", "year"], as_index=False)
+    .groupby(["country", "year", "ibl"], as_index=False)
     .agg(
         mean_contracts_6m=("nb_contracts_6m", "mean"),
         median_contracts_6m=("nb_contracts_6m", "median"),
@@ -8,5 +8,5 @@ kpi6_global = (
     )
 )
 
-kpi6_global["mean_contracts_6m"] = kpi6_global["mean_contracts_6m"].round(2)
-kpi6_global["median_contracts_6m"] = kpi6_global["median_contracts_6m"].round(2)
+kpi6_ibl["mean_contracts_6m"] = kpi6_ibl["mean_contracts_6m"].round(2)
+kpi6_ibl["median_contracts_6m"] = kpi6_ibl["median_contracts_6m"].round(2)
