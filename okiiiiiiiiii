@@ -1,59 +1,117 @@
-import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 
-# --- copie DF ---
-events_b2 = events.copy()
+def plot_bloc2_typologie(df_kpi, title_suffix="Global"):
+    """
+    df_kpi doit contenir :
+      year, country, new_dealer_type, nb_new_dealers, pct
+    """
 
-# Exclusion des Key Accounts
-events_b2 = events_b2[~events_b2["is_key_account"]].copy()
+    df = df_kpi[df_kpi["year"].isin([2024, 2025])].copy()
+    if df.empty:
+        print(f"Aucune donnée pour {title_suffix}")
+        return
 
-# Année
-events_b2["year"] = events_b2["dte_new_dealer"].dt.year
+    df = df.sort_values(["country", "year", "new_dealer_type"])
 
-# Agrégation First / Known
-kpi_bloc2_ibl = (
-    events_b2
-    .groupby(["year", "country", "ibl", "new_dealer_type"], as_index=False)
-    .agg(
-        nb_new_dealers=("id_apporteur", "nunique"),
-    )
-)
+    countries = df["country"].unique()
+    years = sorted(df["year"].unique())
+    types = ["First New Dealer", "Known New Dealer"]
 
-# Totaux pour pourcentages
-totaux = (
-    kpi_bloc2_ibl
-    .groupby(["year", "country", "ibl"], as_index=False)
-    .agg(nb_total=("nb_new_dealers", "sum"))
-)
+    x = np.arange(len(countries))
+    width = 0.35
 
-# Fusion totals
-kpi_bloc2_ibl = kpi_bloc2_ibl.merge(
-    totaux, on=["year", "country", "ibl"], how="left"
-)
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-# Pourcentage par type
-kpi_bloc2_ibl["pct"] = (
-    kpi_bloc2_ibl["nb_new_dealers"] /
-    kpi_bloc2_ibl["nb_total"].replace(0, np.nan)
-)
+    # palette douce (bleu pour First, vert pour Known)
+    colors = {
+        "First New Dealer": "#4c72b0",  # bleu
+        "Known New Dealer": "#55a868",  # vert
+    }
 
-# Version globale (ELS + TLS)
-kpi_bloc2_global = (
-    events_b2
-    .groupby(["year", "country", "new_dealer_type"], as_index=False)
-    .agg(
-        nb_new_dealers=("id_apporteur", "nunique"),
-    )
-)
-totaux_global = (
-    kpi_bloc2_global
-    .groupby(["year", "country"], as_index=False)
-    .agg(nb_total=("nb_new_dealers", "sum"))
-)
-kpi_bloc2_global = kpi_bloc2_global.merge(
-    totaux_global, on=["year", "country"], how="left"
-)
-kpi_bloc2_global["pct"] = (
-    kpi_bloc2_global["nb_new_dealers"] /
-    kpi_bloc2_global["nb_total"].replace(0, np.nan)
-)
+    max_total = 0
+
+    for i, year in enumerate(years):
+        df_y = df[df["year"] == year].set_index(["country", "new_dealer_type"]).reindex(
+            [(c, t) for c in countries for t in types]
+        ).reset_index()
+
+        # valeurs par type
+        vals_first = df_y[df_y["new_dealer_type"] == "First New Dealer"]["nb_new_dealers"].fillna(0).values
+        vals_known = df_y[df_y["new_dealer_type"] == "Known New Dealer"]["nb_new_dealers"].fillna(0).values
+
+        offsets = x + (i - (len(years)-1)/2) * width
+
+        # First
+        bar_first = ax.bar(
+            offsets,
+            vals_first,
+            width,
+            label=f"First - {year}" if i == 0 else None,
+            color=colors["First New Dealer"],
+            alpha=0.9,
+        )
+
+        # Known empilé
+        bar_known = ax.bar(
+            offsets,
+            vals_known,
+            width,
+            bottom=vals_first,
+            label=f"Known - {year}" if i == 0 else None,
+            color=colors["Known New Dealer"],
+            alpha=0.9,
+        )
+
+        # Labels internes + total
+        for j, (vf, vk) in enumerate(zip(vals_first, vals_known)):
+            total = vf + vk
+            if total > 0:
+                max_total = max(max_total, total)
+
+                # Label First
+                if vf > 0:
+                    ax.text(
+                        offsets[j],
+                        vf / 2,
+                        f"{int(vf)}",
+                        ha="center",
+                        va="center",
+                        fontsize=8,
+                        color="white",
+                    )
+
+                # Label Known
+                if vk > 0:
+                    ax.text(
+                        offsets[j],
+                        vf + vk / 2,
+                        f"{int(vk)}",
+                        ha="center",
+                        va="center",
+                        fontsize=8,
+                        color="white",
+                    )
+
+                # Total
+                ax.text(
+                    offsets[j],
+                    total + 0.5,
+                    f"{int(total)}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                    fontweight="bold",
+                )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries)
+    ax.set_ylabel("Nombre de New Dealers (hors Key Accounts)")
+    ax.set_title(f"Bloc 2 — Typologie New Dealers (First vs Known) — {title_suffix}")
+    ax.legend()
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    ax.set_ylim(0, max_total * 1.15)
+
+    plt.tight_layout()
+    plt.show()
