@@ -1,31 +1,61 @@
-def build_final_table_v2(follow):
+def build_dealer_stock_pipeline_v2(df_initial, threshold):
     """
-    follow : issu de build_follow_v2
+    Pipeline complet V2 :
+    - prépare la base contrats éligibles
+    - détecte les new dealers
+    - construit les calls (1 ligne = 1 call)
+    - construit le stock mensuel
+    - construit la table follow
+    - construit la table finale
 
-    Retour :
-    final : table prête à être envoyée aux pays (avant filtres année/KA)
+    Tous les DFs retournés (sauf df_prep) sont filtrés sur 2024–2025.
     """
 
-    final = follow.copy()
+    # 1. base filtrée au threshold, IBL nettoyé, is_key_account calculé
+    df_prep = prepare_base_v2(df_initial, threshold)
 
-    final = final[
-        [
-            "country",
-            "ibl",
-            "id_apporteur",
-            "new_dealer_type",
-            "dte_creation_apporteur",
-            "dte_new_dealer",
-            "nb_calls_total",
-            "nb_contrats_total",
-            "is_key_account",
-            "en_suivi",
-            "sorti_suivi",
-            "event_id",
-        ]
-    ]
+    # 2. events new dealer (sur tout l'historique éligible)
+    events_full = compute_new_dealer_events_v2(df_prep)
 
-    return final
+    # filtre events sur 2024-2025 (date de détection new dealer)
+    events = events_full[
+        events_full["dte_new_dealer"].dt.year.isin([2024, 2025])
+    ].copy()
+
+    # 3. calls (1 ligne = 1 contrat éligible dans la fenêtre)
+    # on utilise df_prep complet mais seulement les events filtrés 2024-2025
+    df_calls_full = build_calls_v2(df_prep, events)
+
+    # filtre des calls sur 2024-2025 (date de mise en loyer)
+    df_calls = df_calls_full[
+        df_calls_full["dte_mel"].dt.year.isin([2024, 2025])
+    ].copy()
+
+    # 4. stock mensuel (agrégé à partir de df_calls filtré)
+    stock_full = build_stock_v2(df_calls)
+    # ici dte_ref est déjà une date de fin de mois
+    stock = stock_full[
+        stock_full["dte_ref"].dt.year.isin([2024, 2025])
+    ].copy()
+
+    # 5. follow (résumé par event à partir de df_calls filtré)
+    follow_full = build_follow_v2(df_calls)
+    # dte_new_dealer est déjà dans follow, donc on filtre aussi au cas où
+    follow = follow_full[
+        follow_full["dte_new_dealer"].dt.year.isin([2024, 2025])
+    ].copy()
+
+    # 6. final (table à envoyer aux pays)
+    final_full = build_final_table_v2(follow)
+    # final est déjà limité à 2024-2025 via follow, mais on sécurise
+    final = final_full[
+        final_full["dte_new_dealer"].dt.year.isin([2024, 2025])
+    ].copy()
+
+    # 7. filtre hors key account sur la table finale (comme tu le voulais)
+    final = final[~final["is_key_account"]].copy()
+
+    return df_prep, events, df_calls, stock, follow, final
 
 
     return follow
