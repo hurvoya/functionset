@@ -1,1 +1,1 @@
-stock_existing = build_stock_existing(events_existing, calls_existing)
+pd.set_option("display.float_format", "{:,.2f}".format)
