@@ -1,10 +1,63 @@
-import pandas as pd
-import numpy as np
+def build_calls_existing(events_existing: pd.DataFrame,
+                         df_contracts: pd.DataFrame,
+                         max_calls: int = 8,
+                         follow_months: int = 6) -> pd.DataFrame:
+    # --- prep events
+    ev = events_existing.copy()
+    ev["event_date"] = pd.to_datetime(ev["event_date"], errors="coerce")
+    ev = ev[ev["event_date"].notna()].copy()
 
-def month_end(s: pd.Series) -> pd.Series:
-    s = pd.to_datetime(s, errors="coerce")
-    return s.dt.to_period("M").dt.to_timestamp("M")
+    # début / fin de suivi
+    ev["follow_start"] = (ev["event_date"] + pd.Timedelta(days=1)).dt.normalize()
+    ev["follow_end"] = (add_months(ev["follow_start"], follow_months) - pd.Timedelta(days=1)).dt.normalize()
 
-def add_months(dt: pd.Series, n: int) -> pd.Series:
-    # dt datetime64, retourne dt + n mois (calendaire)
-    return dt + pd.DateOffset(months=n)
+    # --- prep contracts
+    c = df_contracts.copy()
+    c["dte_mel"] = pd.to_datetime(c["dte_mel"], errors="coerce")
+    c = c[c["dte_mel"].notna()].copy()
+
+    # colonnes minimales
+    needed = ["country", "ibl", "id_apporteur", "id_contract", "dte_mel"]
+    missing = [col for col in needed if col not in c.columns]
+    if missing:
+        raise ValueError(f"df_contracts missing columns: {missing}")
+
+    # merge event -> contrats (clé = country, ibl, id_apporteur)
+    m = ev.merge(
+        c,
+        on=["country", "ibl", "id_apporteur"],
+        how="left",
+        suffixes=("", "_c")
+    )
+
+    # garder contrats dans fenêtre de suivi
+    m = m[(m["dte_mel"] >= m["follow_start"]) & (m["dte_mel"] <= m["follow_end"])].copy()
+
+    # trier et numéroter les calls dans l'event
+    m = m.sort_values(["country", "ibl", "id_apporteur", "event_id", "dte_mel", "id_contract"])
+
+    m["call_rank"] = (
+        m.groupby(["country", "ibl", "id_apporteur", "event_id"])
+         .cumcount() + 1
+    )
+
+    # cap à 8
+    m = m[m["call_rank"] <= max_calls].copy()
+
+    # month_ref (pour stock ensuite)
+    m["month_ref"] = month_end(m["dte_mel"])
+
+    # colonnes de sortie (tu peux en rajouter)
+    out_cols = [
+        "country", "ibl", "id_apporteur", "event_id", "method",
+        "event_date", "follow_start", "follow_end",
+        "id_contract", "dte_mel", "month_ref", "call_rank",
+        "is_key_account"
+    ]
+    # si montant dispo, on l'ajoute
+    if "mtd_total_lot" in m.columns:
+        out_cols.insert(out_cols.index("id_contract"), "mtd_total_lot")
+
+    calls_existing = m[out_cols].copy()
+
+    return calls_existing
