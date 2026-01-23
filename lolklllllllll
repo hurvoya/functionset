@@ -1,11 +1,1 @@
-def compute_growth(prod_roll: pd.DataFrame) -> pd.DataFrame:
-
-    df = prod_roll.copy()
-
-    # Growth vs 6 mois précédents
-    df["growth_prev6m"] = (df["prod_6m"] - df["prod_6m_prev"]) / df["prod_6m_prev"]
-
-    # Growth YoY
-    df["growth_yoy"] = (df["prod_6m"] - df["prod_6m_yoy"]) / df["prod_6m_yoy"]
-
-    return df
+prod_growth["eligible_prod"] = prod_growth["prod_6m"] >= 500_000
