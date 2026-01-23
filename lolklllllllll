@@ -1,17 +1,11 @@
-def build_rolling_6m(prod_full: pd.DataFrame) -> pd.DataFrame:
+def compute_growth(prod_roll: pd.DataFrame) -> pd.DataFrame:
 
-    df = prod_full.copy()
-    df = df.sort_values(["country", "ibl", "id_apporteur", "month_ref"])
+    df = prod_roll.copy()
 
-    grp = df.groupby(["country", "ibl", "id_apporteur"], group_keys=False)
+    # Growth vs 6 mois précédents
+    df["growth_prev6m"] = (df["prod_6m"] - df["prod_6m_prev"]) / df["prod_6m_prev"]
 
-    # Fenêtre principale
-    df["prod_6m"] = grp["prod_month"].rolling(6, min_periods=6).sum().reset_index(level=[0,1,2], drop=True)
-
-    # 6 mois précédents
-    df["prod_6m_prev"] = grp["prod_6m"].shift(6)
-
-    # mêmes mois année précédente
-    df["prod_6m_yoy"] = grp["prod_6m"].shift(12)
+    # Growth YoY
+    df["growth_yoy"] = (df["prod_6m"] - df["prod_6m_yoy"]) / df["prod_6m_yoy"]
 
     return df
