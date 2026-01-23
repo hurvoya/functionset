@@ -1,38 +1,17 @@
-def complete_months(prod_monthly: pd.DataFrame) -> pd.DataFrame:
-    """
-    Complète les mois manquants par dealer (prod=0)
-    """
+def build_rolling_6m(prod_full: pd.DataFrame) -> pd.DataFrame:
 
-    all_months = (
-        prod_monthly["month_ref"]
-        .dropna()
-        .sort_values()
-        .unique()
-    )
+    df = prod_full.copy()
+    df = df.sort_values(["country", "ibl", "id_apporteur", "month_ref"])
 
-    dealers = prod_monthly[["country", "ibl", "id_apporteur"]].drop_duplicates()
+    grp = df.groupby(["country", "ibl", "id_apporteur"], group_keys=False)
 
-    # Produit cartésien dealer × mois
-    grid = dealers.assign(key=1).merge(
-        pd.DataFrame({"month_ref": all_months, "key": 1}),
-        on="key",
-        how="outer"
-    ).drop(columns="key")
+    # Fenêtre principale
+    df["prod_6m"] = grp["prod_month"].rolling(6, min_periods=6).sum().reset_index(level=[0,1,2], drop=True)
 
-    df = grid.merge(
-        prod_monthly,
-        on=["country", "ibl", "id_apporteur", "month_ref"],
-        how="left"
-    )
+    # 6 mois précédents
+    df["prod_6m_prev"] = grp["prod_6m"].shift(6)
 
-    df["prod_month"] = df["prod_month"].fillna(0)
-    df["nb_contracts_month"] = df["nb_contracts_month"].fillna(0)
+    # mêmes mois année précédente
+    df["prod_6m_yoy"] = grp["prod_6m"].shift(12)
 
-    # is_key_account : on propage le flag si connu
-    df["is_key_account"] = (
-        df.groupby(["country", "ibl", "id_apporteur"])["is_key_account"]
-          .transform("max")
-          .fillna(False)
-    )
-
-    return df.sort_values(["country", "ibl", "id_apporteur", "month_ref"])
+    return df
