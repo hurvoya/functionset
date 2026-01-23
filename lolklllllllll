@@ -1,0 +1,49 @@
+import pandas as pd
+import numpy as np
+
+def month_end(dt: pd.Series) -> pd.Series:
+    """Retourne le dernier jour du mois (datetime64) pour une série de dates."""
+    dt = pd.to_datetime(dt, errors="coerce")
+    return (dt.dt.to_period("M").dt.to_timestamp("M"))
+
+def build_prod_monthly(df_contracts: pd.DataFrame) -> pd.DataFrame:
+    """
+    Construit la production mensuelle par dealer.
+    df_contracts attendu avec colonnes :
+      - country, ibl, id_apporteur, dte_mel, mtd_total_lot
+      - optionnel: is_key_account
+    """
+
+    df = df_contracts.copy()
+
+    # 1) Dates MEL
+    df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce")
+    df = df[df["dte_mel"].notna()].copy()
+
+    # 2) Montant en numérique
+    df["mtd_total_lot"] = pd.to_numeric(df["mtd_total_lot"], errors="coerce").fillna(0)
+
+    # 3) Month reference (fin de mois)
+    df["month_ref"] = month_end(df["dte_mel"])
+
+    # 4) Flag key account (si absent, on met False)
+    if "is_key_account" not in df.columns:
+        df["is_key_account"] = False
+    else:
+        # normalisation au cas où (0/1, "true"/"false", etc.)
+        df["is_key_account"] = df["is_key_account"].astype(bool)
+
+    # 5) Agrégation
+    prod_monthly = (
+        df.groupby(["country", "ibl", "id_apporteur", "month_ref"], as_index=False)
+          .agg(
+              prod_month=("mtd_total_lot", "sum"),
+              nb_contracts_month=("mtd_total_lot", "size"),
+              is_key_account=("is_key_account", "max"),  # remonte KA si au moins un contrat KA
+          )
+    )
+
+    # 6) Typage / arrondis
+    prod_monthly["prod_month"] = prod_monthly["prod_month"].round(2)
+
+    return prod_monthly
