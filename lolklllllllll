@@ -1,1 +1,76 @@
-calls_existing = build_calls_existing(events_existing, df_contracts)
+def build_stock_existing(events_existing: pd.DataFrame,
+                         calls_existing: pd.DataFrame,
+                         follow_months: int = 6) -> pd.DataFrame:
+
+    ev = events_existing.copy()
+    ev["event_date"] = pd.to_datetime(ev["event_date"], errors="coerce")
+    ev = ev[ev["event_date"].notna()].copy()
+
+    ev["follow_start"] = (ev["event_date"] + pd.Timedelta(days=1)).dt.normalize()
+    ev["follow_end"] = (add_months(ev["follow_start"], follow_months) - pd.Timedelta(days=1)).dt.normalize()
+
+    # start / end month_ref
+    ev["start_month_ref"] = month_end(ev["follow_start"])
+    ev["end_month_ref"] = month_end(ev["follow_end"])
+
+    # construire la timeline mois par mois pour chaque event
+    rows = []
+    for r in ev[["country", "ibl", "id_apporteur", "event_id", "method", "event_date",
+                "follow_start", "follow_end", "start_month_ref", "end_month_ref",
+                "is_key_account"]].itertuples(index=False):
+        start = r.start_month_ref
+        end = r.end_month_ref
+        if pd.isna(start) or pd.isna(end):
+            continue
+        months = pd.date_range(start=start, end=end, freq="M")
+        for mref in months:
+            rows.append({
+                "country": r.country,
+                "ibl": r.ibl,
+                "id_apporteur": r.id_apporteur,
+                "event_id": r.event_id,
+                "method": r.method,
+                "event_date": r.event_date,
+                "follow_start": r.follow_start,
+                "follow_end": r.follow_end,
+                "month_ref": mref,
+                "is_key_account": r.is_key_account
+            })
+
+    stock = pd.DataFrame(rows)
+    if stock.empty:
+        # aucun event
+        stock["nb_calls_month"] = []
+        stock["nb_calls_cum"] = []
+        stock["in_follow_up"] = []
+        stock["out_follow_up"] = []
+        return stock
+
+    # calls par mois
+    calls_m = (
+        calls_existing
+        .groupby(["country", "ibl", "id_apporteur", "event_id", "method", "month_ref"], as_index=False)
+        .agg(nb_calls_month=("id_contract", "nunique"))
+    )
+
+    stock = stock.merge(
+        calls_m,
+        on=["country", "ibl", "id_apporteur", "event_id", "method", "month_ref"],
+        how="left"
+    )
+    stock["nb_calls_month"] = stock["nb_calls_month"].fillna(0).astype(int)
+
+    # cumuls
+    stock = stock.sort_values(["country", "ibl", "id_apporteur", "event_id", "month_ref"])
+    stock["nb_calls_cum"] = (
+        stock.groupby(["country", "ibl", "id_apporteur", "event_id"])["nb_calls_month"]
+             .cumsum()
+    )
+
+    # flags
+    stock["in_follow_up"] = True
+    stock["out_follow_up"] = stock["month_ref"].eq(
+        stock.groupby(["country", "ibl", "id_apporteur", "event_id"])["month_ref"].transform("max")
+    )
+
+    return stock
