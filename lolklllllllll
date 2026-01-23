@@ -1,1 +1,59 @@
-prod_growth["eligible_prod"] = prod_growth["prod_6m"] >= 500_000
+def build_existing_events(prod_growth: pd.DataFrame,
+                          min_prod: float = 500_000,
+                          growth_threshold: float = 0.30) -> pd.DataFrame:
+    df = prod_growth.copy()
+
+    # Conditions communes
+    base = df[df["prod_6m"].notna()].copy()
+    base = base[base["prod_6m"] >= min_prod].copy()
+
+    # --- Méthode A : YoY ---
+    yoy = base[base["growth_yoy"].notna()].copy()
+    yoy = yoy[yoy["growth_yoy"] > growth_threshold].copy()
+
+    yoy["method"] = "yoy"
+    yoy["prod_ref"] = yoy["prod_6m_yoy"]
+    yoy["prod_comp"] = yoy["prod_6m"]
+    yoy["growth_pct"] = (yoy["growth_yoy"] * 100).round(1)
+
+    # --- Méthode B : Prev6M ---
+    prev = base[base["growth_prev6m"].notna()].copy()
+    prev = prev[prev["growth_prev6m"] > growth_threshold].copy()
+
+    prev["method"] = "prev6m"
+    prev["prod_ref"] = prev["prod_6m_prev"]
+    prev["prod_comp"] = prev["prod_6m"]
+    prev["growth_pct"] = (prev["growth_prev6m"] * 100).round(1)
+
+    # Colonnes communes
+    keep_cols = [
+        "country", "ibl", "id_apporteur", "month_ref",
+        "prod_6m", "prod_ref", "prod_comp", "growth_pct",
+        "is_key_account"
+    ]
+
+    events = pd.concat([yoy[keep_cols + ["method"]], prev[keep_cols + ["method"]]], ignore_index=True)
+
+    # Date de détection = month_ref
+    events = events.rename(columns={"month_ref": "event_date"})
+    events["event_type"] = "existing_dealer_growth"
+
+    # Année de détection (utile pour visus)
+    events["year"] = events["event_date"].dt.year
+
+    # ID event : unique par (dealer, date, method)
+    events = events.sort_values(["country", "ibl", "id_apporteur", "event_date", "method"])
+    events["event_id"] = (
+        events.groupby(["country", "ibl", "id_apporteur", "method"])
+              .cumcount() + 1
+    )
+
+    # Réorganisation colonnes
+    events = events[
+        ["country", "ibl", "id_apporteur", "event_id",
+         "event_date", "event_type", "method",
+         "prod_6m", "prod_ref", "prod_comp", "growth_pct",
+         "is_key_account", "year"]
+    ]
+
+    return events
