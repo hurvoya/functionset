@@ -1,57 +1,31 @@
-def build_existing_events_candidates(prod_roll: pd.DataFrame,
-                                     first_mel: pd.DataFrame,
-                                     nd_follow_end: pd.DataFrame,
-                                     method: str,
-                                     min_prod: float = 500_000,
-                                     growth_threshold: float = 0.30) -> pd.DataFrame:
-    df = prod_roll.copy()
-    df["month_ref"] = pd.to_datetime(df["month_ref"], errors="coerce")
+def apply_eg_cooldown(events_candidates: pd.DataFrame, cooldown_months: int = 6) -> pd.DataFrame:
+    ev = events_candidates.copy()
+    ev["event_date"] = pd.to_datetime(ev["event_date"], errors="coerce")
+    ev = ev[ev["event_date"].notna()].copy()
+    ev = ev.sort_values(["country", "ibl", "id_apporteur", "event_date"])
 
-    df = df.merge(first_mel, on=["country", "ibl", "id_apporteur"], how="left")
-    df = df.merge(nd_follow_end, on=["country", "ibl", "id_apporteur"], how="left")
+    kept_rows = []
+    last_event = {}
 
-    df["first_mel_date"] = pd.to_datetime(df["first_mel_date"], errors="coerce")
-    df["nd_follow_end"] = pd.to_datetime(df["nd_follow_end"], errors="coerce")
+    for r in ev.itertuples(index=False):
+        key = (r.country, r.ibl, r.id_apporteur)
+        d = r.event_date
 
-    # priorité ND : pas d'EG tant que ND actif
-    df = df[(df["nd_follow_end"].isna()) | (df["month_ref"] > df["nd_follow_end"])].copy()
+        if key not in last_event:
+            kept_rows.append(r)
+            last_event[key] = d
+        else:
+            # si on est encore dans la fenêtre de suivi EG => on ignore
+            if d <= (last_event[key] + pd.DateOffset(months=cooldown_months)):
+                continue
+            kept_rows.append(r)
+            last_event[key] = d
 
-    base = df[df["prod_6m"].notna()].copy()
-    base = base[base["prod_6m"] >= min_prod].copy()
+    out = pd.DataFrame(kept_rows, columns=ev.columns)
 
-    if method == "prev6m":
-        growth_col = "growth_prev6m"
-        ref_col = "prod_6m_prev"
-        history_months = 6
-    elif method == "yoy":
-        growth_col = "growth_yoy"
-        ref_col = "prod_6m_yoy"
-        history_months = 12
-    else:
-        raise ValueError("method must be 'prev6m' or 'yoy'")
-
-    # anti "first production"
-    base["has_history"] = base["first_mel_date"].notna() & (
-        base["first_mel_date"] < (base["month_ref"] - pd.DateOffset(months=history_months))
-    )
-
-    ev = base[base[growth_col].notna()].copy()
-    ev = ev[(ev[growth_col] > growth_threshold) & (ev["has_history"])].copy()
-
-    ev["event_date"] = ev["month_ref"]
-    ev["event_type"] = "existing_dealer_growth"
-    ev["method"] = method
-
-    ev["prod_ref"] = ev[ref_col]
-    ev["prod_comp"] = ev["prod_6m"]
-    ev["growth_pct"] = (ev[growth_col] * 100).round(1)
-    ev["year"] = ev["event_date"].dt.year
-
-    out = ev[[
-        "country", "ibl", "id_apporteur",
-        "event_date", "event_type", "method",
-        "prod_6m", "prod_ref", "prod_comp", "growth_pct",
-        "is_key_account", "year"
-    ]].copy()
+    # event_id stable par dealer (séquentiel)
+    out = out.sort_values(["country", "ibl", "id_apporteur", "event_date"])
+    out["event_id"] = out.groupby(["country", "ibl", "id_apporteur"]).cumcount() + 1
 
     return out
+
