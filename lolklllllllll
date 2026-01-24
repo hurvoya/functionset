@@ -1,19 +1,8 @@
-# Méthode opérationnelle
-events_prev6m, stock_prev6m, follow_prev6m = run_existing_growth_pipeline_v4(
-    df_contracts=df_contracts,
-    stock_nd=stock,          # ta table ND s'appelle stock
-    method="prev6m",
-    min_prod=500_000,
-    growth_threshold=0.30,
-    cooldown_months=6
-)
+# 1) volumétrie doit être raisonnable
+events_prev6m.shape, events_yoy.shape
 
-# Méthode benchmark
-events_yoy, stock_yoy, follow_yoy = run_existing_growth_pipeline_v4(
-    df_contracts=df_contracts,
-    stock_nd=stock,
-    method="yoy",
-    min_prod=500_000,
-    growth_threshold=0.30,
-    cooldown_months=6
-)
+# 2) pas de multi-events mensuels pendant suivi EG (cooldown)
+events_prev6m.groupby(["country","ibl","id_apporteur"]).size().describe()
+
+# 3) cap calls à 8
+follow_prev6m.groupby(["country","ibl","id_apporteur","event_id"]).size().max()
