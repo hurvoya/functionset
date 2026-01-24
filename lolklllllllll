@@ -1,9 +1,69 @@
-import pandas as pd
-import numpy as np
+def build_prod_monthly(df_contracts: pd.DataFrame) -> pd.DataFrame:
+    df = df_contracts.copy()
 
-def month_end(s: pd.Series) -> pd.Series:
-    s = pd.to_datetime(s, errors="coerce")
-    return s.dt.to_period("M").dt.to_timestamp("M")
+    df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce")
+    df = df[df["dte_mel"].notna()].copy()
 
-def add_months(dt: pd.Series, n: int) -> pd.Series:
-    return dt + pd.DateOffset(months=n)
+    df["mtd_total_lot"] = pd.to_numeric(df["mtd_total_lot"], errors="coerce").fillna(0.0)
+
+    if "is_key_account" not in df.columns:
+        df["is_key_account"] = False
+    df["is_key_account"] = df["is_key_account"].astype(bool)
+
+    df["month_ref"] = month_end(df["dte_mel"])
+
+    prod_monthly = (
+        df.groupby(["country", "ibl", "id_apporteur", "month_ref"], as_index=False)
+          .agg(
+              prod_month=("mtd_total_lot", "sum"),
+              nb_contracts_month=("id_contract", "nunique"),
+              is_key_account=("is_key_account", "max"),
+          )
+    )
+    prod_monthly["prod_month"] = prod_monthly["prod_month"].round(2)
+    return prod_monthly
+
+
+def complete_months(prod_monthly: pd.DataFrame) -> pd.DataFrame:
+    all_months = prod_monthly["month_ref"].dropna().sort_values().unique()
+    dealers = prod_monthly[["country", "ibl", "id_apporteur"]].drop_duplicates()
+
+    grid = dealers.assign(_k=1).merge(
+        pd.DataFrame({"month_ref": all_months, "_k": 1}),
+        on="_k",
+        how="outer"
+    ).drop(columns="_k")
+
+    df = grid.merge(
+        prod_monthly,
+        on=["country", "ibl", "id_apporteur", "month_ref"],
+        how="left"
+    )
+
+    df["prod_month"] = df["prod_month"].fillna(0.0)
+    df["nb_contracts_month"] = df["nb_contracts_month"].fillna(0).astype(int)
+
+    df["is_key_account"] = (
+        df.groupby(["country", "ibl", "id_apporteur"])["is_key_account"]
+          .transform("max")
+          .fillna(False)
+          .astype(bool)
+    )
+
+    return df.sort_values(["country", "ibl", "id_apporteur", "month_ref"])
+
+
+def build_rolling_6m(prod_full: pd.DataFrame) -> pd.DataFrame:
+    df = prod_full.copy()
+    df = df.sort_values(["country", "ibl", "id_apporteur", "month_ref"])
+
+    grp = df.groupby(["country", "ibl", "id_apporteur"], group_keys=False)
+
+    df["prod_6m"] = grp["prod_month"].rolling(6, min_periods=6).sum().reset_index(level=[0,1,2], drop=True)
+    df["prod_6m_prev"] = grp["prod_6m"].shift(6)
+    df["prod_6m_yoy"] = grp["prod_6m"].shift(12)
+
+    df["growth_prev6m"] = (df["prod_6m"] - df["prod_6m_prev"]) / df["prod_6m_prev"]
+    df["growth_yoy"] = (df["prod_6m"] - df["prod_6m_yoy"]) / df["prod_6m_yoy"]
+
+    return df
