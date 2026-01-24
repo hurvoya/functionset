@@ -1,40 +1,19 @@
-def run_existing_growth_pipeline_v4(df_contracts: pd.DataFrame,
-                                    stock_nd: pd.DataFrame,
-                                    method: str,
-                                    min_prod: float = 500_000,
-                                    growth_threshold: float = 0.30,
-                                    cooldown_months: int = 6,
-                                    follow_months: int = 6,
-                                    max_calls: int = 8) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+# Méthode opérationnelle
+events_prev6m, stock_prev6m, follow_prev6m = run_existing_growth_pipeline_v4(
+    df_contracts=df_contracts,
+    stock_nd=stock,          # ta table ND s'appelle stock
+    method="prev6m",
+    min_prod=500_000,
+    growth_threshold=0.30,
+    cooldown_months=6
+)
 
-    # prod + rolling
-    prod_monthly = build_prod_monthly(df_contracts)
-    prod_full = complete_months(prod_monthly)
-    prod_roll = build_rolling_6m(prod_full)
-
-    # enrichissements
-    first_mel = build_first_mel(df_contracts)
-    nd_follow_end = build_nd_follow_end(stock_nd)
-
-    # events candidats
-    events_candidates = build_existing_events_candidates(
-        prod_roll=prod_roll,
-        first_mel=first_mel,
-        nd_follow_end=nd_follow_end,
-        method=method,
-        min_prod=min_prod,
-        growth_threshold=growth_threshold
-    )
-
-    # cooldown EG (anti re-trigger)
-    events_existing = apply_eg_cooldown(events_candidates, cooldown_months=cooldown_months)
-
-    # follow + stock
-    follow_existing = build_follow_existing(
-        events_existing, df_contracts, max_calls=max_calls, follow_months=follow_months
-    )
-    stock_existing = build_stock_existing(
-        events_existing, follow_existing, follow_months=follow_months
-    )
-
-    return events_existing, stock_existing, follow_existing
+# Méthode benchmark
+events_yoy, stock_yoy, follow_yoy = run_existing_growth_pipeline_v4(
+    df_contracts=df_contracts,
+    stock_nd=stock,
+    method="yoy",
+    min_prod=500_000,
+    growth_threshold=0.30,
+    cooldown_months=6
+)
