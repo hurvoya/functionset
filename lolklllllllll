@@ -1,10 +1,17 @@
-# events = events_yoy  # ou events_prev6m
+df = events.copy()
 
-kpi_global = build_kpi_block1_volume(events, ibl=None)
-plot_block1_volume(kpi_global, "Existing Dealers Volume — Key Account vs Non Key Account (Global)")
+# année
+df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
+df["year"] = df["event_date"].dt.year
 
-kpi_els = build_kpi_block1_volume(events, ibl="ELS")
-plot_block1_volume(kpi_els, "Existing Dealers Volume — Key Account vs Non Key Account (ELS)")
+# filtre années
+df = df[df["year"].isin([2024, 2025])].copy()
 
-kpi_tls = build_kpi_block1_volume(events, ibl="TLS")
-plot_block1_volume(kpi_tls, "Existing Dealers Volume — Key Account vs Non Key Account (TLS)")
+# sécurité
+df["is_key_account"] = df["is_key_account"].astype(bool)
+
+# KPI global
+kpi_block1_global = (
+    df.groupby(["country", "year", "is_key_account"], as_index=False)
+      .agg(n_dealers=("id_apporteur", "nunique"))
+)
