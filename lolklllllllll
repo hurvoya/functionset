@@ -1,19 +1,6 @@
-# --- PATCH: ne pas merger 'sorti_suivi' pour éviter _x/_y ---
-end_month = (
-    follow_existing_yoy_es.assign(
-        last_month=lambda d: d["dte_end_event"].apply(lambda x: month_end(min(x, CAP_END)))
-    )[["id_apporteur", "event_id", "last_month"]]
-)
+print(stock_existing_yoy_es["sorti_suivi"].value_counts(dropna=False))
+# attendu: beaucoup de False + quelques True (1 True par event)
 
-stock_existing_yoy_es = stock_existing_yoy_es.merge(
-    end_month,
-    on=["id_apporteur", "event_id"],
-    how="left"
-)
-
-# Recalcul propre : sorti_suivi=True uniquement sur la dernière ligne (dernier mois) de l'event
-stock_existing_yoy_es["sorti_suivi"] = stock_existing_yoy_es["dte_ref"].eq(stock_existing_yoy_es["last_month"])
-
-stock_existing_yoy_es = stock_existing_yoy_es.drop(columns=["last_month"])
-
-print(stock_existing_yoy_es.head())
+# vérifier qu'il y a 1 seul True par event
+chk = stock_existing_yoy_es.groupby(["id_apporteur","event_id"])["sorti_suivi"].sum()
+print(chk.describe())
