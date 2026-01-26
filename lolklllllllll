@@ -1,3 +1,15 @@
-plot_block1_volume(kpi_block1_global, "Existing Dealers Volume – Global")
-plot_block1_volume(kpi_block1_els, "Existing Dealers Volume – ELS")
-plot_block1_volume(kpi_block1_tls, "Existing Dealers Volume – TLS")
+import pandas as pd
+import numpy as np
+
+from pandas.tseries.offsets import DateOffset, MonthEnd
+
+CAP_START = pd.Timestamp("2024-01-01")
+CAP_END   = pd.Timestamp("2025-12-31")
+
+OFFSET_6M  = DateOffset(months=6)
+OFFSET_12M = DateOffset(months=12)
+OFFSET_18M = DateOffset(months=18)
+
+PROD_MIN = 500_000
+GROWTH_MIN = 0.30
+MAX_CALLS = 8
