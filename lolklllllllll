@@ -1,22 +1,23 @@
-# join sur la MEL déclencheuse
-anchor = df_es.copy()
-anchor = anchor.sort_values(["id_apporteur", "dte_mel", "id_contract"])
+# cross join via merge sur dealer puis filtre par dates
+calls = df_es.merge(
+    events_yoy_es[["id_apporteur","event_id","dte_existing_event"]],
+    on="id_apporteur",
+    how="inner"
+)
 
-# si plusieurs contrats même jour : on prend le dernier id_contract (stable)
-anchor = anchor.groupby(["id_apporteur", "dte_mel"], as_index=False).tail(1)
+calls["end_6m"] = calls["dte_existing_event"] + OFFSET_6M
+calls = calls[(calls["dte_mel"] >= calls["dte_existing_event"]) & (calls["dte_mel"] <= calls["end_6m"])].copy()
+calls = calls.sort_values(["id_apporteur","event_id","dte_mel","id_contract"])
+calls["rk"] = calls.groupby(["id_apporteur","event_id"]).cumcount() + 1
+calls = calls[calls["rk"] <= MAX_CALLS].copy()
 
-events_yoy_es = events_yoy_es.merge(
-    anchor[["id_apporteur","dte_mel","ibl","partner","is_key_account","dte_creation_apporteur","country"]],
-    left_on=["id_apporteur","dte_existing_event"],
-    right_on=["id_apporteur","dte_mel"],
-    how="left"
-).drop(columns=["dte_mel"])
+df_calls_existing_yoy_es = calls[[
+    "id_contract","id_apporteur","event_id","dte_existing_event","dte_mel","mtd_total_lot",
+    "country","ibl","dte_creation_apporteur","is_key_account","partner"
+]].copy()
 
-# event_id (unique)
-events_yoy_es = events_yoy_es.sort_values(["id_apporteur","dte_existing_event"]).reset_index(drop=True)
-events_yoy_es["event_id"] = events_yoy_es.groupby("id_apporteur").cumcount() + 1  # local Espagne
-events_yoy_es["method"] = "yoy"
-
-# CHECKS
-print(events_yoy_es.head())
-print("Missing anchor fields:", events_yoy_es[["ibl","partner","is_key_account"]].isna().mean())
+print("df_calls_existing_yoy_es rows:", len(df_calls_existing_yoy_es))
+print("calls per event (min/median/max):",
+      df_calls_existing_yoy_es.groupby(["id_apporteur","event_id"]).size().min(),
+      df_calls_existing_yoy_es.groupby(["id_apporteur","event_id"]).size().median(),
+      df_calls_existing_yoy_es.groupby(["id_apporteur","event_id"]).size().max())
