@@ -1,16 +1,17 @@
-events_existing_yoy_es = detected_events.assign(
-    prod_6m=lambda d: d["prod_6m"],
-    prod_ref=lambda d: d["prod_ref"],
-    growth_pct=lambda d: d["growth_pct"]
-)[[
-    "id_apporteur",
-    "event_id",
-    "dte_existing_event",
-    "prod_6m",
-    "prod_ref",
-    "growth_pct",
-    "country",
-    "ibl",
-    "is_key_account",
-    "dte_creation_apporteur"
-]]
+# --- PATCH METRICS: ajouter prod_6m / ref / growth à events (YoY) ---
+
+metrics_yoy = df_feat[["id_apporteur", "dte_mel", "prod_6m", "ref_yoy", "growth_yoy"]].copy()
+metrics_yoy = metrics_yoy.rename(columns={
+    "dte_mel": "dte_existing_event",
+    "ref_yoy": "prod_ref",
+    "growth_yoy": "growth_pct"
+})
+
+events_existing_yoy_es = events_existing_yoy_es.merge(
+    metrics_yoy,
+    on=["id_apporteur", "dte_existing_event"],
+    how="left"
+)
+
+# check
+print("Missing metrics:", events_existing_yoy_es[["prod_6m","prod_ref","growth_pct"]].isna().mean())
