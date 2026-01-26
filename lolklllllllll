@@ -1,17 +1,10 @@
-df = events.copy()
-
-# année
-df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
-df["year"] = df["event_date"].dt.year
-
-# filtre années
-df = df[df["year"].isin([2024, 2025])].copy()
-
-# sécurité
-df["is_key_account"] = df["is_key_account"].astype(bool)
-
-# KPI global
-kpi_block1_global = (
-    df.groupby(["country", "year", "is_key_account"], as_index=False)
-      .agg(n_dealers=("id_apporteur", "nunique"))
+kpi_block1_els = (
+    df[df["ibl"] == "ELS"]
+    .groupby(["country", "year", "is_key_account"], as_index=False)
+    .agg(n_dealers=("id_apporteur", "nunique"))
+)
+kpi_block1_tls = (
+    df[df["ibl"] == "TLS"]
+    .groupby(["country", "year", "is_key_account"], as_index=False)
+    .agg(n_dealers=("id_apporteur", "nunique"))
 )
