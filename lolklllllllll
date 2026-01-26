@@ -1,7 +1,22 @@
-ndw = nd_windows_es.sort_values(["id_apporteur", "dte_start_nd"]).copy()
-tmp = df_es.sort_values(["id_apporteur", "dte_mel"]).copy()
+# --- ETAPE 3 PATCH: merge_asof requires sorted keys ---
 
-tmp = pd.merge_asof(
+# Assure datetime
+df_es["dte_mel"] = pd.to_datetime(df_es["dte_mel"], errors="coerce")
+
+ndw = nd_windows_es.copy()
+ndw["dte_start_nd"] = pd.to_datetime(ndw["dte_start_nd"], errors="coerce")
+ndw["dte_end_nd"]   = pd.to_datetime(ndw["dte_end_nd"], errors="coerce")
+
+# Drop NaT côté ndw (sinon asof plante / fait n'importe quoi)
+ndw = ndw.dropna(subset=["dte_start_nd", "dte_end_nd"]).copy()
+
+# TRI OBLIGATOIRE pour merge_asof (by + on)
+ndw = ndw.sort_values(["id_apporteur", "dte_start_nd"]).reset_index(drop=True)
+
+tmp = df_es.dropna(subset=["dte_mel"]).copy()
+tmp = tmp.sort_values(["id_apporteur", "dte_mel"]).reset_index(drop=True)
+
+tmp2 = pd.merge_asof(
     tmp,
     ndw[["id_apporteur", "dte_start_nd", "dte_end_nd"]],
     left_on="dte_mel",
@@ -11,9 +26,8 @@ tmp = pd.merge_asof(
     allow_exact_matches=True
 )
 
-tmp["in_nd_window"] = tmp["dte_end_nd"].notna() & (tmp["dte_mel"] <= tmp["dte_end_nd"])
+tmp2["in_nd_window"] = tmp2["dte_end_nd"].notna() & (tmp2["dte_mel"] <= tmp2["dte_end_nd"])
 
-df_es = tmp.drop(columns=["dte_start_nd", "dte_end_nd"]).copy()
+df_es = tmp2.drop(columns=["dte_start_nd", "dte_end_nd"]).copy()
 
-# CHECKS
 print("Share MEL in ND window:", df_es["in_nd_window"].mean())
