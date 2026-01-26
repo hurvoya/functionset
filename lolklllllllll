@@ -1,11 +1,9 @@
-Règles (comme convenu) :
+cand_yoy = df_feat[
+    (~df_feat["in_nd_window"]) &
+    (~df_feat["new_dealer_like"]) &
+    (df_feat["prod_6m"] >= PROD_MIN) &
+    (df_feat["growth_yoy"] >= GROWTH_MIN)
+].copy()
 
-pas en fenêtre ND au moment de la MEL (in_nd_window == False)
-
-pas “new dealer-like”
-
-prod_6m >= 500k
-
-growth >= 30%
-
-Et ensuite : 1 event, puis fenêtre 6m/8 contrats → pas de redétection pendant la fenêtre existing.
+cand_yoy = cand_yoy.sort_values(["id_apporteur", "dte_mel", "id_contract"])
+print("YoY candidates rows:", len(cand_yoy), "dealers:", cand_yoy["id_apporteur"].nunique())
