@@ -1,2 +1,56 @@
-df_es["id_apporteur"] = df_es["id_apporteur"].astype("int64")
-ndw["id_apporteur"] = ndw["id_apporteur"].astype("int64")
+import numpy as np
+import pandas as pd
+
+# Assure datetime
+df_es["dte_mel"] = pd.to_datetime(df_es["dte_mel"], errors="coerce")
+
+ndw = nd_windows_es.copy()
+ndw["dte_start_nd"] = pd.to_datetime(ndw["dte_start_nd"], errors="coerce")
+ndw["dte_end_nd"]   = pd.to_datetime(ndw["dte_end_nd"], errors="coerce")
+
+# Nettoyage minimal
+df_es = df_es[df_es["dte_mel"].notna()].copy()
+ndw = ndw.dropna(subset=["dte_start_nd", "dte_end_nd"]).copy()
+
+# (Optionnel mais conseillé) Harmoniser type id_apporteur
+df_es["id_apporteur"] = pd.to_numeric(df_es["id_apporteur"], errors="coerce").astype("Int64")
+ndw["id_apporteur"]   = pd.to_numeric(ndw["id_apporteur"], errors="coerce").astype("Int64")
+
+df_es = df_es[df_es["id_apporteur"].notna()].copy()
+ndw   = ndw[ndw["id_apporteur"].notna()].copy()
+
+def mark_in_nd_window(mels: pd.DataFrame, wins: pd.DataFrame) -> pd.DataFrame:
+    """
+    Pour un dealer:
+    - wins: lignes (start,end) triées par start
+    - mels: lignes MEL triées par dte_mel
+    Marque chaque MEL si elle tombe dans la dernière fenêtre dont start <= dte_mel.
+    """
+    mels = mels.sort_values("dte_mel").copy()
+    wins = wins.sort_values("dte_start_nd").copy()
+
+    if wins.empty:
+        mels["in_nd_window"] = False
+        return mels
+
+    starts = wins["dte_start_nd"].to_numpy()
+    ends   = wins["dte_end_nd"].to_numpy()
+
+    t = mels["dte_mel"].to_numpy()
+
+    # idx = index de la dernière fenêtre dont start <= t
+    idx = np.searchsorted(starts, t, side="right") - 1
+
+    in_win = (idx >= 0) & (t <= ends[idx])
+    mels["in_nd_window"] = in_win
+    return mels
+
+# Appliquer par dealer
+df_es = (
+    df_es.groupby("id_apporteur", group_keys=False)
+         .apply(lambda g: mark_in_nd_window(g, ndw[ndw["id_apporteur"] == g.name][["dte_start_nd","dte_end_nd"]]))
+         .reset_index(drop=True)
+)
+
+print("Share MEL in ND window:", df_es["in_nd_window"].mean())
+print("MEL in ND window (count):", df_es["in_nd_window"].sum())
