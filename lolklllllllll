@@ -1,151 +1,31 @@
-import numpy as np
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
-# -------------------------------------------------------------------
-# 1) Parameters (years + colors like New Dealer)
-# -------------------------------------------------------------------
 YEARS = [2024, 2025]
 
-# Put your exact ND hex codes here if you have them.
-COL_2024_NON_KA = "#1f4e79"   # dark blue
-COL_2024_KA     = "#9dc3e6"   # light blue
-COL_2025_NON_KA = "#1f6f43"   # dark green
-COL_2025_KA     = "#a9d18e"   # light green
+def build_kpi_block1_volume(events, ibl=None):
+    df = events.copy()
 
-
-# -------------------------------------------------------------------
-# 2) Helpers
-# -------------------------------------------------------------------
-def _ensure_year(events_df):
-    df = events_df.copy()
+    # année (si elle n'existe pas, on la reconstruit depuis event_date)
     if "year" not in df.columns:
-        if "event_date" not in df.columns:
-            raise KeyError("events must contain either 'year' or 'event_date'.")
         df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
         df["year"] = df["event_date"].dt.year
-    return df
 
-
-def _filter_ibl(df, ibl_value):
-    """
-    ibl_value:
-      - None  -> keep all (Global)
-      - 'ELS' -> keep ELS only
-      - 'TLS' -> keep TLS only
-    """
-    if ibl_value is None:
-        return df
-    if ibl_value not in ["ELS", "TLS"]:
-        raise ValueError("ibl_value must be None, 'ELS', or 'TLS'")
-    return df[df["ibl"] == ibl_value].copy()
-
-
-# -------------------------------------------------------------------
-# 3) KPI Block 1
-# -------------------------------------------------------------------
-def kpi_block1_existing_volume(events_df, ibl_value=None):
-    """
-    Returns: country, year, is_key_account, n_existing_dealers
-    Counting distinct id_apporteur.
-    """
-    df = _ensure_year(events_df)
-
-    required_cols = {"country", "ibl", "id_apporteur", "is_key_account", "year"}
-    missing = required_cols - set(df.columns)
-    if missing:
-        raise KeyError("events is missing columns: {}".format(sorted(missing)))
-
+    # filtre années
     df = df[df["year"].isin(YEARS)].copy()
-    df = _filter_ibl(df, ibl_value)
 
+    # filtre IBL (Global si ibl=None)
+    if ibl is not None:
+        df = df[df["ibl"] == ibl].copy()
+
+    # sécurité bool
     df["is_key_account"] = df["is_key_account"].astype(bool)
 
+    # KPI : 1 dealer = 1 id_apporteur (distinct)
     kpi = (
         df.groupby(["country", "year", "is_key_account"], as_index=False)
-          .agg(n_existing_dealers=("id_apporteur", "nunique"))
+          .agg(n_dealers=("id_apporteur", "nunique"))
     )
-    return kpi
-
-
-# -------------------------------------------------------------------
-# 4) Plot Block 1 (Grouped bars: 2024/2025, each stacked KA/Non-KA)
-# -------------------------------------------------------------------
-def _add_value_labels(ax, containers, fontsize=10):
-    for cont in containers:
-        for rect in cont:
-            h = rect.get_height()
-            if h and h > 0:
-                x = rect.get_x() + rect.get_width() / 2
-                y = rect.get_y() + h / 2
-                ax.text(x, y, f"{int(h)}", ha="center", va="center", fontsize=fontsize)
-
-
-def _add_totals(ax, x_positions, totals, fontsize=11):
-    ymax = ax.get_ylim()[1]
-    for x, t in zip(x_positions, totals):
-        if t and t > 0:
-            ax.text(x, t + ymax * 0.01, f"{int(t)}",
-                    ha="center", va="bottom", fontsize=fontsize, fontweight="bold")
-
-
-def plot_block1_existing_volume(events_df, ibl_value=None, title_suffix="", label_fontsize=11):
-    kpi = kpi_block1_existing_volume(events_df, ibl_value=ibl_value)
-
-    countries = sorted(kpi["country"].unique().tolist())
-
-    def get_val(country, year, is_ka):
-        row = kpi[(kpi["country"] == country) & (kpi["year"] == year) & (kpi["is_key_account"] == is_ka)]
-        return int(row["n_existing_dealers"].iloc[0]) if len(row) else 0
-
-    non_ka_2024 = np.array([get_val(c, 2024, False) for c in countries])
-    ka_2024     = np.array([get_val(c, 2024, True)  for c in countries])
-    non_ka_2025 = np.array([get_val(c, 2025, False) for c in countries])
-    ka_2025     = np.array([get_val(c, 2025, True)  for c in countries])
-
-    x = np.arange(len(countries))
-    width = 0.34
-    x_2024 = x - width / 2
-    x_2025 = x + width / 2
-
-    fig, ax = plt.subplots(figsize=(max(10, len(countries) * 0.8), 6))
-
-    c1 = ax.bar(x_2024, non_ka_2024, width=width, label="2024 - Non Key Account", color=COL_2024_NON_KA)
-    c2 = ax.bar(x_2024, ka_2024,     width=width, bottom=non_ka_2024, label="2024 - Key Account", color=COL_2024_KA)
-
-    c3 = ax.bar(x_2025, non_ka_2025, width=width, label="2025 - Non Key Account", color=COL_2025_NON_KA)
-    c4 = ax.bar(x_2025, ka_2025,     width=width, bottom=non_ka_2025, label="2025 - Key Account", color=COL_2025_KA)
-
-    _add_value_labels(ax, [c1, c2, c3, c4], fontsize=label_fontsize)
-
-    totals_2024 = non_ka_2024 + ka_2024
-    totals_2025 = non_ka_2025 + ka_2025
-    _add_totals(ax, x_2024, totals_2024, fontsize=label_fontsize + 1)
-    _add_totals(ax, x_2025, totals_2025, fontsize=label_fontsize + 1)
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Number of existing dealers identified")
-
-    base_title = "Existing Dealers Volume — Key Account vs Non Key Account (2024 vs 2025)"
-    if title_suffix:
-        ax.set_title(f"{base_title} — {title_suffix}")
-    else:
-        ax.set_title(base_title)
-
-    ax.legend(ncols=2, frameon=False)
-    ax.grid(axis="y", alpha=0.25)
-    ax.set_axisbelow(True)
-
-    plt.tight_layout()
-    plt.show()
 
     return kpi
-
-
-# -------------------------------------------------------------------
-# 5) Run the 3 requested graphs: Global / ELS / TLS
-# -------------------------------------------------------------------
-# kpi_block1_global = plot_block1_existing_volume(events, ibl_value=None, title_suffix="Global", label_fontsize=11)
-# kpi_block1_els    = plot_block1_existing_volume(events, ibl_value="ELS", title_suffix="ELS", label_fontsize=11)
-# kpi_block1_tls    = plot_block1_existing_volume(events, ibl_value="TLS", title_suffix="TLS", label_fontsize=11)
