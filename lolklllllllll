@@ -1,58 +1,19 @@
-def month_end(ts):
-    return (pd.Timestamp(ts) + MonthEnd(0))
-
-# calls groupés par mois
-df_calls_existing_yoy_es["dte_ref"] = df_calls_existing_yoy_es["dte_mel"].apply(month_end)
-
-calls_by_month = (
-    df_calls_existing_yoy_es.groupby(["country","ibl","id_apporteur","event_id","dte_ref"], as_index=False)
-    .agg(
-        nb_calls=("id_contract","count"),
-        nb_contrats_elligibles=("id_contract","count"),
-        dte_existing_event=("dte_existing_event","min"),
-        dte_creation_apporteur=("dte_creation_apporteur","min"),
-        is_key_account=("is_key_account","max"),
-    )
+# --- PATCH: ne pas merger 'sorti_suivi' pour éviter _x/_y ---
+end_month = (
+    follow_existing_yoy_es.assign(
+        last_month=lambda d: d["dte_end_event"].apply(lambda x: month_end(min(x, CAP_END)))
+    )[["id_apporteur", "event_id", "last_month"]]
 )
 
-# construire la grille de mois par event
-rows = []
-for _, r in follow_existing_yoy_es.iterrows():
-    start = month_end(r["dte_existing_event"])
-    end = month_end(min(r["dte_end_event"], CAP_END))
-    months = pd.date_range(start=start, end=end, freq="M")
-    for m in months:
-        rows.append({
-            "country": r["country"],
-            "ibl": r["ibl"],
-            "id_apporteur": r["id_apporteur"],
-            "event_id": r["event_id"],
-            "dte_ref": m,
-            "dte_creation_apporteur": r["dte_creation_apporteur"],
-            "is_key_account": r["is_key_account"],
-            "en_suivi": True,
-            "sorti_suivi": False
-        })
-
-stock_existing_yoy_es = pd.DataFrame(rows)
-
-# merge nb_calls mois (0 si pas de call ce mois)
 stock_existing_yoy_es = stock_existing_yoy_es.merge(
-    calls_by_month[["country","ibl","id_apporteur","event_id","dte_ref","nb_calls","nb_contrats_elligibles"]],
-    on=["country","ibl","id_apporteur","event_id","dte_ref"],
+    end_month,
+    on=["id_apporteur", "event_id"],
     how="left"
 )
-stock_existing_yoy_es["nb_calls"] = stock_existing_yoy_es["nb_calls"].fillna(0).astype(int)
-stock_existing_yoy_es["nb_contrats_elligibles"] = stock_existing_yoy_es["nb_contrats_elligibles"].fillna(0).astype(int)
 
-# flag sortie sur le dernier mois si l’event est terminé avant CAP_END
-end_month = (
-    follow_existing_yoy_es.assign(last_month=lambda d: d["dte_end_event"].apply(lambda x: month_end(min(x, CAP_END))))
-    [["id_apporteur","event_id","last_month","sorti_suivi"]]
-)
-stock_existing_yoy_es = stock_existing_yoy_es.merge(end_month, on=["id_apporteur","event_id"], how="left")
-stock_existing_yoy_es["sorti_suivi"] = stock_existing_yoy_es["sorti_suivi"] & (stock_existing_yoy_es["dte_ref"] == stock_existing_yoy_es["last_month"])
+# Recalcul propre : sorti_suivi=True uniquement sur la dernière ligne (dernier mois) de l'event
+stock_existing_yoy_es["sorti_suivi"] = stock_existing_yoy_es["dte_ref"].eq(stock_existing_yoy_es["last_month"])
+
 stock_existing_yoy_es = stock_existing_yoy_es.drop(columns=["last_month"])
 
-print("stock_existing_yoy_es rows:", len(stock_existing_yoy_es))
 print(stock_existing_yoy_es.head())
