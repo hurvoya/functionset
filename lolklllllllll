@@ -1,29 +1,16 @@
-# Events cap
-events_existing_yoy_es = events_yoy_es.copy()
-events_existing_yoy_es = events_existing_yoy_es[
-    (events_existing_yoy_es["dte_existing_event"] >= CAP_START) &
-    (events_existing_yoy_es["dte_existing_event"] <= CAP_END)
-].copy()
-
-# Restreindre tout au set d'events conservés
-keep_keys = events_existing_yoy_es[["id_apporteur","event_id"]].copy()
-
-df_calls_existing_yoy_es = df_calls_existing_yoy_es.merge(keep_keys, on=["id_apporteur","event_id"], how="inner")
-df_calls_existing_yoy_es = df_calls_existing_yoy_es[
-    (df_calls_existing_yoy_es["dte_mel"] >= CAP_START) &
-    (df_calls_existing_yoy_es["dte_mel"] <= CAP_END)
-].copy()
-
-follow_existing_yoy_es = follow_existing_yoy_es.merge(keep_keys, on=["id_apporteur","event_id"], how="inner")
-
-stock_existing_yoy_es = stock_existing_yoy_es.merge(keep_keys, on=["id_apporteur","event_id"], how="inner")
-stock_existing_yoy_es = stock_existing_yoy_es[
-    (stock_existing_yoy_es["dte_ref"] >= month_end(CAP_START)) &
-    (stock_existing_yoy_es["dte_ref"] <= month_end(CAP_END))
-].copy()
-
-print("FINAL YoY ES:",
-      len(events_existing_yoy_es), "events /",
-      len(df_calls_existing_yoy_es), "calls /",
-      len(follow_existing_yoy_es), "follow /",
-      len(stock_existing_yoy_es), "stock rows")
+events_existing_yoy_es = detected_events.assign(
+    prod_6m=lambda d: d["prod_6m"],
+    prod_ref=lambda d: d["prod_ref"],
+    growth_pct=lambda d: d["growth_pct"]
+)[[
+    "id_apporteur",
+    "event_id",
+    "dte_existing_event",
+    "prod_6m",
+    "prod_ref",
+    "growth_pct",
+    "country",
+    "ibl",
+    "is_key_account",
+    "dte_creation_apporteur"
+]]
