@@ -1,39 +1,22 @@
-def select_non_overlapping_events(cand, all_mels):
-    # cand: candidats triés pour un dealer
-    # all_mels: toutes les MEL (df_es) pour ce dealer (triées)
-    selected = []
-    last_end = pd.Timestamp.min
+# join sur la MEL déclencheuse
+anchor = df_es.copy()
+anchor = anchor.sort_values(["id_apporteur", "dte_mel", "id_contract"])
 
-    mels = all_mels.sort_values(["dte_mel", "id_contract"]).copy()
+# si plusieurs contrats même jour : on prend le dernier id_contract (stable)
+anchor = anchor.groupby(["id_apporteur", "dte_mel"], as_index=False).tail(1)
 
-    for _, row in cand.iterrows():
-        t = row["dte_mel"]
-        if t <= last_end:
-            continue
+events_yoy_es = events_yoy_es.merge(
+    anchor[["id_apporteur","dte_mel","ibl","partner","is_key_account","dte_creation_apporteur","country"]],
+    left_on=["id_apporteur","dte_existing_event"],
+    right_on=["id_apporteur","dte_mel"],
+    how="left"
+).drop(columns=["dte_mel"])
 
-        # fenêtre existante : (t ; t+6m] capped + 8 MEL max
-        end_6m = t + OFFSET_6M
-        window_mels = mels[(mels["dte_mel"] >= t) & (mels["dte_mel"] <= end_6m)].copy()
-        window_mels = window_mels.sort_values(["dte_mel", "id_contract"])
-        if len(window_mels) >= MAX_CALLS:
-            t8 = window_mels.iloc[MAX_CALLS-1]["dte_mel"]  # date de la 8e MEL
-            end = min(end_6m, t8)
-        else:
-            end = end_6m
+# event_id (unique)
+events_yoy_es = events_yoy_es.sort_values(["id_apporteur","dte_existing_event"]).reset_index(drop=True)
+events_yoy_es["event_id"] = events_yoy_es.groupby("id_apporteur").cumcount() + 1  # local Espagne
+events_yoy_es["method"] = "yoy"
 
-        selected.append((row["id_apporteur"], t, end))
-        last_end = end
-
-    out = pd.DataFrame(selected, columns=["id_apporteur", "dte_existing_event", "dte_end_existing"])
-    return out
-
-events_yoy_es = []
-for dealer_id, cand_d in cand_yoy.groupby("id_apporteur"):
-    mels_d = df_es[df_es["id_apporteur"] == dealer_id]
-    out_d = select_non_overlapping_events(cand_d, mels_d)
-    if len(out_d):
-        events_yoy_es.append(out_d)
-
-events_yoy_es = pd.concat(events_yoy_es, ignore_index=True) if events_yoy_es else pd.DataFrame(columns=["id_apporteur","dte_existing_event","dte_end_existing"])
-
-print("Selected YoY events:", len(events_yoy_es), "dealers:", events_yoy_es["id_apporteur"].nunique())
+# CHECKS
+print(events_yoy_es.head())
+print("Missing anchor fields:", events_yoy_es[["ibl","partner","is_key_account"]].isna().mean())
