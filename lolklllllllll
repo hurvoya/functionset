@@ -1,23 +1,30 @@
-# cross join via merge sur dealer puis filtre par dates
-calls = df_es.merge(
-    events_yoy_es[["id_apporteur","event_id","dte_existing_event"]],
-    on="id_apporteur",
-    how="inner"
+follow_existing_yoy_es = (
+    df_calls_existing_yoy_es.groupby(["country","ibl","id_apporteur","event_id"], as_index=False)
+    .agg(
+        dte_existing_event=("dte_existing_event","min"),
+        dte_creation_apporteur=("dte_creation_apporteur","min"),
+        is_key_account=("is_key_account","max"),
+        nb_calls_total=("id_contract","count"),
+        nb_contrats_total=("id_contract","count"),
+    )
 )
 
-calls["end_6m"] = calls["dte_existing_event"] + OFFSET_6M
-calls = calls[(calls["dte_mel"] >= calls["dte_existing_event"]) & (calls["dte_mel"] <= calls["end_6m"])].copy()
-calls = calls.sort_values(["id_apporteur","event_id","dte_mel","id_contract"])
-calls["rk"] = calls.groupby(["id_apporteur","event_id"]).cumcount() + 1
-calls = calls[calls["rk"] <= MAX_CALLS].copy()
+# sortie / en_suivi vs CAP_END
+# fin théorique = min(8e call, start+6m)
+tmp = df_calls_existing_yoy_es.sort_values(["id_apporteur","event_id","dte_mel","id_contract"]).copy()
+tmp["rk"] = tmp.groupby(["id_apporteur","event_id"]).cumcount() + 1
+eighth2 = tmp[tmp["rk"]==MAX_CALLS].groupby(["id_apporteur","event_id"], as_index=False).agg(dte_8th=("dte_mel","min"))
 
-df_calls_existing_yoy_es = calls[[
-    "id_contract","id_apporteur","event_id","dte_existing_event","dte_mel","mtd_total_lot",
-    "country","ibl","dte_creation_apporteur","is_key_account","partner"
-]].copy()
+follow_existing_yoy_es = follow_existing_yoy_es.merge(eighth2, on=["id_apporteur","event_id"], how="left")
+follow_existing_yoy_es["dte_end_6m"] = follow_existing_yoy_es["dte_existing_event"] + OFFSET_6M
+follow_existing_yoy_es["dte_end_event"] = np.where(
+    follow_existing_yoy_es["dte_8th"].notna(),
+    np.minimum(follow_existing_yoy_es["dte_8th"], follow_existing_yoy_es["dte_end_6m"]),
+    follow_existing_yoy_es["dte_end_6m"]
+)
+follow_existing_yoy_es["dte_end_event"] = pd.to_datetime(follow_existing_yoy_es["dte_end_event"])
 
-print("df_calls_existing_yoy_es rows:", len(df_calls_existing_yoy_es))
-print("calls per event (min/median/max):",
-      df_calls_existing_yoy_es.groupby(["id_apporteur","event_id"]).size().min(),
-      df_calls_existing_yoy_es.groupby(["id_apporteur","event_id"]).size().median(),
-      df_calls_existing_yoy_es.groupby(["id_apporteur","event_id"]).size().max())
+follow_existing_yoy_es["sorti_suivi"] = follow_existing_yoy_es["dte_end_event"] <= CAP_END
+follow_existing_yoy_es["en_suivi"] = ~follow_existing_yoy_es["sorti_suivi"]
+
+print(follow_existing_yoy_es.head())
