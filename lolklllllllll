@@ -1,19 +1,40 @@
-df_es = df_prep[df_prep["country"].isin(["ES", "Spain", "ESP"])].copy()  # adapte si besoin
-# Si country est déjà "ES" uniquement : df_es = df_prep[df_prep["country"]=="ES"].copy()
+# ND tables Espagne
+events_nd_es = events[events["country"].isin(["ES", "Spain", "ESP"])].copy()
+calls_nd_es  = df_calls[df_calls["country"].isin(["ES", "Spain", "ESP"])].copy()
 
-# Dates
-df_es["dte_mel"] = pd.to_datetime(df_es["dte_mel"], errors="coerce")
-df_es["dte_creation_apporteur"] = pd.to_datetime(df_es["dte_creation_apporteur"], errors="coerce")
+events_nd_es["dte_new_dealer"] = pd.to_datetime(events_nd_es["dte_new_dealer"], errors="coerce")
+calls_nd_es["dte_mel"] = pd.to_datetime(calls_nd_es["dte_mel"], errors="coerce")
 
-# Nettoyage minimal : on ne garde que les MEL datées
-df_es = df_es[df_es["dte_mel"].notna()].copy()
+# 8e call date par (id_apporteur, event_id)
+calls_nd_es = calls_nd_es.sort_values(["id_apporteur", "event_id", "dte_mel", "id_contract"])
+calls_nd_es["rk"] = calls_nd_es.groupby(["id_apporteur", "event_id"]).cumcount() + 1
 
-# Tri
-df_es = df_es.sort_values(["id_apporteur", "dte_mel", "id_contract"]).reset_index(drop=True)
+eighth = (
+    calls_nd_es[calls_nd_es["rk"] == MAX_CALLS]
+    .groupby(["id_apporteur", "event_id"], as_index=False)
+    .agg(dte_8th_call=("dte_mel", "min"))
+)
 
-# CHECKS rapides
-print("df_es rows:", len(df_es))
-print("dealers:", df_es["id_apporteur"].nunique())
-print("min/max dte_mel:", df_es["dte_mel"].min(), df_es["dte_mel"].max())
-print("ibl values:", df_es["ibl"].dropna().unique())
-print("is_key_account values:", df_es["is_key_account"].dropna().unique())
+nd_windows_es = events_nd_es.merge(eighth, on=["id_apporteur", "event_id"], how="left")
+
+nd_windows_es["dte_start_nd"] = nd_windows_es["dte_new_dealer"]
+nd_windows_es["dte_end_6m"] = nd_windows_es["dte_start_nd"] + OFFSET_6M
+
+# end = min(8th_call_date, start+6m) si 8th existe, sinon start+6m
+nd_windows_es["dte_end_nd"] = np.where(
+    nd_windows_es["dte_8th_call"].notna(),
+    np.minimum(nd_windows_es["dte_8th_call"], nd_windows_es["dte_end_6m"]),
+    nd_windows_es["dte_end_6m"]
+)
+nd_windows_es["dte_end_nd"] = pd.to_datetime(nd_windows_es["dte_end_nd"])
+
+nd_windows_es = nd_windows_es[
+    ["country", "ibl", "id_apporteur", "event_id", "dte_start_nd", "dte_end_nd"]
+].copy()
+
+# CHECKS
+print("nd_windows_es rows:", len(nd_windows_es))
+print("dealers in ND windows:", nd_windows_es["id_apporteur"].nunique())
+print("window duration (days) min/max:",
+      (nd_windows_es["dte_end_nd"] - nd_windows_es["dte_start_nd"]).dt.days.min(),
+      (nd_windows_es["dte_end_nd"] - nd_windows_es["dte_start_nd"]).dt.days.max())
