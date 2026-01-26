@@ -1,65 +1,10 @@
-# Couleurs (mets ici EXACTEMENT tes hex de New Dealer si tu veux du 100% identique)
-COL_2024_NON_KA = "#1f4e79"   # bleu foncé
-COL_2024_KA     = "#9dc3e6"   # bleu clair
-COL_2025_NON_KA = "#1f6f43"   # vert foncé
-COL_2025_KA     = "#a9d18e"   # vert clair
+# events = events_yoy  # ou events_prev6m
 
-def plot_block1_volume(kpi, title):
-    countries = sorted(kpi["country"].unique().tolist())
+kpi_global = build_kpi_block1_volume(events, ibl=None)
+plot_block1_volume(kpi_global, "Existing Dealers Volume — Key Account vs Non Key Account (Global)")
 
-    def val(country, year, is_ka):
-        tmp = kpi[(kpi["country"] == country) & (kpi["year"] == year) & (kpi["is_key_account"] == is_ka)]
-        return int(tmp["n_dealers"].iloc[0]) if len(tmp) else 0
+kpi_els = build_kpi_block1_volume(events, ibl="ELS")
+plot_block1_volume(kpi_els, "Existing Dealers Volume — Key Account vs Non Key Account (ELS)")
 
-    non_ka_2024 = np.array([val(c, 2024, False) for c in countries])
-    ka_2024     = np.array([val(c, 2024, True)  for c in countries])
-    non_ka_2025 = np.array([val(c, 2025, False) for c in countries])
-    ka_2025     = np.array([val(c, 2025, True)  for c in countries])
-
-    x = np.arange(len(countries))
-    width = 0.34
-    x_2024 = x - width/2
-    x_2025 = x + width/2
-
-    fig, ax = plt.subplots(figsize=(max(10, len(countries)*0.8), 6))
-
-    b1 = ax.bar(x_2024, non_ka_2024, width=width, color=COL_2024_NON_KA, label="2024 - Non Key Account")
-    b2 = ax.bar(x_2024, ka_2024,     width=width, bottom=non_ka_2024, color=COL_2024_KA, label="2024 - Key Account")
-
-    b3 = ax.bar(x_2025, non_ka_2025, width=width, color=COL_2025_NON_KA, label="2025 - Non Key Account")
-    b4 = ax.bar(x_2025, ka_2025,     width=width, bottom=non_ka_2025, color=COL_2025_KA, label="2025 - Key Account")
-
-    # labels dans les segments
-    def add_segment_labels(container):
-        for r in container:
-            h = r.get_height()
-            if h > 0:
-                ax.text(r.get_x() + r.get_width()/2, r.get_y() + h/2, f"{int(h)}",
-                        ha="center", va="center", fontsize=11)
-
-    for cont in [b1, b2, b3, b4]:
-        add_segment_labels(cont)
-
-    # totals en gras au-dessus
-    totals_2024 = non_ka_2024 + ka_2024
-    totals_2025 = non_ka_2025 + ka_2025
-    ymax = max((totals_2024.max() if len(totals_2024) else 0),
-               (totals_2025.max() if len(totals_2025) else 0), 1)
-
-    for xi, t in zip(x_2024, totals_2024):
-        if t > 0:
-            ax.text(xi, t + ymax*0.02, f"{int(t)}", ha="center", va="bottom", fontsize=12, fontweight="bold")
-    for xi, t in zip(x_2025, totals_2025):
-        if t > 0:
-            ax.text(xi, t + ymax*0.02, f"{int(t)}", ha="center", va="bottom", fontsize=12, fontweight="bold")
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(countries)
-    ax.set_ylabel("Number of existing dealers identified")
-    ax.set_title(title)
-    ax.grid(axis="y", alpha=0.25)
-    ax.set_axisbelow(True)
-    ax.legend(ncols=2, frameon=False)
-
-    plt.tight_layout()
-    plt.show()
+kpi_tls = build_kpi_block1_volume(events, ibl="TLS")
+plot_block1_volume(kpi_tls, "Existing Dealers Volume — Key Account vs Non Key Account (TLS)")
