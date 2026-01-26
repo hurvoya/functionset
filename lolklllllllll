@@ -1,51 +1,11 @@
-def add_cum_at_boundaries(dfi):
-    # dfi = un dealer, trié par date
-    dfi = dfi.sort_values(["dte_mel", "id_contract"]).copy()
-    dfi["cum_amt"] = dfi["mtd_total_lot"].fillna(0).cumsum()
+Règles (comme convenu) :
 
-    base = dfi[["dte_mel", "cum_amt"]].copy()
+pas en fenêtre ND au moment de la MEL (in_nd_window == False)
 
-    # BORNES
-    dfi["t"]    = dfi["dte_mel"]
-    dfi["t_6"]  = dfi["dte_mel"] - OFFSET_6M
-    dfi["t_12"] = dfi["dte_mel"] - OFFSET_12M
-    dfi["t_18"] = dfi["dte_mel"] - OFFSET_18M
+pas “new dealer-like”
 
-    # cum(t)
-    dfi["cum_t"] = dfi["cum_amt"]
+prod_6m >= 500k
 
-    # cum(t-6m), cum(t-12m), cum(t-18m) via asof
-    for col_t, col_out in [("t_6", "cum_t6"), ("t_12", "cum_t12"), ("t_18", "cum_t18")]:
-        left = dfi[[col_t]].rename(columns={col_t: "dte_mel"}).sort_values("dte_mel")
-        right = base.sort_values("dte_mel")
-        merged = pd.merge_asof(left, right, on="dte_mel", direction="backward", allow_exact_matches=True)
-        # merged['cum_amt'] est aligné à l’ordre de left; on remet dans l’ordre original de dfi via index
-        dfi[col_out] = merged["cum_amt"].values
+growth >= 30%
 
-    # quand pas d’historique => cum = 0
-    for c in ["cum_t6", "cum_t12", "cum_t18"]:
-        dfi[c] = dfi[c].fillna(0)
-
-    return dfi
-
-df_feat = (
-    df_es.groupby("id_apporteur", group_keys=False)
-         .apply(add_cum_at_boundaries)
-         .reset_index(drop=True)
-)
-
-# Fenêtres
-df_feat["prod_6m"] = df_feat["cum_t"]   - df_feat["cum_t6"]
-df_feat["ref_yoy"] = df_feat["cum_t12"] - df_feat["cum_t18"]
-df_feat["ref_prev6m"] = df_feat["cum_t6"] - df_feat["cum_t12"]
-
-# “new dealer-like” (aucune MEL dans les 12 mois avant cette MEL)
-df_feat["prev_mel"] = df_feat.groupby("id_apporteur")["dte_mel"].shift(1)
-df_feat["new_dealer_like"] = df_feat["prev_mel"].isna() | (df_feat["prev_mel"] <= (df_feat["dte_mel"] - OFFSET_12M))
-
-# Growth
-df_feat["growth_yoy"] = np.where(df_feat["ref_yoy"] > 0, (df_feat["prod_6m"] - df_feat["ref_yoy"]) / df_feat["ref_yoy"], np.inf)
-df_feat["growth_prev6m"] = np.where(df_feat["ref_prev6m"] > 0, (df_feat["prod_6m"] - df_feat["ref_prev6m"]) / df_feat["ref_prev6m"], np.inf)
-
-# CHECKS
-print(df_feat[["prod_6m","ref_yoy","growth_yoy","new_dealer_like","in_nd_window"]].describe(include="all"))
+Et ensuite : 1 event, puis fenêtre 6m/8 contrats → pas de redétection pendant la fenêtre existing.
