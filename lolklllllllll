@@ -1,15 +1,19 @@
-import pandas as pd
-import numpy as np
+df_es = df_prep[df_prep["country"].isin(["ES", "Spain", "ESP"])].copy()  # adapte si besoin
+# Si country est déjà "ES" uniquement : df_es = df_prep[df_prep["country"]=="ES"].copy()
 
-from pandas.tseries.offsets import DateOffset, MonthEnd
+# Dates
+df_es["dte_mel"] = pd.to_datetime(df_es["dte_mel"], errors="coerce")
+df_es["dte_creation_apporteur"] = pd.to_datetime(df_es["dte_creation_apporteur"], errors="coerce")
 
-CAP_START = pd.Timestamp("2024-01-01")
-CAP_END   = pd.Timestamp("2025-12-31")
+# Nettoyage minimal : on ne garde que les MEL datées
+df_es = df_es[df_es["dte_mel"].notna()].copy()
 
-OFFSET_6M  = DateOffset(months=6)
-OFFSET_12M = DateOffset(months=12)
-OFFSET_18M = DateOffset(months=18)
+# Tri
+df_es = df_es.sort_values(["id_apporteur", "dte_mel", "id_contract"]).reset_index(drop=True)
 
-PROD_MIN = 500_000
-GROWTH_MIN = 0.30
-MAX_CALLS = 8
+# CHECKS rapides
+print("df_es rows:", len(df_es))
+print("dealers:", df_es["id_apporteur"].nunique())
+print("min/max dte_mel:", df_es["dte_mel"].min(), df_es["dte_mel"].max())
+print("ibl values:", df_es["ibl"].dropna().unique())
+print("is_key_account values:", df_es["is_key_account"].dropna().unique())
