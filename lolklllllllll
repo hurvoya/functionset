@@ -1,5 +1,3 @@
-calls_existing_yoy = build_calls_existing(events_existing_yoy, df_base, max_calls=8, follow_months=6)
-calls_existing_prev6m = build_calls_existing(events_existing_prev6m, df_base, max_calls=8, follow_months=6)
-
-print(calls_existing_yoy.shape)
-print(calls_existing_yoy.head())
+chk = calls_existing_yoy.groupby(["country","id_apporteur","dte_existing_event"]).size().describe()
+print(chk)
+print((calls_existing_yoy.groupby(["country","id_apporteur","dte_existing_event"]).size() > 8).sum())
