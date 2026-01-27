@@ -1,5 +1,17 @@
-plot_avg_calls_bar(
-    kpi_avg_calls_els,
-    "Average number of calls per dealer – 2025 (ELS)",
-    color="#9ecae1"
-)
+thresholds = [0, 20000, 40000, 60000, 80000, 100000]
+def compute_calls_by_threshold(df_calls, thresholds):
+    results = []
+
+    for t in thresholds:
+        df_filt = df_calls[df_calls["mtd_total_lot"] >= t]
+
+        tmp = (
+            df_filt
+            .groupby("country")
+            .size()
+            .reset_index(name="nb_calls")
+        )
+        tmp["threshold"] = t
+        results.append(tmp)
+
+    return pd.concat(results, ignore_index=True)
