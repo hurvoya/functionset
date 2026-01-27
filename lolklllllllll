@@ -1,20 +1,16 @@
-def exclude_new_dealers(existing_df, nd_windows):
+def exclude_existing_in_follow(existing_df, follow_existing):
     df = existing_df.merge(
-        nd_windows[[
-            "id_apporteur",
-            "nd_start",
-            "nd_end"
-        ]],
+        follow_existing[["id_apporteur", "follow_start", "follow_end"]],
         on="id_apporteur",
         how="left"
     )
 
-    df["in_nd_window"] = (
-        (df["snapshot_date"] >= df["nd_start"]) &
-        (df["snapshot_date"] <= df["nd_end"])
+    df["in_existing_follow"] = (
+        (df["snapshot_date"] >= df["follow_start"]) &
+        (df["snapshot_date"] <= df["follow_end"])
     )
 
-    df = df[~df["in_nd_window"]].copy()
-    df.drop(columns=["nd_start", "nd_end", "in_nd_window"], inplace=True)
+    df = df[~df["in_existing_follow"]].copy()
+    df.drop(columns=["follow_start", "follow_end", "in_existing_follow"], inplace=True)
 
     return df
