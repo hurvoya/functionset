@@ -1,30 +1,25 @@
-calls_els = calls_2025[calls_2025["ibl"] == "ELS"]
+def plot_avg_calls_bar(df, title, color):
+    dfp = df.sort_values("country").copy()
 
-calls_by_dealer_els = (
-    calls_els
-    .groupby(["country", "id_apporteur"])
-    .size()
-    .reset_index(name="nb_calls_dealer")
-)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    bars = ax.bar(dfp["country"], dfp["avg_calls_per_dealer"], color=color)
 
-kpi_avg_calls_els = (
-    calls_by_dealer_els
-    .groupby("country", as_index=False)["nb_calls_dealer"]
-    .mean()
-    .rename(columns={"nb_calls_dealer": "avg_calls_per_dealer"})
-)
-calls_tls = calls_2025[calls_2025["ibl"] == "TLS"]
+    y_max = dfp["avg_calls_per_dealer"].max() if len(dfp) else 0
 
-calls_by_dealer_tls = (
-    calls_tls
-    .groupby(["country", "id_apporteur"])
-    .size()
-    .reset_index(name="nb_calls_dealer")
-)
+    for bar in bars:
+        h = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width()/2,
+            h + (y_max * 0.02 if y_max else 0.1),
+            f"{h:.2f}",
+            ha="center", va="bottom",
+            fontsize=11, fontweight="bold"
+        )
 
-kpi_avg_calls_tls = (
-    calls_by_dealer_tls
-    .groupby("country", as_index=False)["nb_calls_dealer"]
-    .mean()
-    .rename(columns={"nb_calls_dealer": "avg_calls_per_dealer"})
-)
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_ylabel("Average number of calls per dealer")
+    ax.set_xlabel("Country")
+    ax.set_ylim(0, y_max * 1.2 if y_max else 1)
+    ax.grid(axis="y", alpha=0.25)
+    plt.tight_layout()
+    plt.show()
