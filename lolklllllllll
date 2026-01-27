@@ -1,18 +1,38 @@
-df = events.copy()
+import matplotlib.pyplot as plt
+import numpy as np
 
-# 1. Filtre années
-df["year"] = df["dte_event"].dt.year
-df = df[df["year"].isin([2024, 2025])]
+countries = sorted(kpi_bloc1["country"].dropna().unique())
+x = np.arange(len(countries))
+width = 0.35
 
-# 2. Création libellé KA
-df["ka_type"] = df["is_key_account"].map({
-    True: "Key Account",
-    False: "Non-Key Account"
-})
+def get_vals(year, ka_type):
+    return (
+        kpi_bloc1[(kpi_bloc1["year"] == year) &
+                  (kpi_bloc1["ka_type"] == ka_type)]
+        .set_index("country")
+        .reindex(countries, fill_value=0)["nb_dealers"]
+        .values
+    )
 
-# 3. Agrégation
-kpi_bloc1 = (
-    df.groupby(["country", "year", "ka_type"])
-      .size()
-      .reset_index(name="nb_dealers")
-)
+nk_2024 = get_vals(2024, "Non-Key Account")
+ka_2024 = get_vals(2024, "Key Account")
+nk_2025 = get_vals(2025, "Non-Key Account")
+ka_2025 = get_vals(2025, "Key Account")
+
+plt.figure(figsize=(12, 6))
+
+# 2024 (bleu clair/bleu foncé)
+plt.bar(x - width/2, nk_2024, width, color="#9ecae1", label="2024 Non-Key")
+plt.bar(x - width/2, ka_2024, width, bottom=nk_2024, color="#3182bd", label="2024 Key")
+
+# 2025 (vert clair/vert foncé)
+plt.bar(x + width/2, nk_2025, width, color="#a1d99b", label="2025 Non-Key")
+plt.bar(x + width/2, ka_2025, width, bottom=nk_2025, color="#31a354", label="2025 Key")
+
+plt.xticks(x, countries)
+plt.ylabel("Number of identifications (events)")
+plt.title("Existing dealers identified with >30% growth – Key vs Non-Key")
+plt.legend()
+plt.grid(axis="y", alpha=0.3)
+plt.tight_layout()
+plt.show()
