@@ -1,14 +1,53 @@
-def compute_kpi_volume(df, ibl=None):
-    data = df.copy()
-    
-    if ibl is not None:
-        data = data[data["ibl"] == ibl]
+import matplotlib.pyplot as plt
+import numpy as np
 
-    kpi = (
-        data
-        .groupby(["country", "is_key_account"])
-        .agg(nb_dealers=("id_apporteur", "nunique"))
-        .reset_index()
+def plot_volume_key_vs_nonkey(kpi, title):
+    pivot = (
+        kpi
+        .pivot(index="country", columns="is_key_account", values="nb_dealers")
+        .fillna(0)
     )
 
-    return kpi
+    # sécurité si une colonne manque
+    if True not in pivot.columns:
+        pivot[True] = 0
+    if False not in pivot.columns:
+        pivot[False] = 0
+
+    countries = pivot.index
+    non_key = pivot[False]
+    key = pivot[True]
+    total = non_key + key
+
+    x = np.arange(len(countries))
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # couleurs cohérentes avec new dealer
+    c_nonkey = "#6baed6"   # bleu clair
+    c_key = "#2171b5"      # bleu foncé
+
+    b1 = ax.bar(x, non_key, label="Non key account", color=c_nonkey)
+    b2 = ax.bar(x, key, bottom=non_key, label="Key account", color=c_key)
+
+    # labels dans les barres
+    for i, v in enumerate(non_key):
+        if v > 0:
+            ax.text(i, v/2, int(v), ha="center", va="center", color="white", fontsize=11)
+
+    for i, v in enumerate(key):
+        if v > 0:
+            ax.text(i, non_key[i] + v/2, int(v), ha="center", va="center", color="white", fontsize=11)
+
+    # total au-dessus
+    for i, v in enumerate(total):
+        ax.text(i, v + 1, int(v), ha="center", va="bottom", fontsize=12, fontweight="bold")
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries, rotation=45)
+    ax.set_ylabel("Number of dealers")
+    ax.set_title(title)
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
