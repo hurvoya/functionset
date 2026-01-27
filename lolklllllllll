@@ -1,28 +1,6 @@
-import matplotlib.pyplot as plt
-
-def plot_bar_with_labels(df, value_col, title, ylabel, color=COLOR_BLUE):
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    bars = ax.bar(
-        df["country"],
-        df[value_col],
-        color=color
-    )
-
-    for bar in bars:
-        h = bar.get_height()
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            h,
-            f"{int(round(h))}",
-            ha="center",
-            va="bottom",
-            fontsize=10,
-            fontweight="bold"
-        )
-
-    ax.set_title(title)
-    ax.set_ylabel(ylabel)
-    ax.set_xlabel("Country")
-    plt.tight_layout()
-    plt.show()
+plot_bar_with_labels(
+    kpi_calls_mean[kpi_calls_mean["ibl"]=="ELS"],
+    "avg_calls_per_dealer",
+    "Average number of calls per dealer – 2025 (ELS)",
+    "Average calls"
+)
