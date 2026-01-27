@@ -1,20 +1,55 @@
-# Global
-kpi_g = compute_kpi_block2_unique_vs_repeater(events_existing, ibl=None)
-plot_block2_unique_vs_repeater(
-    kpi_g,
-    "Unique vs Repeater Existing Dealers (Non Key Accounts) – 2025 (Global)"
+import pandas as pd
+import numpy as np
+
+# ============================
+# 1. Filtre de base
+# ============================
+df = events_existing.copy()
+
+df = df[
+    (df["dte_existing_event"].dt.year == 2025) &
+    (df["is_key_account"] == False)
+]
+
+# ============================
+# 2. Compte événements par dealer
+# ============================
+dealer_counts = (
+    df.groupby(["country", "ibl", "id_apporteur"])
+      .size()
+      .reset_index(name="nb_events")
 )
 
-# ELS
-kpi_els = compute_kpi_block2_unique_vs_repeater(events_existing, ibl="ELS")
-plot_block2_unique_vs_repeater(
-    kpi_els,
-    "Unique vs Repeater Existing Dealers (Non Key Accounts) – 2025 (ELS)"
+# ============================
+# 3. Tag unique / repeater
+# ============================
+dealer_counts["dealer_type"] = np.where(
+    dealer_counts["nb_events"] == 1,
+    "unique",
+    "repeater"
 )
 
-# TLS
-kpi_tls = compute_kpi_block2_unique_vs_repeater(events_existing, ibl="TLS")
-plot_block2_unique_vs_repeater(
-    kpi_tls,
-    "Unique vs Repeater Existing Dealers (Non Key Accounts) – 2025 (TLS)"
+# ============================
+# 4. Revenir au niveau événement
+# ============================
+df = df.merge(
+    dealer_counts[["country", "ibl", "id_apporteur", "dealer_type"]],
+    on=["country", "ibl", "id_apporteur"],
+    how="left"
+)
+
+# ============================
+# 5. KPI final : nombre d’événements
+# ============================
+kpi_block2 = (
+    df.groupby(["country", "ibl", "dealer_type"])
+      .size()
+      .reset_index(name="nb_events")
+)
+
+# version globale (tous IBL)
+kpi_block2_global = (
+    df.groupby(["country", "dealer_type"])
+      .size()
+      .reset_index(name="nb_events")
 )
