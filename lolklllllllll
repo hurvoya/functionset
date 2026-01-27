@@ -1,28 +1,13 @@
-import matplotlib.pyplot as plt
-import numpy as np
+plot_total_calls_bar(
+    kpi_calls_global.rename(columns={"nb_calls": "nb_calls"}),
+    "Total number of calls – 2025 (Global)",
+    color="#1f77b4"
+)
+kpi_calls_els = kpi_calls_by_country_ibl[kpi_calls_by_country_ibl["ibl"] == "ELS"]\
+    .groupby("country", as_index=False)["nb_calls"].sum()
 
-def plot_total_calls_bar(df, title, color="#1f77b4"):
-    dfp = df.sort_values("country").copy()
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-    bars = ax.bar(dfp["country"], dfp["nb_calls"], color=color)
-
-    # labels au-dessus
-    y_max = dfp["nb_calls"].max() if len(dfp) else 0
-    for bar in bars:
-        h = bar.get_height()
-        ax.text(
-            bar.get_x() + bar.get_width()/2,
-            h + (y_max * 0.01 if y_max else 0.1),
-            f"{int(h)}",
-            ha="center", va="bottom",
-            fontsize=11, fontweight="bold"
-        )
-
-    ax.set_title(title, fontsize=14, fontweight="bold")
-    ax.set_ylabel("Number of calls")
-    ax.set_xlabel("Country")
-    ax.set_ylim(0, y_max * 1.15 if y_max else 1)
-    ax.grid(axis="y", alpha=0.25)
-    plt.tight_layout()
-    plt.show()
+plot_total_calls_bar(
+    kpi_calls_els,
+    "Total number of calls – 2025 (ELS)",
+    color="#9ecae1"   # bleu clair
+)
