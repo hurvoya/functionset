@@ -1,6 +1,5 @@
-kpi_calls_by_country_ibl = (
-    calls_2025
-    .groupby(["country", "ibl"], dropna=False)
-    .size()
-    .reset_index(name="nb_calls")
+kpi_calls_global = (
+    kpi_calls_by_country_ibl
+    .groupby("country", as_index=False)["nb_calls"]
+    .sum()
 )
