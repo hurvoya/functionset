@@ -1,31 +1,8 @@
-def plot_block2_unique_vs_repeater(kpi, title):
-    pivot = (
-        kpi
-        .pivot(index="country", columns="dealer_type", values="nb_dealers")
-        .fillna(0)
-    )
+plot_block2_unique_vs_repeater(
+    kpi_block2,
+    "Unique vs Repeater Existing Dealers (Non Key Accounts) – 2025"
+)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    pivot.plot(
-        kind="bar",
-        stacked=True,
-        ax=ax,
-        color={
-            "Unique dealer": "#7fb3d5",   # bleu clair
-            "Repeater": "#1f4e79"         # bleu foncé
-        }
-    )
-
-    # labels dans les barres
-    for c in ax.containers:
-        ax.bar_label(c, label_type="center", fontsize=10)
-
-    ax.set_title(title, fontsize=14, weight="bold")
-    ax.set_ylabel("Number of dealers")
-    ax.set_xlabel("")
-    ax.legend(title="Dealer type")
-    ax.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()
     plt.show()
