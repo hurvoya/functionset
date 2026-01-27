@@ -1,118 +1,38 @@
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
-# =========================
-# BLOC 2.1 — Events vs Unique dealers (Non-Key Accounts only)
-# =========================
-
-# 0) Copie de travail
-df = events.copy()
-
-# 1) Filtre hors Key Account (opérationnel)
-df = df[df["is_key_account"] == False].copy()
-
-# 2) Année (à partir de la date d'identification)
-df["year"] = pd.to_datetime(df["dte_existing_event"], errors="coerce").dt.year
-df = df[df["year"].isin([2024, 2025])].copy()
-
-# 3) KPI : nb events vs nb dealers uniques
-kpi_bloc2_1 = (
-    df.groupby(["country", "year"])
-      .agg(
-          nb_events=("id_apporteur", "size"),
-          nb_unique_dealers=("id_apporteur", "nunique")
-      )
-      .reset_index()
-)
-
-# sécurité : éviter des valeurs négatives si data weird
-kpi_bloc2_1["nb_unique_dealers"] = kpi_bloc2_1["nb_unique_dealers"].clip(lower=0)
-kpi_bloc2_1["nb_events"] = kpi_bloc2_1["nb_events"].clip(lower=0)
-
-# 4) Préparation des vecteurs pour plot
-countries = sorted(kpi_bloc2_1["country"].dropna().unique())
+countries = sorted(kpi_bloc1["country"].dropna().unique())
 x = np.arange(len(countries))
 width = 0.35
 
-def get_vals(year, col):
+def get_vals(year, ka_type):
     return (
-        kpi_bloc2_1[kpi_bloc2_1["year"] == year]
+        kpi_bloc1[(kpi_bloc1["year"] == year) &
+                  (kpi_bloc1["ka_type"] == ka_type)]
         .set_index("country")
-        .reindex(countries, fill_value=0)[col]
+        .reindex(countries, fill_value=0)["nb_dealers"]
         .values
     )
 
-events_2024 = get_vals(2024, "nb_events")
-unique_2024 = get_vals(2024, "nb_unique_dealers")
-extra_2024 = np.maximum(events_2024 - unique_2024, 0)
+nk_2024 = get_vals(2024, "Non-Key Account")
+ka_2024 = get_vals(2024, "Key Account")
+nk_2025 = get_vals(2025, "Non-Key Account")
+ka_2025 = get_vals(2025, "Key Account")
 
-events_2025 = get_vals(2025, "nb_events")
-unique_2025 = get_vals(2025, "nb_unique_dealers")
-extra_2025 = np.maximum(events_2025 - unique_2025, 0)
+plt.figure(figsize=(12, 6))
 
-# 5) Plot
-plt.figure(figsize=(13, 6))
+# 2024 (bleu clair/bleu foncé)
+plt.bar(x - width/2, nk_2024, width, color="#9ecae1", label="2024 Non-Key")
+plt.bar(x - width/2, ka_2024, width, bottom=nk_2024, color="#3182bd", label="2024 Key")
 
-bars_u_2024 = plt.bar(x - width/2, unique_2024, width, color="#3182bd", label="2024 Unique dealers")
-bars_e_2024 = plt.bar(x - width/2, extra_2024, width, bottom=unique_2024, color="#9ecae1", label="2024 Repeated events")
+# 2025 (vert clair/vert foncé)
+plt.bar(x + width/2, nk_2025, width, color="#a1d99b", label="2025 Non-Key")
+plt.bar(x + width/2, ka_2025, width, bottom=nk_2025, color="#31a354", label="2025 Key")
 
-bars_u_2025 = plt.bar(x + width/2, unique_2025, width, color="#31a354", label="2025 Unique dealers")
-bars_e_2025 = plt.bar(x + width/2, extra_2025, width, bottom=unique_2025, color="#a1d99b", label="2025 Repeated events")
-
-# 6) Labels dans chaque segment
-def add_segment_labels(bars, values, bottoms=None):
-    for i, bar in enumerate(bars):
-        h = values[i]
-        if h == 0:
-            continue
-        y = (bottoms[i] if bottoms is not None else 0) + h / 2
-        plt.text(
-            bar.get_x() + bar.get_width()/2,
-            y,
-            f"{int(h)}",
-            ha="center",
-            va="center",
-            fontsize=10,
-            color="white",
-            fontweight="bold"
-        )
-
-add_segment_labels(bars_u_2024, unique_2024)
-add_segment_labels(bars_e_2024, extra_2024, unique_2024)
-
-add_segment_labels(bars_u_2025, unique_2025)
-add_segment_labels(bars_e_2025, extra_2025, unique_2025)
-
-# 7) Labels totaux au-dessus des barres
-for i in range(len(countries)):
-    plt.text(
-        x[i] - width/2,
-        events_2024[i] + 0.5,
-        f"{int(events_2024[i])}",
-        ha="center",
-        va="bottom",
-        fontsize=11,
-        fontweight="bold"
-    )
-    plt.text(
-        x[i] + width/2,
-        events_2025[i] + 0.5,
-        f"{int(events_2025[i])}",
-        ha="center",
-        va="bottom",
-        fontsize=11,
-        fontweight="bold"
-    )
-
-# 8) Mise en forme
 plt.xticks(x, countries)
 plt.ylabel("Number of identifications (events)")
-plt.title("Existing dealers – Events vs Unique dealers (Non-Key Accounts only)")
-plt.legend(ncol=2, frameon=False)
+plt.title("Existing dealers identified with >30% growth – Key vs Non-Key")
+plt.legend()
 plt.grid(axis="y", alpha=0.3)
 plt.tight_layout()
 plt.show()
-
-# (Optionnel) Afficher le KPI pour contrôle
-print(kpi_bloc2_1.sort_values(["country","year"]))
