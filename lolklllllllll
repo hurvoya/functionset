@@ -11,3 +11,11 @@ plot_total_calls_bar(
     "Total number of calls – 2025 (ELS)",
     color="#9ecae1"   # bleu clair
 )
+kpi_calls_tls = kpi_calls_by_country_ibl[kpi_calls_by_country_ibl["ibl"] == "TLS"]\
+    .groupby("country", as_index=False)["nb_calls"].sum()
+
+plot_total_calls_bar(
+    kpi_calls_tls,
+    "Total number of calls – 2025 (TLS)",
+    color="#08519c"   # bleu foncé
+)
