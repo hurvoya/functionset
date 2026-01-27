@@ -1,38 +1,46 @@
-import matplotlib.pyplot as plt
-import numpy as np
+plt.figure(figsize=(13, 6))
 
-countries = sorted(kpi_bloc1["country"].dropna().unique())
-x = np.arange(len(countries))
-width = 0.35
+# barres
+bars_nk_2024 = plt.bar(x - width/2, nk_2024, width, color="#9ecae1", label="2024 Non-Key")
+bars_ka_2024 = plt.bar(x - width/2, ka_2024, width, bottom=nk_2024, color="#3182bd", label="2024 Key")
 
-def get_vals(year, ka_type):
-    return (
-        kpi_bloc1[(kpi_bloc1["year"] == year) &
-                  (kpi_bloc1["ka_type"] == ka_type)]
-        .set_index("country")
-        .reindex(countries, fill_value=0)["nb_dealers"]
-        .values
-    )
+bars_nk_2025 = plt.bar(x + width/2, nk_2025, width, color="#a1d99b", label="2025 Non-Key")
+bars_ka_2025 = plt.bar(x + width/2, ka_2025, width, bottom=nk_2025, color="#31a354", label="2025 Key")
 
-nk_2024 = get_vals(2024, "Non-Key Account")
-ka_2024 = get_vals(2024, "Key Account")
-nk_2025 = get_vals(2025, "Non-Key Account")
-ka_2025 = get_vals(2025, "Key Account")
+# labels segments
+def add_labels(bars, bottoms=None):
+    for i, bar in enumerate(bars):
+        h = bar.get_height()
+        if h == 0:
+            continue
+        y = bar.get_y() + (bottoms[i] if bottoms is not None else 0) + h / 2
+        plt.text(bar.get_x() + bar.get_width()/2, y,
+                 f"{int(h)}", ha="center", va="center",
+                 fontsize=10, color="white", fontweight="bold")
 
-plt.figure(figsize=(12, 6))
+add_labels(bars_nk_2024)
+add_labels(bars_ka_2024, nk_2024)
+add_labels(bars_nk_2025)
+add_labels(bars_ka_2025, nk_2025)
 
-# 2024 (bleu clair/bleu foncé)
-plt.bar(x - width/2, nk_2024, width, color="#9ecae1", label="2024 Non-Key")
-plt.bar(x - width/2, ka_2024, width, bottom=nk_2024, color="#3182bd", label="2024 Key")
+# labels totaux
+for i in range(len(countries)):
+    total_2024 = nk_2024[i] + ka_2024[i]
+    total_2025 = nk_2025[i] + ka_2025[i]
 
-# 2025 (vert clair/vert foncé)
-plt.bar(x + width/2, nk_2025, width, color="#a1d99b", label="2025 Non-Key")
-plt.bar(x + width/2, ka_2025, width, bottom=nk_2025, color="#31a354", label="2025 Key")
+    plt.text(x[i] - width/2, total_2024 + 0.5,
+             f"{int(total_2024)}", ha="center", va="bottom",
+             fontsize=11, fontweight="bold")
 
+    plt.text(x[i] + width/2, total_2025 + 0.5,
+             f"{int(total_2025)}", ha="center", va="bottom",
+             fontsize=11, fontweight="bold")
+
+# axes
 plt.xticks(x, countries)
 plt.ylabel("Number of identifications (events)")
 plt.title("Existing dealers identified with >30% growth – Key vs Non-Key")
-plt.legend()
+plt.legend(ncol=2, frameon=False)
 plt.grid(axis="y", alpha=0.3)
 plt.tight_layout()
 plt.show()
