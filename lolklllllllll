@@ -1,5 +1,29 @@
-kpi_avg_calls_global = (
-    calls_by_dealer
+calls_els = calls_2025[calls_2025["ibl"] == "ELS"]
+
+calls_by_dealer_els = (
+    calls_els
+    .groupby(["country", "id_apporteur"])
+    .size()
+    .reset_index(name="nb_calls_dealer")
+)
+
+kpi_avg_calls_els = (
+    calls_by_dealer_els
+    .groupby("country", as_index=False)["nb_calls_dealer"]
+    .mean()
+    .rename(columns={"nb_calls_dealer": "avg_calls_per_dealer"})
+)
+calls_tls = calls_2025[calls_2025["ibl"] == "TLS"]
+
+calls_by_dealer_tls = (
+    calls_tls
+    .groupby(["country", "id_apporteur"])
+    .size()
+    .reset_index(name="nb_calls_dealer")
+)
+
+kpi_avg_calls_tls = (
+    calls_by_dealer_tls
     .groupby("country", as_index=False)["nb_calls_dealer"]
     .mean()
     .rename(columns={"nb_calls_dealer": "avg_calls_per_dealer"})
