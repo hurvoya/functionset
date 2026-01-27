@@ -1,27 +1,18 @@
-def plot_bar_with_labels(df, value_col, title, ylabel):
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    bars = ax.bar(
-        df["country"],
-        df[value_col],
-        color=COLORS["blue"]
-    )
-
-    # labels manuels
-    for bar in bars:
-        h = bar.get_height()
-        ax.text(
-            bar.get_x() + bar.get_width()/2,
-            h,
-            f"{int(round(h))}",
-            ha="center",
-            va="bottom",
-            fontsize=10,
-            fontweight="bold"
-        )
-
-    ax.set_title(title)
-    ax.set_ylabel(ylabel)
-    ax.set_xlabel("Country")
-    plt.tight_layout()
-    plt.show()
+plot_bar_with_labels(
+    kpi_calls_total.groupby("country", as_index=False)["nb_calls"].sum(),
+    "nb_calls",
+    "Total number of calls – 2025",
+    "Number of calls"
+)
+plot_bar_with_labels(
+    kpi_calls_total.groupby("country", as_index=False)["nb_calls"].sum(),
+    "nb_calls",
+    "Total number of calls – 2025",
+    "Number of calls"
+)
+plot_bar_with_labels(
+    kpi_calls_total[kpi_calls_total["ibl"]=="TLS"],
+    "nb_calls",
+    "Total number of calls – 2025 (TLS)",
+    "Number of calls"
+)
