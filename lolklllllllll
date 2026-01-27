@@ -1,8 +1,91 @@
-plot_block2_unique_vs_repeater(
-    kpi_block2,
-    "Unique vs Repeater Existing Dealers (Non Key Accounts) – 2025"
-)
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
+def compute_kpi_block2_unique_vs_repeater(events_existing, ibl=None):
+    df = events_existing.copy()
+    df["snapshot_date"] = pd.to_datetime(df["snapshot_date"], errors="coerce")
+    df["year"] = df["snapshot_date"].dt.year
+
+    # 2025 uniquement + hors key account
+    df = df[(df["year"] == 2025) & (df["is_key_account"] == False)].copy()
+
+    # filtre IBL si demandé
+    if ibl is not None:
+        df = df[df["ibl"] == ibl].copy()
+
+    # nb d'events par dealer (par pays)
+    dealer_counts = (
+        df.groupby(["country", "id_apporteur"])
+          .size()
+          .reset_index(name="nb_events")
+    )
+
+    dealer_counts["dealer_type"] = np.where(
+        dealer_counts["nb_events"] == 1,
+        "Unique dealer",
+        "Repeater"
+    )
+
+    kpi = (
+        dealer_counts.groupby(["country", "dealer_type"])
+                     .size()
+                     .reset_index(name="nb_dealers")
+    )
+
+    return kpi
+
+
+def plot_block2_unique_vs_repeater(kpi, title):
+    # pivot en colonnes unique / repeater
+    pivot = (
+        kpi.pivot(index="country", columns="dealer_type", values="nb_dealers")
+           .fillna(0)
+    )
+    if "Unique dealer" not in pivot.columns:
+        pivot["Unique dealer"] = 0
+    if "Repeater" not in pivot.columns:
+        pivot["Repeater"] = 0
+
+    pivot = pivot.sort_index()
+
+    countries = pivot.index.tolist()
+    unique_vals = pivot["Unique dealer"].values
+    repeater_vals = pivot["Repeater"].values
+    total_vals = unique_vals + repeater_vals
+
+    x = np.arange(len(countries))
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # couleurs cohérentes
+    c_unique = "#7fb3d5"   # bleu clair
+    c_rep = "#1f4e79"      # bleu foncé
+
+    b1 = ax.bar(x, unique_vals, color=c_unique, label="Unique dealer")
+    b2 = ax.bar(x, repeater_vals, bottom=unique_vals, color=c_rep, label="Repeater")
+
+    # labels dans les barres (manuel, robuste)
+    for i in range(len(countries)):
+        u = unique_vals[i]
+        r = repeater_vals[i]
+        t = total_vals[i]
+
+        if u > 0:
+            ax.text(i, u/2, f"{int(u)}", ha="center", va="center", color="white", fontsize=11)
+        if r > 0:
+            ax.text(i, u + r/2, f"{int(r)}", ha="center", va="center", color="white", fontsize=11)
+
+        # total au-dessus
+        ax.text(i, t + max(total_vals)*0.01 + 0.5, f"{int(t)}",
+                ha="center", va="bottom", fontsize=12, fontweight="bold")
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(countries, rotation=45, ha="right")
+    ax.set_ylabel("Number of dealers")
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.legend()
+    ax.grid(axis="y", alpha=0.25)
 
     plt.tight_layout()
     plt.show()
