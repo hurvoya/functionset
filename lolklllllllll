@@ -1,5 +1,1 @@
-tmp = calls_existing_yoy.copy()
-tmp["dte_existing_event"] = pd.to_datetime(tmp["dte_existing_event"])
-tmp["dte_mel"] = pd.to_datetime(tmp["dte_mel"])
-ok = (tmp["dte_mel"] <= (tmp["dte_existing_event"] + pd.DateOffset(months=6))).mean()
-print("pct calls within 6 months:", ok)
+print((tmp["dte_mel"] < tmp["dte_existing_event"]).mean())
