@@ -1,24 +1,22 @@
-df = events.copy()
+import numpy as np
+import matplotlib.pyplot as plt
 
-# 1️⃣ Hors Key Account uniquement
-df = df[df["is_key_account"] == False].copy()
+countries = sorted(kpi_bloc2_1["country"].unique())
+x = np.arange(len(countries))
+width = 0.35
 
-# 2️⃣ Année d’identification
-df["year"] = pd.to_datetime(df["dte_existing_event"], errors="coerce").dt.year
-df = df[df["year"].isin([2024, 2025])]
+def get_vals(year, col):
+    return (
+        kpi_bloc2_1[kpi_bloc2_1["year"] == year]
+        .set_index("country")
+        .reindex(countries, fill_value=0)[col]
+        .values
+    )
 
-# 3️⃣ KPI : events vs dealers uniques
-kpi_bloc2_1 = (
-    df.groupby(["country", "year"])
-      .agg(
-          nb_events=("id_apporteur", "size"),
-          nb_unique_dealers=("id_apporteur", "nunique")
-      )
-      .reset_index()
-)
+events_2024 = get_vals(2024, "nb_events")
+unique_2024 = get_vals(2024, "nb_unique_dealers")
+extra_2024 = events_2024 - unique_2024
 
-print(kpi_bloc2_1.head())
-
-plt.grid(axis="y", alpha=0.3)
-plt.tight_layout()
-plt.show()
+events_2025 = get_vals(2025, "nb_events")
+unique_2025 = get_vals(2025, "nb_unique_dealers")
+extra_2025 = events_2025 - unique_2025
