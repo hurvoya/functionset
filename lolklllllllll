@@ -1,49 +1,5 @@
-calls_2025 = calls[calls["year"] == 2025]
-
-df_threshold_global = compute_calls_by_threshold(calls_2025, thresholds)
-df_threshold_els = compute_calls_by_threshold(
-    calls_2025[calls_2025["ibl"] == "ELS"],
-    thresholds
-)
-df_threshold_tls = compute_calls_by_threshold(
-    calls_2025[calls_2025["ibl"] == "TLS"],
-    thresholds
-)
-def plot_threshold_impact(df, title):
-    fig, ax = plt.subplots(figsize=(9, 5))
-
-    for country, g in df.groupby("country"):
-        g = g.sort_values("threshold")
-        ax.plot(
-            g["threshold"],
-            g["nb_calls"],
-            marker="o",
-            label=country
-        )
-
-    ax.set_title(title, fontsize=14, fontweight="bold")
-    ax.set_xlabel("Threshold (€)")
-    ax.set_ylabel("Number of calls kept")
-    ax.grid(alpha=0.3)
-    ax.legend(title="Country", bbox_to_anchor=(1.02, 1), loc="upper left")
-    plt.tight_layout()
-    plt.show()
-
-
-
 plot_threshold_impact(
-    df_threshold_global,
-    "Impact of threshold on number of calls – 2025 (Global)"
-)
-
-plot_threshold_impact(
-    df_threshold_global,
-    "Impact of threshold on number of calls – 2025 (Global)"
-)
-
-
-plot_threshold_impact(
-    df_threshold_els,
-    "Impact of threshold on number of calls – 2025 (ELS)"
+    df_threshold_tls,
+    "Impact of threshold on number of calls – 2025 (TLS)"
 )
 
