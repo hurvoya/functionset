@@ -1,8 +1,6 @@
-plot_block2_unique_vs_repeater(
-    kpi_block2[kpi_block2["ibl"] == "ELS"],
-    "Existing dealer events – Unique vs Repeaters – ELS (2025)"
-)
-plot_block2_unique_vs_repeater(
-    kpi_block2[kpi_block2["ibl"] == "TLS"],
-    "Existing dealer events – Unique vs Repeaters – TLS (2025)"
+kpi_calls_total = (
+    calls_2025
+    .groupby(["country", "ibl"])
+    .size()
+    .reset_index(name="nb_calls")
 )
