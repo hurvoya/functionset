@@ -1,55 +1,35 @@
-import pandas as pd
-import numpy as np
+COLORS = {
+    "unique": "#9ecae1",     # bleu clair
+    "repeater": "#08519c"    # bleu foncé
+}
+import matplotlib.pyplot as plt
 
-# ============================
-# 1. Filtre de base
-# ============================
-df = events_existing.copy()
+def plot_block2_unique_vs_repeater(kpi_df, title):
+    pivot = (
+        kpi_df.pivot(index="country", columns="dealer_type", values="nb_events")
+              .fillna(0)
+    )
 
-df = df[
-    (df["dte_existing_event"].dt.year == 2025) &
-    (df["is_key_account"] == False)
-]
+    ax = pivot.plot(
+        kind="bar",
+        stacked=True,
+        figsize=(10, 5),
+        color=[COLORS["unique"], COLORS["repeater"]]
+    )
 
-# ============================
-# 2. Compte événements par dealer
-# ============================
-dealer_counts = (
-    df.groupby(["country", "ibl", "id_apporteur"])
-      .size()
-      .reset_index(name="nb_events")
-)
+    # labels dans les barres
+    for container in ax.containers:
+        ax.bar_label(container, label_type="center", fontsize=10)
 
-# ============================
-# 3. Tag unique / repeater
-# ============================
-dealer_counts["dealer_type"] = np.where(
-    dealer_counts["nb_events"] == 1,
-    "unique",
-    "repeater"
-)
+    # total au-dessus
+    totals = pivot.sum(axis=1)
+    for i, total in enumerate(totals):
+        ax.text(i, total, f"{int(total)}", ha="center", va="bottom",
+                fontsize=11, fontweight="bold")
 
-# ============================
-# 4. Revenir au niveau événement
-# ============================
-df = df.merge(
-    dealer_counts[["country", "ibl", "id_apporteur", "dealer_type"]],
-    on=["country", "ibl", "id_apporteur"],
-    how="left"
-)
-
-# ============================
-# 5. KPI final : nombre d’événements
-# ============================
-kpi_block2 = (
-    df.groupby(["country", "ibl", "dealer_type"])
-      .size()
-      .reset_index(name="nb_events")
-)
-
-# version globale (tous IBL)
-kpi_block2_global = (
-    df.groupby(["country", "dealer_type"])
-      .size()
-      .reset_index(name="nb_events")
-)
+    ax.set_title(title)
+    ax.set_ylabel("Number of existing events")
+    ax.set_xlabel("Country")
+    ax.legend(title="Dealer type")
+    plt.tight_layout()
+    plt.show()
