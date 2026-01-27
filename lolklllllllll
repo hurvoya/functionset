@@ -1,13 +1,27 @@
-calls_per_dealer = (
-    calls_2025
-    .groupby(["country", "ibl", "id_apporteur"])
-    .size()
-    .reset_index(name="nb_calls")
-)
+def plot_bar_with_labels(df, value_col, title, ylabel):
+    fig, ax = plt.subplots(figsize=(10, 5))
 
-kpi_calls_mean = (
-    calls_per_dealer
-    .groupby(["country", "ibl"])["nb_calls"]
-    .mean()
-    .reset_index(name="avg_calls_per_dealer")
-)
+    bars = ax.bar(
+        df["country"],
+        df[value_col],
+        color=COLORS["blue"]
+    )
+
+    # labels manuels
+    for bar in bars:
+        h = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width()/2,
+            h,
+            f"{int(round(h))}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            fontweight="bold"
+        )
+
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel("Country")
+    plt.tight_layout()
+    plt.show()
