@@ -1,59 +1,8 @@
-import matplotlib.pyplot as plt
-import numpy as np
-
-def plot_block2_unique_vs_repeater(kpi_df, title):
-    pivot = (
-        kpi_df.pivot(index="country", columns="dealer_type", values="nb_events")
-              .fillna(0)
-    )
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    pivot.plot(
-        kind="bar",
-        stacked=True,
-        ax=ax,
-        color=[COLORS["unique"], COLORS["repeater"]]
-    )
-
-    # ============================
-    # Labels DANS les barres
-    # ============================
-    for i, country in enumerate(pivot.index):
-        cum = 0
-        for dealer_type in pivot.columns:
-            val = pivot.loc[country, dealer_type]
-            if val > 0:
-                ax.text(
-                    i,
-                    cum + val / 2,
-                    str(int(val)),
-                    ha="center",
-                    va="center",
-                    fontsize=10,
-                    color="white",
-                    fontweight="bold"
-                )
-                cum += val
-
-    # ============================
-    # Total au-dessus de chaque barre
-    # ============================
-    totals = pivot.sum(axis=1)
-    for i, total in enumerate(totals):
-        ax.text(
-            i,
-            total,
-            str(int(total)),
-            ha="center",
-            va="bottom",
-            fontsize=11,
-            fontweight="bold"
-        )
-
-    ax.set_title(title)
-    ax.set_ylabel("Number of existing events")
-    ax.set_xlabel("Country")
-    ax.legend(title="Dealer type")
-    plt.tight_layout()
-    plt.show()
+plot_block2_unique_vs_repeater(
+    kpi_block2[kpi_block2["ibl"] == "ELS"],
+    "Existing dealer events – Unique vs Repeaters – ELS (2025)"
+)
+plot_block2_unique_vs_repeater(
+    kpi_block2[kpi_block2["ibl"] == "TLS"],
+    "Existing dealer events – Unique vs Repeaters – TLS (2025)"
+)
