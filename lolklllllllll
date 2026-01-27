@@ -1,24 +1,16 @@
-plt.figure(figsize=(13, 6))
-
-# 2024 (bleu)
-plt.bar(x - width/2, unique_2024, width, color="#3182bd", label="2024 Unique dealers")
-plt.bar(x - width/2, extra_2024, width, bottom=unique_2024, color="#9ecae1", label="2024 Repeated events")
-
-# 2025 (vert)
-plt.bar(x + width/2, unique_2025, width, color="#31a354", label="2025 Unique dealers")
-plt.bar(x + width/2, extra_2025, width, bottom=unique_2025, color="#a1d99b", label="2025 Repeated events")
-
-# labels totaux
-for i in range(len(countries)):
-    plt.text(x[i] - width/2, events_2024[i] + 0.5, str(int(events_2024[i])),
-             ha="center", va="bottom", fontweight="bold", fontsize=11)
-    plt.text(x[i] + width/2, events_2025[i] + 0.5, str(int(events_2025[i])),
-             ha="center", va="bottom", fontweight="bold", fontsize=11)
-
-plt.xticks(x, countries)
-plt.ylabel("Number of identifications (events)")
-plt.title("Existing dealers – Events vs Unique dealers (Non-Key Accounts only)")
-plt.legend(ncol=2, frameon=False)
-plt.grid(axis="y", alpha=0.3)
-plt.tight_layout()
-plt.show()
+def add_segment_labels(bars, values, bottoms=None):
+    for i, bar in enumerate(bars):
+        h = values[i]
+        if h == 0:
+            continue
+        y = (bottoms[i] if bottoms is not None else 0) + h / 2
+        plt.text(
+            bar.get_x() + bar.get_width()/2,
+            y,
+            f"{int(h)}",
+            ha="center",
+            va="center",
+            fontsize=10,
+            color="white",
+            fontweight="bold"
+        )
