@@ -1,11 +1,2 @@
-events_existing_yoy = build_existing_events(
-    metrics_yoy,
-    nd_windows,
-    follow_existing=pd.DataFrame(columns=["id_apporteur","follow_start","follow_end"])
-)
-
-events_existing_prev6m = build_existing_events(
-    metrics_prev6m,
-    nd_windows,
-    follow_existing=pd.DataFrame(columns=["id_apporteur","follow_start","follow_end"])
-)
+events_existing_yoy.groupby("country").size()
+events_existing_yoy["snapshot_date"].value_counts().sort_index()
