@@ -1,10 +1,11 @@
-def build_existing_events(
-    metrics,
+events_existing_yoy = build_existing_events(
+    metrics_yoy,
     nd_windows,
-    follow_existing
-):
-    step1 = filter_existing_business(metrics)
-    step2 = exclude_new_dealers(step1, nd_windows)
-    step3 = exclude_existing_in_follow(step2, follow_existing)
+    follow_existing=pd.DataFrame(columns=["id_apporteur","follow_start","follow_end"])
+)
 
-    return step3
+events_existing_prev6m = build_existing_events(
+    metrics_prev6m,
+    nd_windows,
+    follow_existing=pd.DataFrame(columns=["id_apporteur","follow_start","follow_end"])
+)
