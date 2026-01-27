@@ -1,16 +1,5 @@
-def add_segment_labels(bars, values, bottoms=None):
-    for i, bar in enumerate(bars):
-        h = values[i]
-        if h == 0:
-            continue
-        y = (bottoms[i] if bottoms is not None else 0) + h / 2
-        plt.text(
-            bar.get_x() + bar.get_width()/2,
-            y,
-            f"{int(h)}",
-            ha="center",
-            va="center",
-            fontsize=10,
-            color="white",
-            fontweight="bold"
-        )
+add_segment_labels(bars_u_2024, unique_2024)
+add_segment_labels(bars_e_2024, extra_2024, unique_2024)
+
+add_segment_labels(bars_u_2025, unique_2025)
+add_segment_labels(bars_e_2025, extra_2025, unique_2025)
