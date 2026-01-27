@@ -1,35 +1,4 @@
-COLORS = {
-    "unique": "#9ecae1",     # bleu clair
-    "repeater": "#08519c"    # bleu foncé
-}
-import matplotlib.pyplot as plt
-
-def plot_block2_unique_vs_repeater(kpi_df, title):
-    pivot = (
-        kpi_df.pivot(index="country", columns="dealer_type", values="nb_events")
-              .fillna(0)
-    )
-
-    ax = pivot.plot(
-        kind="bar",
-        stacked=True,
-        figsize=(10, 5),
-        color=[COLORS["unique"], COLORS["repeater"]]
-    )
-
-    # labels dans les barres
-    for container in ax.containers:
-        ax.bar_label(container, label_type="center", fontsize=10)
-
-    # total au-dessus
-    totals = pivot.sum(axis=1)
-    for i, total in enumerate(totals):
-        ax.text(i, total, f"{int(total)}", ha="center", va="bottom",
-                fontsize=11, fontweight="bold")
-
-    ax.set_title(title)
-    ax.set_ylabel("Number of existing events")
-    ax.set_xlabel("Country")
-    ax.legend(title="Dealer type")
-    plt.tight_layout()
-    plt.show()
+plot_block2_unique_vs_repeater(
+    kpi_block2_global,
+    "Existing dealer events – Unique vs Repeaters (2025, non-key accounts)"
+)
