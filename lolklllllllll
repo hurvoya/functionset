@@ -1,38 +1,48 @@
-import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
-countries = sorted(kpi_bloc1["country"].dropna().unique())
-x = np.arange(len(countries))
-width = 0.35
+def prepare_base_existing_from_df_prep(df_prep: pd.DataFrame) -> pd.DataFrame:
+    df = df_prep.copy()
 
-def get_vals(year, ka_type):
-    return (
-        kpi_bloc1[(kpi_bloc1["year"] == year) &
-                  (kpi_bloc1["ka_type"] == ka_type)]
-        .set_index("country")
-        .reindex(countries, fill_value=0)["nb_dealers"]
-        .values
-    )
+    # --- dates
+    df["dte_mel"] = pd.to_datetime(df["dte_mel"], errors="coerce")
+    df["dte_creation_apporteur"] = pd.to_datetime(df["dte_creation_apporteur"], errors="coerce")
 
-nk_2024 = get_vals(2024, "Non-Key Account")
-ka_2024 = get_vals(2024, "Key Account")
-nk_2025 = get_vals(2025, "Non-Key Account")
-ka_2025 = get_vals(2025, "Key Account")
+    # --- types
+    # (on évite les .str inutiles : id_apporteur peut rester en Int64)
+    # mais on force un format nullable pour éviter les surprises
+    if "id_apporteur" in df.columns:
+        df["id_apporteur"] = df["id_apporteur"].astype("Int64")
 
-plt.figure(figsize=(12, 6))
+    # --- colonnes minimales (adapter si tes noms diffèrent légèrement)
+    keep_cols = [
+        "country",
+        "ibl",
+        "id_apporteur",
+        "id_contract",
+        "dte_mel",
+        "mtd_total_lot",
+        "is_key_account",
+        "partner",                 # si tu l’as déjà dans df_prep
+        "dte_creation_apporteur",
+    ]
+    keep_cols = [c for c in keep_cols if c in df.columns]
+    df = df[keep_cols].copy()
 
-# 2024 (bleu clair/bleu foncé)
-plt.bar(x - width/2, nk_2024, width, color="#9ecae1", label="2024 Non-Key")
-plt.bar(x - width/2, ka_2024, width, bottom=nk_2024, color="#3182bd", label="2024 Key")
+    # --- filtre data : on garde l'historique nécessaire pour 2024-2025 snapshots
+    # (safe : depuis 2023-01-01 ; à ajuster si besoin)
+    df = df[df["dte_mel"].notna()].copy()
+    df = df[df["dte_mel"] >= pd.Timestamp("2023-01-01")].copy()
 
-# 2025 (vert clair/vert foncé)
-plt.bar(x + width/2, nk_2025, width, color="#a1d99b", label="2025 Non-Key")
-plt.bar(x + width/2, ka_2025, width, bottom=nk_2025, color="#31a354", label="2025 Key")
+    # --- montant
+    if "mtd_total_lot" in df.columns:
+        df["mtd_total_lot"] = pd.to_numeric(df["mtd_total_lot"], errors="coerce").fillna(0)
 
-plt.xticks(x, countries)
-plt.ylabel("Number of identifications (events)")
-plt.title("Existing dealers identified with >30% growth – Key vs Non-Key")
-plt.legend()
-plt.grid(axis="y", alpha=0.3)
-plt.tight_layout()
-plt.show()
+    return df
+
+
+# ✅ CHECK RAPIDE
+df_base = prepare_base_existing_from_df_prep(df_prep)
+print(df_base.shape)
+print(df_base[["country", "ibl", "dte_mel", "mtd_total_lot", "is_key_account"]].head())
+print(df_base["dte_mel"].min(), df_base["dte_mel"].max())
