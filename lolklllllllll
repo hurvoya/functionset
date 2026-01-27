@@ -1,15 +1,5 @@
 plot_avg_calls_bar(
-    kpi_avg_calls_global,
-    "Average number of calls per dealer – 2025 (Global)",
-    color="#1f77b4"
-)
-plot_avg_calls_bar(
-    kpi_avg_calls_global,
-    "Average number of calls per dealer – 2025 (Global)",
-    color="#1f77b4"
-)
-plot_avg_calls_bar(
-    kpi_avg_calls_tls,
-    "Average number of calls per dealer – 2025 (TLS)",
-    color="#08519c"
+    kpi_avg_calls_els,
+    "Average number of calls per dealer – 2025 (ELS)",
+    color="#9ecae1"
 )
