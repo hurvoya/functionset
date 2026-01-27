@@ -1,15 +1,20 @@
+def exclude_new_dealers(existing_df, nd_windows):
+    df = existing_df.merge(
+        nd_windows[[
+            "id_apporteur",
+            "nd_start",
+            "nd_end"
+        ]],
+        on="id_apporteur",
+        how="left"
+    )
 
----
+    df["in_nd_window"] = (
+        (df["snapshot_date"] >= df["nd_start"]) &
+        (df["snapshot_date"] <= df["nd_end"])
+    )
 
-# 🧱 Étape D1 — Filtrage business pur (500k + 30%)
+    df = df[~df["in_nd_window"]].copy()
+    df.drop(columns=["nd_start", "nd_end", "in_nd_window"], inplace=True)
 
-```python
-def filter_existing_business(metrics):
-    out = metrics.copy()
-
-    out = out[
-        (out["prod_current_6m"] >= 500_000) &
-        (out["growth_pct"] >= 0.30)
-    ].copy()
-
-    return out
+    return df
