@@ -1,16 +1,10 @@
-def exclude_existing_in_follow(existing_df, follow_existing):
-    df = existing_df.merge(
-        follow_existing[["id_apporteur", "follow_start", "follow_end"]],
-        on="id_apporteur",
-        how="left"
-    )
+def build_existing_events(
+    metrics,
+    nd_windows,
+    follow_existing
+):
+    step1 = filter_existing_business(metrics)
+    step2 = exclude_new_dealers(step1, nd_windows)
+    step3 = exclude_existing_in_follow(step2, follow_existing)
 
-    df["in_existing_follow"] = (
-        (df["snapshot_date"] >= df["follow_start"]) &
-        (df["snapshot_date"] <= df["follow_end"])
-    )
-
-    df = df[~df["in_existing_follow"]].copy()
-    df.drop(columns=["follow_start", "follow_end", "in_existing_follow"], inplace=True)
-
-    return df
+    return step3
