@@ -1,20 +1,28 @@
-# GLOBAL
-kpi_global = compute_kpi_volume(df)
-plot_volume_key_vs_nonkey(
-    kpi_global,
-    "Existing dealers identified (Growth > 30%) – Key vs Non-Key (2025)"
+# filtre 2025 + hors key account
+df_2025 = events_existing[
+    (events_existing["year"] == 2025) &
+    (events_existing["is_key_account"] == False)
+].copy()
+
+# compter le nombre d'events par dealer
+dealer_counts = (
+    df_2025
+    .groupby(["country", "id_apporteur"])
+    .size()
+    .reset_index(name="nb_events")
 )
 
-# ELS
-kpi_els = compute_kpi_volume(df, ibl="ELS")
-plot_volume_key_vs_nonkey(
-    kpi_els,
-    "Existing dealers identified – ELS – Key vs Non-Key (2025)"
+# classer unique vs repeater
+dealer_counts["dealer_type"] = np.where(
+    dealer_counts["nb_events"] == 1,
+    "Unique dealer",
+    "Repeater"
 )
 
-# TLS
-kpi_tls = compute_kpi_volume(df, ibl="TLS")
-plot_volume_key_vs_nonkey(
-    kpi_tls,
-    "Existing dealers identified – TLS – Key vs Non-Key (2025)"
+# KPI final
+kpi_block2 = (
+    dealer_counts
+    .groupby(["country", "dealer_type"])
+    .size()
+    .reset_index(name="nb_dealers")
 )
