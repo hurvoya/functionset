@@ -1,22 +1,24 @@
-import numpy as np
-import matplotlib.pyplot as plt
+plt.figure(figsize=(13, 6))
 
-countries = sorted(kpi_bloc2_1["country"].unique())
-x = np.arange(len(countries))
-width = 0.35
+# 2024 (bleu)
+plt.bar(x - width/2, unique_2024, width, color="#3182bd", label="2024 Unique dealers")
+plt.bar(x - width/2, extra_2024, width, bottom=unique_2024, color="#9ecae1", label="2024 Repeated events")
 
-def get_vals(year, col):
-    return (
-        kpi_bloc2_1[kpi_bloc2_1["year"] == year]
-        .set_index("country")
-        .reindex(countries, fill_value=0)[col]
-        .values
-    )
+# 2025 (vert)
+plt.bar(x + width/2, unique_2025, width, color="#31a354", label="2025 Unique dealers")
+plt.bar(x + width/2, extra_2025, width, bottom=unique_2025, color="#a1d99b", label="2025 Repeated events")
 
-events_2024 = get_vals(2024, "nb_events")
-unique_2024 = get_vals(2024, "nb_unique_dealers")
-extra_2024 = events_2024 - unique_2024
+# labels totaux
+for i in range(len(countries)):
+    plt.text(x[i] - width/2, events_2024[i] + 0.5, str(int(events_2024[i])),
+             ha="center", va="bottom", fontweight="bold", fontsize=11)
+    plt.text(x[i] + width/2, events_2025[i] + 0.5, str(int(events_2025[i])),
+             ha="center", va="bottom", fontweight="bold", fontsize=11)
 
-events_2025 = get_vals(2025, "nb_events")
-unique_2025 = get_vals(2025, "nb_unique_dealers")
-extra_2025 = events_2025 - unique_2025
+plt.xticks(x, countries)
+plt.ylabel("Number of identifications (events)")
+plt.title("Existing dealers – Events vs Unique dealers (Non-Key Accounts only)")
+plt.legend(ncol=2, frameon=False)
+plt.grid(axis="y", alpha=0.3)
+plt.tight_layout()
+plt.show()
