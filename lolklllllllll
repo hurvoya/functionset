@@ -1,8 +1,15 @@
-# 1) vérifier qu'on a bien 2023-12-31 et les snapshots 2024-2025
-print(sorted(metrics_yoy["snapshot_date"].unique())[:3], "...", sorted(metrics_yoy["snapshot_date"].unique())[-3:])
 
-# 2) distribution growth_pct (doit avoir des NaN si prev=0)
-print(metrics_yoy["growth_pct"].isna().mean())
+---
 
-# 3) vérifier qu’on a des dealers avec prod_current > 0
-print((metrics_yoy["prod_current_6m"] > 0).mean())
+# 🧱 Étape D1 — Filtrage business pur (500k + 30%)
+
+```python
+def filter_existing_business(metrics):
+    out = metrics.copy()
+
+    out = out[
+        (out["prod_current_6m"] >= 500_000) &
+        (out["growth_pct"] >= 0.30)
+    ].copy()
+
+    return out
