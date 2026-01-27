@@ -1,5 +1,19 @@
-kpi_calls_global = (
+# Pivot pour vérifier pays par pays
+check = (
     kpi_calls_by_country_ibl
-    .groupby("country", as_index=False)["nb_calls"]
-    .sum()
+    .pivot(index="country", columns="ibl", values="nb_calls")
+    .fillna(0)
 )
+
+# total calculé depuis pivot
+check["sum_ibl"] = check.sum(axis=1)
+
+# total global calculé
+global_map = kpi_calls_global.set_index("country")["nb_calls"]
+check["global"] = global_map
+
+# écart
+check["diff"] = check["global"] - check["sum_ibl"]
+
+# on affiche les pays où ça ne colle pas
+print(check[check["diff"] != 0].sort_values("diff", ascending=False).head(50))
