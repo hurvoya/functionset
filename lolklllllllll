@@ -1,17 +1,18 @@
-# --- PATCH METRICS: ajouter prod_6m / ref / growth à events (YoY) ---
+df = events.copy()
 
-metrics_yoy = df_feat[["id_apporteur", "dte_mel", "prod_6m", "ref_yoy", "growth_yoy"]].copy()
-metrics_yoy = metrics_yoy.rename(columns={
-    "dte_mel": "dte_existing_event",
-    "ref_yoy": "prod_ref",
-    "growth_yoy": "growth_pct"
+# 1. Filtre années
+df["year"] = df["dte_event"].dt.year
+df = df[df["year"].isin([2024, 2025])]
+
+# 2. Création libellé KA
+df["ka_type"] = df["is_key_account"].map({
+    True: "Key Account",
+    False: "Non-Key Account"
 })
 
-events_existing_yoy_es = events_existing_yoy_es.merge(
-    metrics_yoy,
-    on=["id_apporteur", "dte_existing_event"],
-    how="left"
+# 3. Agrégation
+kpi_bloc1 = (
+    df.groupby(["country", "year", "ka_type"])
+      .size()
+      .reset_index(name="nb_dealers")
 )
-
-# check
-print("Missing metrics:", events_existing_yoy_es[["prod_6m","prod_ref","growth_pct"]].isna().mean())
