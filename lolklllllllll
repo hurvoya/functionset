@@ -3,116 +3,104 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # =========================
-# BLOC 2.1 — Events vs Unique dealers (Non-Key Accounts only)
+# BLOC 2.2 — Distribution des repeaters (Non-Key Accounts only)
+# 1 graphe par pays, global (tous IBL)
 # =========================
 
-# 0) Copie de travail
+# 0) Base
 df = events.copy()
 
-# 1) Filtre hors Key Account (opérationnel)
+# 1) Hors Key Account
 df = df[df["is_key_account"] == False].copy()
 
-# 2) Année (à partir de la date d'identification)
+# 2) Année (date d'identification de l'event)
 df["year"] = pd.to_datetime(df["dte_existing_event"], errors="coerce").dt.year
 df = df[df["year"].isin([2024, 2025])].copy()
 
-# 3) KPI : nb events vs nb dealers uniques
-kpi_bloc2_1 = (
-    df.groupby(["country", "year"])
-      .agg(
-          nb_events=("id_apporteur", "size"),
-          nb_unique_dealers=("id_apporteur", "nunique")
-      )
-      .reset_index()
+# 3) Nb d'events par dealer, par pays, par année
+dealer_counts = (
+    df.groupby(["country", "year", "id_apporteur"])
+      .size()
+      .reset_index(name="nb_events")
 )
 
-# sécurité : éviter des valeurs négatives si data weird
-kpi_bloc2_1["nb_unique_dealers"] = kpi_bloc2_1["nb_unique_dealers"].clip(lower=0)
-kpi_bloc2_1["nb_events"] = kpi_bloc2_1["nb_events"].clip(lower=0)
+# 4) Binning en classes métier
+def to_bucket(n):
+    if n == 1:
+        return "1"
+    if 2 <= n <= 3:
+        return "2–3"
+    if 4 <= n <= 5:
+        return "4–5"
+    if 6 <= n <= 10:
+        return "6–10"
+    return ">10"
 
-# 4) Préparation des vecteurs pour plot
-countries = sorted(kpi_bloc2_1["country"].dropna().unique())
-x = np.arange(len(countries))
-width = 0.35
+dealer_counts["bucket"] = dealer_counts["nb_events"].apply(to_bucket)
 
-def get_vals(year, col):
-    return (
-        kpi_bloc2_1[kpi_bloc2_1["year"] == year]
-        .set_index("country")
-        .reindex(countries, fill_value=0)[col]
-        .values
-    )
+bucket_order = ["1", "2–3", "4–5", "6–10", ">10"]
 
-events_2024 = get_vals(2024, "nb_events")
-unique_2024 = get_vals(2024, "nb_unique_dealers")
-extra_2024 = np.maximum(events_2024 - unique_2024, 0)
+# 5) Comptage : nombre de dealers par bucket
+bucket_kpi = (
+    dealer_counts.groupby(["country", "year", "bucket"])
+      .size()
+      .reset_index(name="nb_dealers")
+)
 
-events_2025 = get_vals(2025, "nb_events")
-unique_2025 = get_vals(2025, "nb_unique_dealers")
-extra_2025 = np.maximum(events_2025 - unique_2025, 0)
+# 6) Plot : 1 graphe par pays
+countries = sorted(bucket_kpi["country"].dropna().unique())
 
-# 5) Plot
-plt.figure(figsize=(13, 6))
+for c in countries:
+    sub = bucket_kpi[bucket_kpi["country"] == c].copy()
 
-bars_u_2024 = plt.bar(x - width/2, unique_2024, width, color="#3182bd", label="2024 Unique dealers")
-bars_e_2024 = plt.bar(x - width/2, extra_2024, width, bottom=unique_2024, color="#9ecae1", label="2024 Repeated events")
-
-bars_u_2025 = plt.bar(x + width/2, unique_2025, width, color="#31a354", label="2025 Unique dealers")
-bars_e_2025 = plt.bar(x + width/2, extra_2025, width, bottom=unique_2025, color="#a1d99b", label="2025 Repeated events")
-
-# 6) Labels dans chaque segment
-def add_segment_labels(bars, values, bottoms=None):
-    for i, bar in enumerate(bars):
-        h = values[i]
-        if h == 0:
-            continue
-        y = (bottoms[i] if bottoms is not None else 0) + h / 2
-        plt.text(
-            bar.get_x() + bar.get_width()/2,
-            y,
-            f"{int(h)}",
-            ha="center",
-            va="center",
-            fontsize=10,
-            color="white",
-            fontweight="bold"
+    # reindex pour avoir toujours toutes les classes même si 0
+    def vals(year):
+        return (
+            sub[sub["year"] == year]
+            .set_index("bucket")
+            .reindex(bucket_order, fill_value=0)["nb_dealers"]
+            .values
         )
 
-add_segment_labels(bars_u_2024, unique_2024)
-add_segment_labels(bars_e_2024, extra_2024, unique_2024)
+    y2024 = vals(2024)
+    y2025 = vals(2025)
 
-add_segment_labels(bars_u_2025, unique_2025)
-add_segment_labels(bars_e_2025, extra_2025, unique_2025)
+    x = np.arange(len(bucket_order))
+    width = 0.36
 
-# 7) Labels totaux au-dessus des barres
-for i in range(len(countries)):
-    plt.text(
-        x[i] - width/2,
-        events_2024[i] + 0.5,
-        f"{int(events_2024[i])}",
-        ha="center",
-        va="bottom",
-        fontsize=11,
-        fontweight="bold"
-    )
-    plt.text(
-        x[i] + width/2,
-        events_2025[i] + 0.5,
-        f"{int(events_2025[i])}",
-        ha="center",
-        va="bottom",
-        fontsize=11,
-        fontweight="bold"
-    )
+    plt.figure(figsize=(10, 5))
 
-# 8) Mise en forme
-plt.xticks(x, countries)
-plt.ylabel("Number of identifications (events)")
-plt.title("Existing dealers – Events vs Unique dealers (Non-Key Accounts only)")
-plt.legend(ncol=2, frameon=False)
-plt.grid(axis="y", alpha=0.3)
-plt.tight_layout()
-plt.show()
+    bars_2024 = plt.bar(x - width/2, y2024, width, color="#3182bd", label="2024")
+    bars_2025 = plt.bar(x + width/2, y2025, width, color="#31a354", label="2025")
 
-# (Optionnel) Afficher le KPI pour contrôle
-print(kpi_bloc2_1.sort_values(["country","year"]))
+    # Labels sur chaque barre
+    def add_bar_labels(bars, values):
+        for i, bar in enumerate(bars):
+            h = values[i]
+            if h == 0:
+                continue
+            plt.text(
+                bar.get_x() + bar.get_width()/2,
+                h / 2,
+                f"{int(h)}",
+                ha="center",
+                va="center",
+                fontsize=10,
+                color="white",
+                fontweight="bold"
+            )
+
+    add_bar_labels(bars_2024, y2024)
+    add_bar_labels(bars_2025, y2025)
+
+    # Axes / style
+    plt.xticks(x, bucket_order)
+    plt.ylabel("Number of dealers")
+    plt.title(f"Existing dealers – Repeater distribution (Non-Key only) — {c}")
+    plt.legend(frameon=False)
+    plt.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+# (Optionnel) afficher la table KPI
+print(bucket_kpi.sort_values(["country", "year", "bucket"]))
