@@ -1,6 +1,6 @@
-calls_by_dealer = (
-    calls_2025
-    .groupby(["country", "id_apporteur"])
-    .size()
-    .reset_index(name="nb_calls_dealer")
+kpi_avg_calls_global = (
+    calls_by_dealer
+    .groupby("country", as_index=False)["nb_calls_dealer"]
+    .mean()
+    .rename(columns={"nb_calls_dealer": "avg_calls_per_dealer"})
 )
