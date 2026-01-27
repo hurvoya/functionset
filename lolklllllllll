@@ -1,9 +1,14 @@
-df = events_existing.copy()
+def compute_kpi_volume(df, ibl=None):
+    data = df.copy()
+    
+    if ibl is not None:
+        data = data[data["ibl"] == ibl]
 
-# on garde les snapshots utiles pour 2025
-df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
+    kpi = (
+        data
+        .groupby(["country", "is_key_account"])
+        .agg(nb_dealers=("id_apporteur", "nunique"))
+        .reset_index()
+    )
 
-df = df[
-    (df["snapshot_date"] >= "2024-10-01") &
-    (df["snapshot_date"] <= "2025-12-31")
-]
+    return kpi
