@@ -1,46 +1,24 @@
-plt.figure(figsize=(13, 6))
+df = events.copy()
 
-# barres
-bars_nk_2024 = plt.bar(x - width/2, nk_2024, width, color="#9ecae1", label="2024 Non-Key")
-bars_ka_2024 = plt.bar(x - width/2, ka_2024, width, bottom=nk_2024, color="#3182bd", label="2024 Key")
+# 1️⃣ Hors Key Account uniquement
+df = df[df["is_key_account"] == False].copy()
 
-bars_nk_2025 = plt.bar(x + width/2, nk_2025, width, color="#a1d99b", label="2025 Non-Key")
-bars_ka_2025 = plt.bar(x + width/2, ka_2025, width, bottom=nk_2025, color="#31a354", label="2025 Key")
+# 2️⃣ Année d’identification
+df["year"] = pd.to_datetime(df["dte_existing_event"], errors="coerce").dt.year
+df = df[df["year"].isin([2024, 2025])]
 
-# labels segments
-def add_labels(bars, bottoms=None):
-    for i, bar in enumerate(bars):
-        h = bar.get_height()
-        if h == 0:
-            continue
-        y = bar.get_y() + (bottoms[i] if bottoms is not None else 0) + h / 2
-        plt.text(bar.get_x() + bar.get_width()/2, y,
-                 f"{int(h)}", ha="center", va="center",
-                 fontsize=10, color="white", fontweight="bold")
+# 3️⃣ KPI : events vs dealers uniques
+kpi_bloc2_1 = (
+    df.groupby(["country", "year"])
+      .agg(
+          nb_events=("id_apporteur", "size"),
+          nb_unique_dealers=("id_apporteur", "nunique")
+      )
+      .reset_index()
+)
 
-add_labels(bars_nk_2024)
-add_labels(bars_ka_2024, nk_2024)
-add_labels(bars_nk_2025)
-add_labels(bars_ka_2025, nk_2025)
+print(kpi_bloc2_1.head())
 
-# labels totaux
-for i in range(len(countries)):
-    total_2024 = nk_2024[i] + ka_2024[i]
-    total_2025 = nk_2025[i] + ka_2025[i]
-
-    plt.text(x[i] - width/2, total_2024 + 0.5,
-             f"{int(total_2024)}", ha="center", va="bottom",
-             fontsize=11, fontweight="bold")
-
-    plt.text(x[i] + width/2, total_2025 + 0.5,
-             f"{int(total_2025)}", ha="center", va="bottom",
-             fontsize=11, fontweight="bold")
-
-# axes
-plt.xticks(x, countries)
-plt.ylabel("Number of identifications (events)")
-plt.title("Existing dealers identified with >30% growth – Key vs Non-Key")
-plt.legend(ncol=2, frameon=False)
 plt.grid(axis="y", alpha=0.3)
 plt.tight_layout()
 plt.show()
