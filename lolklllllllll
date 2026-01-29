@@ -1,5 +1,24 @@
-plot_threshold_impact(
-    df_threshold_tls,
-    "Impact of threshold on number of calls – 2025 (TLS)"
+events["ka_lookback_start"] = events["dte_new_dealer"] - pd.DateOffset(years=2)
+tmp = events[["id_apporteur", "dte_new_dealer", "ka_lookback_start"]].merge(
+    dfc_ka[["id_apporteur", "dte_mel"]],
+    on="id_apporteur",
+    how="left"
+)
+tmp["in_window"] = (
+    tmp["dte_mel"].notna() &
+    (tmp["dte_mel"] >= tmp["ka_lookback_start"]) &
+    (tmp["dte_mel"] <= tmp["dte_new_dealer"])
+)
+ka_flag = (
+    tmp.groupby(["id_apporteur", "dte_new_dealer"], as_index=False)["in_window"]
+    .any()
+    .rename(columns={"in_window": "is_related_to_a_key_account"})
+)
+events = events.merge(
+    ka_flag,
+    on=["id_apporteur", "dte_new_dealer"],
+    how="left"
 )
 
+events["is_related_to_a_key_account"] = events["is_related_to_a_key_account"].fillna(False)
+events = events.drop(columns=["ka_lookback_start"])
