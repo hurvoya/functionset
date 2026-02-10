@@ -1,0 +1,57 @@
+Checklist à valider avec le métier
+
+Déclencheur opérationnel du call (date de référence)
+
+Par défaut : date de passage GS/AC (demande).
+
+Exception : si un contrat passe directement MEL sans GS/AC → on crée une “pseudo-demande” et la date = dte_mel, call “after the fact”.
+
+✅ À valider : est-ce acceptable et “mieux que rien” officiellement ?
+
+Règle “8 calls” vs “8 dossiers”
+
+On arrête après 8 calls réels (dossiers éligibles call), pas après 8 occurrences.
+
+Un dossier non éligible (ex : montant ≤ 20k) :
+
+déclenche quand même l’évènement si c’est le premier signal,
+
+mais ne consomme pas un slot des 8 calls.
+
+✅ À valider : le compteur “cap” est bien basé sur calls éligibles uniquement.
+
+Fenêtre de suivi
+
+Pour un évènement (ND ou existing) :
+
+suivi pendant 6 mois max
+
+ou jusqu’à atteindre 8 calls éligibles, si ça arrive avant
+
+✅ À valider : la fenêtre “6 mois” démarre bien à la date évènement (GS/AC ou MEL-direct).
+
+Exclusions obligatoires (anti-doublons)
+
+Un dealer ne doit pas générer un évènement existing si :
+
+il est en suivi ND (fenêtre ND en cours)
+
+ou il est en suivi existing (fenêtre existing en cours)
+
+✅ À valider : on exclut bien au moment de qualifier un nouvel évènement (ND/existing), pas seulement au moment de générer les calls.
+
+Règle anti-repeaters existing (cooldown)
+
+Après un évènement existing “snapshot trimestriel” déclenché, on n’en redéclenche pas pendant 12 mois (même si les critères restent vrais aux snapshots suivants).
+
+✅ À valider : durée exacte (12 mois ?), et point de départ (date snapshot ?).
+
+Bonus (si vous voulez verrouiller le scope prod)
+
+Association GS/AC ↔ MEL (quand c’est possible)
+
+Si une demande finit par devenir un contrat, est-ce qu’on a un identifiant de chaînage fiable (id_request ↔ id_contract) ?
+
+Si oui, super pour l’audit.
+
+Si non, pas bloquant (on opère en “liste de calls”), mais il faut l’accepter.
