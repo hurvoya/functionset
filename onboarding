@@ -1,217 +1,71 @@
 import pandas as pd
 import numpy as np
 
-THRESHOLD_CALL = 20_000  # strictement > 20k pour compter comme call éligible
-LOOKBACK_MONTHS = 12
-FOLLOW_MONTHS = 6
-MAX_ELIGIBLE_CALLS = 8
-
-# ----------------------------
-# 0) Normalisation dates / types
-# ----------------------------
-def to_dt(s):
-    return pd.to_datetime(s, errors="coerce")
-
-dfc = df_contract.copy()
-dfd = df_demand.copy()
-
-dfc["dte_mel"] = to_dt(dfc["dte_mel"])
-dfd["dte_trigger"] = to_dt(dfd["dte_trigger"])
-
-# Sécurité types
-# (si id_apporteur est int chez toi, garde int ; sinon convertis en string)
-# Ici on garde tel quel, mais on force une cohérence entre les 2 DF :
-dfc["id_apporteur"] = dfc["id_apporteur"].astype("int64", errors="ignore")
-dfd["id_apporteur"] = dfd["id_apporteur"].astype("int64", errors="ignore")
-
-# Nettoyage minimal : onboarding = demandes avec un trigger
-dfd = dfd[dfd["dte_trigger"].notna()].copy()
-
-# ----------------------------
-# 1) Préparer l'historique MEL par dealer (contrats)
-# ----------------------------
-# On ne garde que les lignes contrat avec une date MEL (production)
-dfc_mel = dfc[dfc["dte_mel"].notna()].copy()
-
-# Pour qualifier "first vs known" on a besoin du 1er MEL historique
-first_mel_by_dealer = (
-    dfc_mel.groupby("id_apporteur", as_index=False)["dte_mel"]
-    .min()
-    .rename(columns={"dte_mel": "dte_first_mel"})
-)
-
-# ----------------------------
-# 2) Construire une table "demand triggers" triée (1 ligne = 1 demande)
-# ----------------------------
-# Ordonner par dealer puis date_trigger (si tu as l'heure, c'est encore mieux)
-dfd = dfd.sort_values(["id_apporteur", "dte_trigger", "id_demand"]).copy()
-
-# (option) Flag call éligible
-dfd["is_call_eligible"] = dfd["mtd_total_lot"].gt(THRESHOLD_CALL)
-
-# ----------------------------
-# 3) Détecter les évènements onboarding (New Dealer)
-#    Règle: aucune MEL dans les 12 mois avant dte_trigger (inclus)
-# ----------------------------
-
-# On va faire un "join logique" sans merge_asof :
-# Pour chaque (dealer, trigger_date), on veut savoir s'il existe une MEL dans [trigger-12m, trigger]
-# Technique robuste: pré-calculer pour chaque dealer les dates MEL triées,
-# puis utiliser searchsorted via numpy (rapide et stable).
-
-# Préparer les listes de MEL par dealer
-mel_dates_by_dealer = (
-    dfc_mel.sort_values(["id_apporteur", "dte_mel"])
-           .groupby("id_apporteur")["dte_mel"]
-           .apply(np.array)
-)
-
-def has_mel_in_lookback(dealer_id, trigger_date):
-    arr = mel_dates_by_dealer.get(dealer_id)
-    if arr is None or pd.isna(trigger_date):
-        return False  # aucune MEL historique => pas de MEL dans lookback
-    start = trigger_date - pd.DateOffset(months=LOOKBACK_MONTHS)
-    # indices d'insertion
-    left = np.searchsorted(arr, np.datetime64(start), side="left")
-    right = np.searchsorted(arr, np.datetime64(trigger_date), side="right")
-    return right > left  # au moins une MEL dans l'intervalle
-
-# Appliquer (sur gros volumes, ça peut être long si pur apply ; mais ça reste stable)
-# Optimisation légère : map sur tuples uniques
-keys = dfd[["id_apporteur", "dte_trigger"]].drop_duplicates()
-keys["has_mel_12m"] = [
-    has_mel_in_lookback(i, d) for i, d in zip(keys["id_apporteur"], keys["dte_trigger"])
-]
-dfd = dfd.merge(keys, on=["id_apporteur", "dte_trigger"], how="left")
-
-# Event onboarding = has_mel_12m == False
-dfd["is_onboarding_event_candidate"] = ~dfd["has_mel_12m"].fillna(False)
-
-# ----------------------------
-# 4) Gérer le "pas de nouvel event si déjà en suivi onboarding"
-#    On déclenche un event, puis on "bloque" les suivants tant qu'on est dans la fenêtre (6m ou 8 calls éligibles)
-# ----------------------------
-
-def build_onboarding_events_and_calls(dfd_sorted: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_nd_windows_from_onboarding_calls(
+    calls_onboarding_audit: pd.DataFrame,
+    follow_months: int = 6,
+    max_eligible_calls: int = 8
+) -> pd.DataFrame:
     """
-    Input: dfd trié par (id_apporteur, dte_trigger, id_demand)
-    Output:
-      - events_onboarding
-      - calls_onboarding (toutes les demandes rattachées à un event, avec call_rank pour éligibles)
+    Construit la table nd_windows à partir des calls onboarding (audit complet).
+    Output: id_apporteur, start_date, end_date
     """
-    events = []
-    calls_rows = []
+    df = calls_onboarding_audit.copy()
 
-    # On travaille dealer par dealer pour appliquer la logique de fenêtre
-    for dealer_id, g in dfd_sorted.groupby("id_apporteur", sort=False):
-        g = g.sort_values(["dte_trigger", "id_demand"]).copy()
+    # Dates
+    df["dte_new_dealer"] = pd.to_datetime(df["dte_new_dealer"], errors="coerce")
+    df["dte_trigger"] = pd.to_datetime(df["dte_trigger"], errors="coerce")
 
-        current_event_id = 0
-        in_follow = False
-        follow_start = None
-        follow_end_by_time = None
-        eligible_calls_count = 0
+    # Sécurité
+    df = df.dropna(subset=["id_apporteur", "event_id", "dte_new_dealer"])
 
-        for _, row in g.iterrows():
-            trig = row["dte_trigger"]
+    # Start = date ND
+    start = (
+        df.groupby(["id_apporteur", "event_id"], as_index=False)["dte_new_dealer"]
+          .min()
+          .rename(columns={"dte_new_dealer": "start_date"})
+    )
 
-            # 1) Si on est en suivi, vérifier si la fenêtre temps est finie
-            if in_follow and trig > follow_end_by_time:
-                in_follow = False
-                follow_start = None
-                follow_end_by_time = None
-                eligible_calls_count = 0
+    # End par défaut = start + 6 mois
+    start["end_default"] = start["start_date"] + pd.DateOffset(months=follow_months)
 
-            # 2) Si pas en suivi, peut-on déclencher un event ?
-            if (not in_follow) and bool(row["is_onboarding_event_candidate"]):
-                current_event_id += 1
-                in_follow = True
-                follow_start = trig
-                follow_end_by_time = trig + pd.DateOffset(months=FOLLOW_MONTHS)
-                eligible_calls_count = 0  # compteur des calls éligibles depuis l'event
+    # Date du 8e call éligible (si existe)
+    # -> on cherche la ligne éligible avec eligible_call_rank == 8
+    if "eligible_call_rank" in df.columns:
+        df_rank = df[df["eligible_call_rank"] == max_eligible_calls].copy()
+        # la date "du 8e call" : c'est dte_trigger de cette ligne
+        end_8 = (
+            df_rank.groupby(["id_apporteur", "event_id"], as_index=False)["dte_trigger"]
+                  .min()
+                  .rename(columns={"dte_trigger": "end_8calls"})
+        )
+    else:
+        # fallback si tu n'as pas eligible_call_rank : on le recalcule vite
+        df = df.sort_values(["id_apporteur", "event_id", "dte_trigger"])
+        df["is_call_eligible"] = df["is_call_eligible"].fillna(False).astype(bool)
+        df["eligible_call_rank"] = df.groupby(["id_apporteur","event_id"])["is_call_eligible"].cumsum()
 
-                events.append({
-                    "id_apporteur": dealer_id,
-                    "event_id": current_event_id,
-                    "dte_new_dealer": trig,  # date d'identification onboarding
-                    # new_dealer_type rempli plus bas via merge avec dte_first_mel
-                })
+        df_rank = df[df["eligible_call_rank"] == max_eligible_calls].copy()
+        end_8 = (
+            df_rank.groupby(["id_apporteur", "event_id"], as_index=False)["dte_trigger"]
+                  .min()
+                  .rename(columns={"dte_trigger": "end_8calls"})
+        )
 
-            # 3) Si en suivi, rattacher la demande à l'event courant
-            if in_follow:
-                is_elig = bool(row["is_call_eligible"])
-                call_rank = np.nan
+    # Merge + end_date = min(end_default, end_8calls) si end_8calls existe
+    w = start.merge(end_8, on=["id_apporteur", "event_id"], how="left")
 
-                # Si éligible, incrémenter, et stopper au 8e (mais sans annuler l'event)
-                if is_elig and eligible_calls_count < MAX_ELIGIBLE_CALLS:
-                    eligible_calls_count += 1
-                    call_rank = eligible_calls_count
+    w["end_date"] = np.where(
+        w["end_8calls"].notna(),
+        np.minimum(w["end_default"].values.astype("datetime64[ns]"),
+                   w["end_8calls"].values.astype("datetime64[ns]")),
+        w["end_default"].values.astype("datetime64[ns]")
+    )
+    w["end_date"] = pd.to_datetime(w["end_date"])
 
-                # Une demande non-éligible est quand même rattachée à l'event (utile pour audit),
-                # mais ne compte pas (call_rank NaN)
-                calls_rows.append({
-                    "id_apporteur": dealer_id,
-                    "event_id": current_event_id,
-                    "dte_new_dealer": follow_start,
-                    "id_demand": row["id_demand"],
-                    "dte_trigger": trig,
-                    "mtd_total_lot": row["mtd_total_lot"],
-                    "is_call_eligible": is_elig,
-                    "call_rank": call_rank,
-                    # On garde les infos utiles aux pays :
-                    "lib_apporteur": row.get("lib_apporteur"),
-                    "dte_creation_v2": row.get("dte_creation_v2"),
-                    "ibl": row.get("ibl"),
-                    "market": row.get("market"),
-                    "lib_partner": row.get("lib_partner"),
-                    "status": row.get("status"),
-                    "dte_current_status": row.get("dte_current_status"),
-                    "flg_direct_mel": row.get("flg_direct_mel"),
-                    "id_client": row.get("id_client"),
-                    "lib_client": row.get("lib_client"),
-                    "tel_1": row.get("tel_1"),
-                    "tel_2": row.get("tel_2"),
-                })
+    # Format final
+    nd_windows = w[["id_apporteur", "start_date", "end_date"]].copy()
 
-                # Si on a atteint 8 calls éligibles, on sort immédiatement du suivi (même si < 6 mois)
-                if eligible_calls_count >= MAX_ELIGIBLE_CALLS:
-                    in_follow = False
-                    follow_start = None
-                    follow_end_by_time = None
-                    eligible_calls_count = 0
-
-    events_df = pd.DataFrame(events)
-    calls_df = pd.DataFrame(calls_rows)
-    return events_df, calls_df
-
-events_onboarding, calls_onboarding = build_onboarding_events_and_calls(dfd)
-
-# ----------------------------
-# 5) Qualifier first vs known via df_contract (dte_first_mel)
-# ----------------------------
-# Merge dte_first_mel, puis qualifier:
-events_onboarding = events_onboarding.merge(first_mel_by_dealer, on="id_apporteur", how="left")
-
-# first_new_dealer si pas de MEL avant l'event_date
-events_onboarding["new_dealer_type"] = np.where(
-    events_onboarding["dte_first_mel"].isna() | (events_onboarding["dte_first_mel"] > events_onboarding["dte_new_dealer"]),
-    "first_new_dealer",
-    "known_new_dealer"
-)
-
-events_onboarding = events_onboarding.drop(columns=["dte_first_mel"])
-
-# Répliquer new_dealer_type sur calls
-calls_onboarding = calls_onboarding.merge(
-    events_onboarding[["id_apporteur", "event_id", "new_dealer_type"]],
-    on=["id_apporteur", "event_id"],
-    how="left"
-)
-
-# ----------------------------
-# 6) Option : ne garder en "calls à faire" que les calls éligibles (call_rank non null)
-#    (ça dépend si tu veux garder un audit complet)
-# ----------------------------
-calls_to_do = calls_onboarding[calls_onboarding["call_rank"].notna()].copy()
-
-# Voilà : events_onboarding / calls_onboarding / calls_to_do
+    # Optionnel: si tu veux exclure un growth event si snapshot tombe le jour même de end_date
+    # -> on laisse end_date inclusif (c'est ce qu'on fait partout)
+    return nd_windows
