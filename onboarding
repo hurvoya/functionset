@@ -1,71 +1,323 @@
 import pandas as pd
 import numpy as np
 
-def build_nd_windows_from_onboarding_calls(
-    calls_onboarding_audit: pd.DataFrame,
-    follow_months: int = 6,
-    max_eligible_calls: int = 8
+# ----------------------------
+# Utils dates / snapshots
+# ----------------------------
+def _to_dt(s: pd.Series) -> pd.Series:
+    return pd.to_datetime(s, errors="coerce")
+
+def generate_quarter_snapshots(
+    min_date: pd.Timestamp,
+    max_date: pd.Timestamp,
+    future_quarters: int = 4
+) -> pd.DatetimeIndex:
+    """
+    Génère des fins de trimestre entre min_date et max_date,
+    et ajoute future_quarters trimestres après max_date (pour être 'auto').
+    """
+    min_date = pd.to_datetime(min_date).normalize()
+    max_date = pd.to_datetime(max_date).normalize()
+
+    if pd.isna(min_date) or pd.isna(max_date):
+        return pd.DatetimeIndex([])
+
+    # fin de trimestre de départ / fin
+    start_qe = (min_date + pd.offsets.QuarterEnd(0))
+    end_qe = (max_date + pd.offsets.QuarterEnd(future_quarters))
+
+    # pandas: "Q-DEC" = quarter ending in Dec => fins de trimestre classiques
+    return pd.date_range(start=start_qe, end=end_qe, freq="Q-DEC")
+
+
+def _window_6m_end(snapshot: pd.Timestamp) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """
+    Fenêtre 6 mois glissants inclusive : (snapshot - 6 mois + 1 jour) -> snapshot
+    Exemple snapshot=2025-12-31 => start=2025-07-01, end=2025-12-31
+    """
+    end = snapshot
+    start = (snapshot - pd.DateOffset(months=6)) + pd.Timedelta(days=1)
+    return start, end
+
+
+def _is_in_any_window(
+    id_apporteur: pd.Series,
+    dte: pd.Series,
+    windows: pd.DataFrame | None
+) -> pd.Series:
+    """
+    windows attendu: colonnes ['id_apporteur','start_date','end_date']
+    Retourne un bool par ligne (id_apporteur, dte) indiquant si dte ∈ [start_date, end_date].
+    """
+    if windows is None or windows.empty:
+        return pd.Series(False, index=id_apporteur.index)
+
+    w = windows.copy()
+    w["start_date"] = _to_dt(w["start_date"])
+    w["end_date"] = _to_dt(w["end_date"])
+
+    # Merge standard + filtre (pas de merge_asof)
+    tmp = pd.DataFrame({"id_apporteur": id_apporteur.values, "dte": _to_dt(dte).values})
+    tmp["_row"] = np.arange(len(tmp))
+
+    m = tmp.merge(w, on="id_apporteur", how="left")
+    in_win = (m["dte"] >= m["start_date"]) & (m["dte"] <= m["end_date"])
+    # un apporteur peut avoir plusieurs fenêtres => any
+    out = m.groupby("_row", as_index=False)["dte"].size()
+    # on reconstruit un bool via groupby-any
+    in_any = in_win.groupby(m["_row"]).any()
+    return in_any.reindex(tmp["_row"]).fillna(False).values
+
+
+# ----------------------------
+# Bloc C-D : metrics + eligibility (YoY)
+# ----------------------------
+def compute_growth_events_yoy(
+    df_contract: pd.DataFrame,
+    snapshots: pd.DatetimeIndex,
+    prod_min: float = 500_000.0,
+    growth_min: float = 0.30,
+    inf_growth_value: float = 10.0,  # 1000%
+    nd_windows: pd.DataFrame | None = None,
+    existing_windows: pd.DataFrame | None = None,
+    cooldown_years: int = 1
 ) -> pd.DataFrame:
     """
-    Construit la table nd_windows à partir des calls onboarding (audit complet).
-    Output: id_apporteur, start_date, end_date
+    Sortie: events_growth_yoy
+    Colonnes: id_apporteur, event_id, dte_existing_event, prod_6m, prod_6m_yoy, growth_pct
+    + (optionnel) flags d'exclusion si tu veux auditer.
     """
-    df = calls_onboarding_audit.copy()
+    dfc = df_contract.copy()
 
-    # Dates
-    df["dte_new_dealer"] = pd.to_datetime(df["dte_new_dealer"], errors="coerce")
-    df["dte_trigger"] = pd.to_datetime(df["dte_trigger"], errors="coerce")
+    dfc["dte_mel"] = _to_dt(dfc["dte_mel"])
+    dfc["mtd_total_lot"] = pd.to_numeric(dfc["mtd_total_lot"], errors="coerce").fillna(0.0)
 
-    # Sécurité
-    df = df.dropna(subset=["id_apporteur", "event_id", "dte_new_dealer"])
+    dfc = dfc.dropna(subset=["id_apporteur", "dte_mel"])
+    dfc = dfc.sort_values(["id_apporteur", "dte_mel"])
 
-    # Start = date ND
-    start = (
-        df.groupby(["id_apporteur", "event_id"], as_index=False)["dte_new_dealer"]
-          .min()
-          .rename(columns={"dte_new_dealer": "start_date"})
+    if len(snapshots) == 0:
+        return pd.DataFrame(columns=[
+            "id_apporteur","event_id","dte_existing_event",
+            "prod_6m","prod_6m_yoy","growth_pct"
+        ])
+
+    rows = []
+    for snap in snapshots:
+        s0, s1 = _window_6m_end(snap)
+        y0, y1 = _window_6m_end(snap - pd.DateOffset(years=1))
+
+        # prod 6m
+        m6 = dfc[(dfc["dte_mel"] >= s0) & (dfc["dte_mel"] <= s1)]
+        prod_6m = m6.groupby("id_apporteur")["mtd_total_lot"].sum()
+
+        # prod yoy (mêmes mois année précédente)
+        my = dfc[(dfc["dte_mel"] >= y0) & (dfc["dte_mel"] <= y1)]
+        prod_y = my.groupby("id_apporteur")["mtd_total_lot"].sum()
+
+        # union index
+        idx = prod_6m.index.union(prod_y.index)
+        if len(idx) == 0:
+            continue
+
+        tmp = pd.DataFrame({"id_apporteur": idx})
+        tmp["dte_existing_event"] = snap
+        tmp = tmp.set_index("id_apporteur")
+
+        tmp["prod_6m"] = prod_6m.reindex(idx).fillna(0.0)
+        tmp["prod_6m_yoy"] = prod_y.reindex(idx).fillna(0.0)
+
+        denom = tmp["prod_6m_yoy"].values
+        num = tmp["prod_6m"].values
+        growth = np.where(
+            denom == 0,
+            np.where(num > 0, inf_growth_value, 0.0),
+            (num / denom) - 1.0
+        )
+        tmp["growth_pct"] = growth
+
+        # Exclusions ND / Existing actifs au snapshot
+        tmp = tmp.reset_index()
+        tmp["in_nd_window"] = _is_in_any_window(tmp["id_apporteur"], tmp["dte_existing_event"], nd_windows)
+        tmp["in_existing_window"] = _is_in_any_window(tmp["id_apporteur"], tmp["dte_existing_event"], existing_windows)
+
+        # Eligibilité métier
+        tmp["is_eligible"] = (
+            (tmp["prod_6m"] >= prod_min) &
+            (tmp["growth_pct"] >= growth_min) &
+            (~tmp["in_nd_window"]) &
+            (~tmp["in_existing_window"])
+        )
+
+        rows.append(tmp)
+
+    if not rows:
+        return pd.DataFrame(columns=[
+            "id_apporteur","event_id","dte_existing_event",
+            "prod_6m","prod_6m_yoy","growth_pct"
+        ])
+
+    all_snap = pd.concat(rows, ignore_index=True)
+    all_snap = all_snap[all_snap["is_eligible"]].copy()
+
+    # Cooldown 1 an : on garde un event, puis on bloque 12 mois
+    all_snap = all_snap.sort_values(["id_apporteur", "dte_existing_event"])
+    kept = []
+    last_kept = {}  # id_apporteur -> last event date
+
+    for r in all_snap.itertuples(index=False):
+        aid = r.id_apporteur
+        dte = r.dte_existing_event
+        if aid not in last_kept:
+            kept.append(r)
+            last_kept[aid] = dte
+        else:
+            if dte > (last_kept[aid] + pd.DateOffset(years=cooldown_years)):
+                kept.append(r)
+                last_kept[aid] = dte
+
+    ev = pd.DataFrame(kept)
+    if ev.empty:
+        return pd.DataFrame(columns=[
+            "id_apporteur","event_id","dte_existing_event",
+            "prod_6m","prod_6m_yoy","growth_pct"
+        ])
+
+    # event_id par apporteur (séquentiel)
+    ev["event_id"] = ev.groupby("id_apporteur").cumcount() + 1
+
+    # Colonnes finales (tu peux en garder plus pour audit si tu veux)
+    ev = ev[[
+        "id_apporteur","event_id","dte_existing_event",
+        "prod_6m","prod_6m_yoy","growth_pct"
+    ]].copy()
+
+    return ev
+
+
+# ----------------------------
+# Bloc F : calls (audit complet + rang sur calls éligibles)
+# ----------------------------
+def build_growth_calls_audit(
+    events_growth_yoy: pd.DataFrame,
+    df_demand: pd.DataFrame,
+    call_amount_threshold: float = 20_000.0,  # strict >
+    max_eligible_calls: int = 8,
+    follow_months: int = 6
+) -> pd.DataFrame:
+    """
+    Sortie: calls_growth_yoy_audit
+    1 ligne = 1 demande rattachée à un event (dans la fenêtre 6 mois)
+    + is_call_eligible, eligible_call_rank, in_scope (<=8 éligibles)
+    """
+    if events_growth_yoy.empty:
+        return pd.DataFrame()
+
+    dfd = df_demand.copy()
+    dfd["dte_trigger"] = _to_dt(dfd["dte_trigger"])
+    dfd["mtd_total_lot"] = pd.to_numeric(dfd["mtd_total_lot"], errors="coerce").fillna(0.0)
+
+    dfd = dfd.dropna(subset=["id_apporteur", "id_demand", "dte_trigger"])
+    dfd = dfd.sort_values(["id_apporteur", "dte_trigger", "id_demand"])
+
+    ev = events_growth_yoy.copy()
+    ev["dte_existing_event"] = _to_dt(ev["dte_existing_event"])
+
+    # Join "large" events x demands par id_apporteur, puis filtre fenêtre
+    m = dfd.merge(
+        ev[["id_apporteur","event_id","dte_existing_event"]],
+        on="id_apporteur",
+        how="inner"
     )
 
-    # End par défaut = start + 6 mois
-    start["end_default"] = start["start_date"] + pd.DateOffset(months=follow_months)
+    # Fenêtre 6 mois après l'identification (incluse)
+    end_win = m["dte_existing_event"] + pd.DateOffset(months=follow_months)
+    m = m[(m["dte_trigger"] >= m["dte_existing_event"]) & (m["dte_trigger"] <= end_win)].copy()
 
-    # Date du 8e call éligible (si existe)
-    # -> on cherche la ligne éligible avec eligible_call_rank == 8
-    if "eligible_call_rank" in df.columns:
-        df_rank = df[df["eligible_call_rank"] == max_eligible_calls].copy()
-        # la date "du 8e call" : c'est dte_trigger de cette ligne
-        end_8 = (
-            df_rank.groupby(["id_apporteur", "event_id"], as_index=False)["dte_trigger"]
-                  .min()
-                  .rename(columns={"dte_trigger": "end_8calls"})
-        )
-    else:
-        # fallback si tu n'as pas eligible_call_rank : on le recalcule vite
-        df = df.sort_values(["id_apporteur", "event_id", "dte_trigger"])
-        df["is_call_eligible"] = df["is_call_eligible"].fillna(False).astype(bool)
-        df["eligible_call_rank"] = df.groupby(["id_apporteur","event_id"])["is_call_eligible"].cumsum()
+    if m.empty:
+        return m
 
-        df_rank = df[df["eligible_call_rank"] == max_eligible_calls].copy()
-        end_8 = (
-            df_rank.groupby(["id_apporteur", "event_id"], as_index=False)["dte_trigger"]
-                  .min()
-                  .rename(columns={"dte_trigger": "end_8calls"})
-        )
+    # Eligibilité call (strict > 20k)
+    m["is_call_eligible"] = m["mtd_total_lot"] > call_amount_threshold
 
-    # Merge + end_date = min(end_default, end_8calls) si end_8calls existe
-    w = start.merge(end_8, on=["id_apporteur", "event_id"], how="left")
+    # Rang uniquement sur éligibles
+    m = m.sort_values(["id_apporteur","event_id","dte_trigger","id_demand"])
+    m["eligible_call_rank"] = m.groupby(["id_apporteur","event_id"])["is_call_eligible"].cumsum()
 
-    w["end_date"] = np.where(
-        w["end_8calls"].notna(),
-        np.minimum(w["end_default"].values.astype("datetime64[ns]"),
-                   w["end_8calls"].values.astype("datetime64[ns]")),
-        w["end_default"].values.astype("datetime64[ns]")
+    # Scope opérationnel: <=8 calls éligibles
+    m["in_scope"] = (~m["is_call_eligible"]) | (m["eligible_call_rank"] <= max_eligible_calls)
+
+    # (Optionnel) flag "is_call_to_do" = éligible ET rank<=8
+    m["is_call_to_do"] = m["is_call_eligible"] & (m["eligible_call_rank"] <= max_eligible_calls)
+
+    # Colonnes utiles + colonnes infos pays (on garde tout, audit)
+    cols_calc = [
+        "id_apporteur","id_demand","event_id","dte_existing_event","dte_trigger",
+        "mtd_total_lot","is_call_eligible","eligible_call_rank","in_scope","is_call_to_do"
+    ]
+
+    cols_info = [
+        "lib_apporteur","dte_creation_v2","ibl","market","lib_partner","status",
+        "dte_current_status","flg_direct_mel","id_client","lib_client","tel_1","tel_2"
+    ]
+    cols_info = [c for c in cols_info if c in m.columns]
+
+    out = m[cols_calc + cols_info].copy()
+    return out
+
+
+# ----------------------------
+# Runner "simple" YoY
+# ----------------------------
+def run_growth_yoy_pipeline(
+    df_contract: pd.DataFrame,
+    df_demand: pd.DataFrame,
+    nd_windows: pd.DataFrame | None = None,
+    existing_windows: pd.DataFrame | None = None,
+    prod_min: float = 500_000.0,
+    growth_min: float = 0.30,
+    inf_growth_value: float = 10.0,
+    future_quarters: int = 4
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Retourne:
+    - events_growth_yoy
+    - calls_growth_yoy_audit
+    """
+    # bornes snapshots basées sur les données disponibles
+    d_min = pd.concat([
+        _to_dt(df_contract["dte_mel"]) if "dte_mel" in df_contract.columns else pd.Series(dtype="datetime64[ns]"),
+        _to_dt(df_demand["dte_trigger"]) if "dte_trigger" in df_demand.columns else pd.Series(dtype="datetime64[ns]")
+    ], ignore_index=True).min()
+
+    d_max = pd.concat([
+        _to_dt(df_contract["dte_mel"]) if "dte_mel" in df_contract.columns else pd.Series(dtype="datetime64[ns]"),
+        _to_dt(df_demand["dte_trigger"]) if "dte_trigger" in df_demand.columns else pd.Series(dtype="datetime64[ns]")
+    ], ignore_index=True).max()
+
+    # si tu veux que ça “tourne tout seul” même sans data future : on étend jusqu’à today()
+    today = pd.Timestamp.today().normalize()
+    if pd.isna(d_max) or d_max < today:
+        d_max = today
+
+    snapshots = generate_quarter_snapshots(d_min, d_max, future_quarters=future_quarters)
+
+    events = compute_growth_events_yoy(
+        df_contract=df_contract,
+        snapshots=snapshots,
+        prod_min=prod_min,
+        growth_min=growth_min,
+        inf_growth_value=inf_growth_value,
+        nd_windows=nd_windows,
+        existing_windows=existing_windows,
+        cooldown_years=1
     )
-    w["end_date"] = pd.to_datetime(w["end_date"])
 
-    # Format final
-    nd_windows = w[["id_apporteur", "start_date", "end_date"]].copy()
+    calls_audit = build_growth_calls_audit(
+        events_growth_yoy=events,
+        df_demand=df_demand,
+        call_amount_threshold=20_000.0,
+        max_eligible_calls=8,
+        follow_months=6
+    )
 
-    # Optionnel: si tu veux exclure un growth event si snapshot tombe le jour même de end_date
-    # -> on laisse end_date inclusif (c'est ce qu'on fait partout)
-    return nd_windows
+    return events, calls_audit
