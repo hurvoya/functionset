@@ -1,0 +1,11 @@
+exclusions = df_exclusion_dealer.set_index(['BU', 'Exclusion Id']).index
+
+df_contract = df_contract[
+    ~df_contract.set_index(['ibl', 'id_apporteur']).index.isin(exclusions)
+]
+
+df_demand = df_demand[
+    ~df_demand.set_index(['ibl', 'id_apporteur']).index.isin(exclusions)
+]
+
+exclusions = df_exclusion_dealer[['BU', 'Exclusion Id']].drop_duplicates().set_index(['BU', 'Exclusion Id']).index
