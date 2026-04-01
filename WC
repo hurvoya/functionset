@@ -1,4 +1,38 @@
-df_exclusion_dealer['Exclusion Id'] = pd.to_numeric(
-    df_exclusion_dealer['Exclusion Id'],
-    errors='coerce'
+# 1. Harmoniser le type du code enseigne
+df_exclusion_enseigne['Code enseigne'] = pd.to_numeric(df_exclusion_enseigne['Code enseigne'], errors='coerce')
+df_contract['code_enseigne'] = pd.to_numeric(df_contract['code_enseigne'], errors='coerce')
+df_demand['code_enseigne'] = pd.to_numeric(df_demand['code_enseigne'], errors='coerce')
+
+# 2. Liste des couples (IBL, code_enseigne) à exclure
+enseignes_exclues = (
+    df_exclusion_enseigne[['BU', 'Code enseigne']]
+    .drop_duplicates()
+    .set_index(['BU', 'Code enseigne'])
+    .index
 )
+
+# 3. Récupérer tous les couples (ibl, dealer) liés à ces enseignes dans contract + demand
+dealers_exclus_contract = df_contract[
+    df_contract.set_index(['ibl', 'code_enseigne']).index.isin(enseignes_exclues)
+][['ibl', 'id_apporteur']]
+
+dealers_exclus_demand = df_demand[
+    df_demand.set_index(['ibl', 'code_enseigne']).index.isin(enseignes_exclues)
+][['ibl', 'id_apporteur']]
+
+# 4. Construire la liste finale unique des couples (ibl, dealer) à exclure
+dealers_exclus = (
+    pd.concat([dealers_exclus_contract, dealers_exclus_demand], ignore_index=True)
+    .drop_duplicates()
+    .set_index(['ibl', 'id_apporteur'])
+    .index
+)
+
+# 5. Exclure ces couples de contract et demand
+df_contract = df_contract[
+    ~df_contract.set_index(['ibl', 'id_apporteur']).index.isin(dealers_exclus)
+]
+
+df_demand = df_demand[
+    ~df_demand.set_index(['ibl', 'id_apporteur']).index.isin(dealers_exclus)
+]
