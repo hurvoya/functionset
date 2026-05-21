@@ -1,58 +1,9 @@
-# Copies de travail
-df_created = df_created.copy()
-df_mail = df_mail.copy()
-
-# Nettoyage côté df_created
-df_created["email receiver clean"] = (
-    df_created["email receiver"]
-    .astype(str)
-    .str.strip()
-    .str.lower()
-)
-
-df_created["country clean"] = (
-    df_created["country"]
-    .astype(str)
-    .str.strip()
-    .str.lower()
-)
-
-# Nettoyage côté df_mail
-df_mail["Mailbox full name clean"] = (
-    df_mail["Mailbox full name"]
-    .astype(str)
-    .str.strip()
-    .str.lower()
-)
-
-df_mail["country clean"] = (
-    df_mail["Vountry"]  # remplace par "Country" si besoin
-    .astype(str)
-    .str.strip()
-    .str.lower()
-)
-
-# Création d'une table de référence unique pays + mailbox
-ref_mail = (
-    df_mail[["country clean", "Mailbox full name clean"]]
-    .drop_duplicates()
-)
-
-# Ajout du flag dans df_created
-df_created = df_created.merge(
-    ref_mail.assign(receiver_match_df_mail=True),
-    how="left",
-    left_on=["country clean", "email receiver clean"],
-    right_on=["country clean", "Mailbox full name clean"]
-)
-
-# Remplacer les NaN par False
-df_created["receiver_match_df_mail"] = (
-    df_created["receiver_match_df_mail"]
-    .fillna(False)
-)
-
-# Nettoyage des colonnes techniques si tu ne veux pas les garder
-df_created = df_created.drop(
-    columns=["email receiver clean", "country clean", "Mailbox full name clean"]
+df_created["email sender type"] = np.where(
+    df_created["email sender"].isna(),
+    pd.NA,
+    np.where(
+        df_created["email sender"].str.lower().str.contains("@bnpp", na=False),
+        "internal",
+        "external"
+    )
 )
