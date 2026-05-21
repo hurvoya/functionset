@@ -1,48 +1,65 @@
 import numpy as np
 import pandas as pd
 
-# Copies optionnelles
 closed = df_closed.copy()
-touch_target = df_touch_target.copy()
+fte = df_fte_by_process.copy()
 
-# Nettoyage des clés de matching
-closed["process_key"] = closed["new process"].astype(str).str.strip().str.lower()
-touch_target["process_key"] = touch_target["TASK"].astype(str).str.strip().str.lower()
+# -----------------------------
+# 1. Nettoyage des clés de matching
+# -----------------------------
+closed["process_key"] = closed["new process"].astype("string").str.strip().str.lower()
+closed["country_key"] = closed["country"].astype("string").str.strip().str.lower()
+closed["status_key"] = closed["case status"].astype("string").str.strip().str.lower()
 
-# On garde uniquement les colonnes utiles
-touch_target_clean = touch_target[["process_key", "Proposed target"]].drop_duplicates(
-    subset=["process_key"],
+fte["process_key"] = fte["Process"].astype("string").str.strip().str.lower()
+fte["country_key"] = fte["Country"].astype("string").str.strip().str.lower()
+fte["status_key"] = fte["status"].astype("string").str.strip().str.lower()
+
+# -----------------------------
+# 2. Conversion du temps en numérique
+# -----------------------------
+fte["time_minutes_task"] = pd.to_numeric(
+    fte["time (minutes)"],
+    errors="coerce"
+)
+
+# -----------------------------
+# 3. Préparation de la table de référence
+# -----------------------------
+fte_clean = fte[
+    ["process_key", "country_key", "status_key", "time_minutes_task"]
+].drop_duplicates(
+    subset=["process_key", "country_key", "status_key"],
     keep="first"
 )
 
-# Merge pour attribuer la target
+# -----------------------------
+# 4. Merge pour attribuer le temps
+# -----------------------------
 closed = closed.merge(
-    touch_target_clean,
-    on="process_key",
+    fte_clean,
+    on=["process_key", "country_key", "status_key"],
     how="left"
 )
 
-# Renommer la colonne pour être plus clair
-closed = closed.rename(columns={
-    "Proposed target": "touch_target"
-})
-
-# Comparaison nb of touch vs target
-closed["within_touch_target"] = np.where(
-    closed["nb of touch"] <= closed["touch_target"],
+# -----------------------------
+# 5. Flag : correspondance trouvée ou non
+# -----------------------------
+closed["fte_time_found"] = np.where(
+    closed["time_minutes_task"].notna(),
     1,
     0
 )
 
-# Optionnel : indiquer si une target a été trouvée ou non
-closed["touch_target_found"] = np.where(
-    closed["touch_target"].notna(),
-    1,
-    0
+# Optionnel : version en heures
+closed["time_hours_task"] = closed["time_minutes_task"] / 60
+
+# -----------------------------
+# 6. Nettoyage des colonnes techniques
+# -----------------------------
+closed = closed.drop(
+    columns=["process_key", "country_key", "status_key"],
+    errors="ignore"
 )
 
-# Nettoyage colonne technique
-closed = closed.drop(columns=["process_key"], errors="ignore")
-
-# Résultat final
 df_closed = closed
