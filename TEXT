@@ -1,10 +1,27 @@
-# Conversion des dates en datetime, puis suppression de la timezone
-closed["creation date"] = (
-    pd.to_datetime(closed["creation date"], errors="coerce", utc=True)
-    .dt.tz_localize(None)
-)
-
-closed["end date"] = (
-    pd.to_datetime(closed["end date"], errors="coerce", utc=True)
-    .dt.tz_localize(None)
+FTE Chart =
+UNION(
+    SELECTCOLUMNS(
+        'Table',
+        "country", 'Table'[country],
+        "closing_month", 'Table'[closing_month],
+        "BarGroup", "Measurable",
+        "FTE_Type", "Measurable Operational FTE",
+        "FTE", 'Table'[measurable Operational FTE]
+    ),
+    SELECTCOLUMNS(
+        'Table',
+        "country", 'Table'[country],
+        "closing_month", 'Table'[closing_month],
+        "BarGroup", "Modelised",
+        "FTE_Type", "Modelised FTE case",
+        "FTE", 'Table'[MOdelised FTE case]
+    ),
+    SELECTCOLUMNS(
+        'Table',
+        "country", 'Table'[country],
+        "closing_month", 'Table'[closing_month],
+        "BarGroup", "Modelised",
+        "FTE_Type", "Modelised FTE robot",
+        "FTE", 'Table'[MOdelised FTE robot]
+    )
 )
