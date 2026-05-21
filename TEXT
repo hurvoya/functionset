@@ -1,11 +1,48 @@
-robot_ids = df_robot["id_robot"].dropna().astype(str).str.strip()
-robot_ids = set(robot_ids)
+import numpy as np
+import pandas as pd
 
-for df in [df_created, df_stock, df_closed]:
-    df["flag_robot"] = (
-        df["case manager"]
-        .astype(str)
-        .str.strip()
-        .isin(robot_ids)
-        .astype(int)
-    )
+# Copies optionnelles
+closed = df_closed.copy()
+touch_target = df_touch_target.copy()
+
+# Nettoyage des clés de matching
+closed["process_key"] = closed["new process"].astype(str).str.strip().str.lower()
+touch_target["process_key"] = touch_target["TASK"].astype(str).str.strip().str.lower()
+
+# On garde uniquement les colonnes utiles
+touch_target_clean = touch_target[["process_key", "Proposed target"]].drop_duplicates(
+    subset=["process_key"],
+    keep="first"
+)
+
+# Merge pour attribuer la target
+closed = closed.merge(
+    touch_target_clean,
+    on="process_key",
+    how="left"
+)
+
+# Renommer la colonne pour être plus clair
+closed = closed.rename(columns={
+    "Proposed target": "touch_target"
+})
+
+# Comparaison nb of touch vs target
+closed["within_touch_target"] = np.where(
+    closed["nb of touch"] <= closed["touch_target"],
+    1,
+    0
+)
+
+# Optionnel : indiquer si une target a été trouvée ou non
+closed["touch_target_found"] = np.where(
+    closed["touch_target"].notna(),
+    1,
+    0
+)
+
+# Nettoyage colonne technique
+closed = closed.drop(columns=["process_key"], errors="ignore")
+
+# Résultat final
+df_closed = closed
