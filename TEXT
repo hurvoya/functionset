@@ -1,9 +1,5 @@
-df_created["email sender type"] = np.where(
-    df_created["email sender"].isna(),
-    pd.NA,
-    np.where(
-        df_created["email sender"].str.lower().str.contains("@bnpp", na=False),
-        "internal",
-        "external"
-    )
+cols_dates = ["creation date", "closing date"]
+
+df_created[cols_dates] = df_created[cols_dates].apply(
+    lambda x: x.dt.strftime("%d/%m/%Y %H:%M:%S")
 )
