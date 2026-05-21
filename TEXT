@@ -1,65 +1,33 @@
-import numpy as np
 import pandas as pd
+import numpy as np
 
-closed = df_closed.copy()
-fte = df_fte_by_process.copy()
+# Sécurité sur les dates
+closed["creation date"] = pd.to_datetime(closed["creation date"], errors="coerce")
+closed["end date"] = pd.to_datetime(closed["end date"], errors="coerce")
 
-# -----------------------------
-# 1. Nettoyage des clés de matching
-# -----------------------------
-closed["process_key"] = closed["new process"].astype("string").str.strip().str.lower()
-closed["country_key"] = closed["country"].astype("string").str.strip().str.lower()
-closed["status_key"] = closed["case status"].astype("string").str.strip().str.lower()
-
-fte["process_key"] = fte["Process"].astype("string").str.strip().str.lower()
-fte["country_key"] = fte["Country"].astype("string").str.strip().str.lower()
-fte["status_key"] = fte["status"].astype("string").str.strip().str.lower()
-
-# -----------------------------
-# 2. Conversion du temps en numérique
-# -----------------------------
-fte["time_minutes_task"] = pd.to_numeric(
-    fte["time (minutes)"],
+# Sécurité sur le temps
+closed["time_minutes_task"] = pd.to_numeric(
+    closed["time_minutes_task"],
     errors="coerce"
 )
 
-# -----------------------------
-# 3. Préparation de la table de référence
-# -----------------------------
-fte_clean = fte[
-    ["process_key", "country_key", "status_key", "time_minutes_task"]
-].drop_duplicates(
-    subset=["process_key", "country_key", "status_key"],
-    keep="first"
+# Filtrer à partir de janvier 2026 sur la creation date
+closed_2026 = closed[
+    closed["creation date"] >= pd.Timestamp("2026-01-01")
+].copy()
+
+# Créer le mois de clôture
+closed_2026["closing_month"] = closed_2026["end date"].dt.to_period("M").dt.to_timestamp()
+
+# Agréger les minutes par pays et mois de clôture
+df_monthly_workload = (
+    closed_2026
+    .groupby(["country", "closing_month"], as_index=False)
+    .agg(
+        total_minutes=("time_minutes_task", "sum"),
+        nb_tasks=("case id", "count")
+    )
 )
 
-# -----------------------------
-# 4. Merge pour attribuer le temps
-# -----------------------------
-closed = closed.merge(
-    fte_clean,
-    on=["process_key", "country_key", "status_key"],
-    how="left"
-)
-
-# -----------------------------
-# 5. Flag : correspondance trouvée ou non
-# -----------------------------
-closed["fte_time_found"] = np.where(
-    closed["time_minutes_task"].notna(),
-    1,
-    0
-)
-
-# Optionnel : version en heures
-closed["time_hours_task"] = closed["time_minutes_task"] / 60
-
-# -----------------------------
-# 6. Nettoyage des colonnes techniques
-# -----------------------------
-closed = closed.drop(
-    columns=["process_key", "country_key", "status_key"],
-    errors="ignore"
-)
-
-df_closed = closed
+# Conversion minutes -> heures
+df_monthly_workload["total_hours"] = df_monthly_workload["total_minutes"] / 60
