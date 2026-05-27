@@ -1,5 +1,42 @@
-cols_dates = ["creation date", "closing date"]
+def infer_column_types(df, id_keywords=("id", "key", "code")):
+    """
+    Classe les colonnes en grandes familles :
+    - keys
+    - numeric
+    - categorical
+    - dates
+    - boolean
+    - text
+    """
 
-df_created[cols_dates] = df_created[cols_dates].apply(
-    lambda x: x.dt.strftime("%d/%m/%Y %H:%M:%S")
-)
+    column_types = {
+        "keys": [],
+        "numeric": [],
+        "categorical": [],
+        "dates": [],
+        "boolean": [],
+        "text": []
+    }
+
+    for col in df.columns:
+        col_lower = col.lower()
+
+        if any(keyword in col_lower for keyword in id_keywords):
+            column_types["keys"].append(col)
+
+        elif pd.api.types.is_bool_dtype(df[col]):
+            column_types["boolean"].append(col)
+
+        elif pd.api.types.is_numeric_dtype(df[col]):
+            column_types["numeric"].append(col)
+
+        elif pd.api.types.is_datetime64_any_dtype(df[col]):
+            column_types["dates"].append(col)
+
+        elif df[col].nunique(dropna=True) <= 30:
+            column_types["categorical"].append(col)
+
+        else:
+            column_types["text"].append(col)
+
+    return column_types
