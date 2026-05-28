@@ -1,38 +1,37 @@
-def check_categorical_quality(
+def check_date_quality(
     df,
     table_name,
-    categorical_cols,
+    date_cols,
     country_col="country",
-    max_categories=50
+    allow_future_dates=False
 ):
     """
-    Contrôle les colonnes catégorielles :
-    - nombre de catégories distinctes
-    - catégories les plus fréquentes
-    - catégories potentiellement trop nombreuses
+    Contrôle les colonnes de date :
+    - taux de valeurs manquantes
+    - date min
+    - date max
+    - nombre de dates futures
     """
 
     results = []
+    today = pd.Timestamp.today().normalize()
 
     for country, subdf in df.groupby(country_col):
-        for col in categorical_cols:
-            nunique = subdf[col].nunique(dropna=True)
-            top_values = (
-                subdf[col]
-                .value_counts(dropna=False)
-                .head(5)
-                .to_dict()
-            )
+        for col in date_cols:
+            date_series = pd.to_datetime(subdf[col], errors="coerce")
+
+            future_count = (date_series > today).sum()
 
             results.append({
                 "table": table_name,
                 "country": country,
-                "check": "categorical_quality",
+                "check": "date_quality",
                 "column": col,
-                "n_unique": nunique,
-                "top_values": top_values,
-                "threshold": max_categories,
-                "status": "OK" if nunique <= max_categories else "WARNING"
+                "missing_rate": round(date_series.isna().mean(), 4),
+                "min_date": date_series.min(),
+                "max_date": date_series.max(),
+                "future_date_count": future_count,
+                "status": "KO" if not allow_future_dates and future_count > 0 else "OK"
             })
 
     return pd.DataFrame(results)
