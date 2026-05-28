@@ -1,34 +1,54 @@
-def check_outliers_iqr(df, table_name, numeric_cols, country_col="country"):
+def infer_column_types(
+    df,
+    id_keywords=("id", "key", "code", "uuid"),
+    country_col="country",
+    categorical_threshold=30
+):
     """
-    Détecte les outliers avec la méthode IQR.
-    Ce n'est pas forcément une erreur, plutôt un signal à analyser.
+    Infère les types fonctionnels des colonnes.
+    
+    Retourne un dictionnaire :
+    - keys
+    - numeric
+    - categorical
+    - dates
+    - boolean
+    - text
+    - country
     """
 
-    results = []
+    column_types = {
+        "country": [],
+        "keys": [],
+        "numeric": [],
+        "categorical": [],
+        "dates": [],
+        "boolean": [],
+        "text": []
+    }
 
-    for country, subdf in df.groupby(country_col):
-        for col in numeric_cols:
-            q1 = subdf[col].quantile(0.25)
-            q3 = subdf[col].quantile(0.75)
-            iqr = q3 - q1
+    for col in df.columns:
+        col_lower = col.lower()
 
-            lower_bound = q1 - 1.5 * iqr
-            upper_bound = q3 + 1.5 * iqr
+        if col == country_col:
+            column_types["country"].append(col)
 
-            outlier_count = (
-                (subdf[col] < lower_bound) |
-                (subdf[col] > upper_bound)
-            ).sum()
+        elif any(keyword in col_lower for keyword in id_keywords):
+            column_types["keys"].append(col)
 
-            results.append({
-                "table": table_name,
-                "country": country,
-                "check": "outliers_iqr",
-                "column": col,
-                "lower_bound": lower_bound,
-                "upper_bound": upper_bound,
-                "outlier_count": outlier_count,
-                "status": "WARNING" if outlier_count > 0 else "OK"
-            })
+        elif pd.api.types.is_bool_dtype(df[col]):
+            column_types["boolean"].append(col)
 
-    return pd.DataFrame(results)
+        elif pd.api.types.is_datetime64_any_dtype(df[col]):
+            column_types["dates"].append(col)
+
+        elif pd.api.types.is_numeric_dtype(df[col]):
+            column_types["numeric"].append(col)
+
+        elif df[col].nunique(dropna=True) <= categorical_threshold:
+            column_types["categorical"].append(col)
+
+        else:
+            column_types["text"].append(col)
+
+    return column_types
