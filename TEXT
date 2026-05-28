@@ -1,39 +1,38 @@
-def check_numeric_quality(
+def check_categorical_quality(
     df,
     table_name,
-    numeric_cols,
+    categorical_cols,
     country_col="country",
-    allow_negative=True
+    max_categories=50
 ):
     """
-    Contrôle les colonnes numériques :
-    - valeurs manquantes
-    - min
-    - max
-    - moyenne
-    - nombre de valeurs négatives
-    - nombre de zéros
+    Contrôle les colonnes catégorielles :
+    - nombre de catégories distinctes
+    - catégories les plus fréquentes
+    - catégories potentiellement trop nombreuses
     """
 
     results = []
 
     for country, subdf in df.groupby(country_col):
-        for col in numeric_cols:
-            negative_count = (subdf[col] < 0).sum() if not allow_negative else np.nan
-            zero_count = (subdf[col] == 0).sum()
+        for col in categorical_cols:
+            nunique = subdf[col].nunique(dropna=True)
+            top_values = (
+                subdf[col]
+                .value_counts(dropna=False)
+                .head(5)
+                .to_dict()
+            )
 
             results.append({
                 "table": table_name,
                 "country": country,
-                "check": "numeric_quality",
+                "check": "categorical_quality",
                 "column": col,
-                "missing_rate": round(subdf[col].isna().mean(), 4),
-                "min": subdf[col].min(),
-                "max": subdf[col].max(),
-                "mean": subdf[col].mean(),
-                "zero_count": zero_count,
-                "negative_count": negative_count,
-                "status": "KO" if not allow_negative and negative_count > 0 else "OK"
+                "n_unique": nunique,
+                "top_values": top_values,
+                "threshold": max_categories,
+                "status": "OK" if nunique <= max_categories else "WARNING"
             })
 
     return pd.DataFrame(results)
