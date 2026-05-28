@@ -1,27 +1,39 @@
-def check_duplicates(df, table_name, key_cols, country_col="country"):
+def check_numeric_quality(
+    df,
+    table_name,
+    numeric_cols,
+    country_col="country",
+    allow_negative=True
+):
     """
-    Vérifie les doublons sur une clé métier.
-    Exemple de clé : ["country", "customer_id"]
+    Contrôle les colonnes numériques :
+    - valeurs manquantes
+    - min
+    - max
+    - moyenne
+    - nombre de valeurs négatives
+    - nombre de zéros
     """
 
     results = []
 
-    if country_col in key_cols:
-        group_col = country_col
-    else:
-        group_col = country_col
+    for country, subdf in df.groupby(country_col):
+        for col in numeric_cols:
+            negative_count = (subdf[col] < 0).sum() if not allow_negative else np.nan
+            zero_count = (subdf[col] == 0).sum()
 
-    for country, subdf in df.groupby(group_col):
-        duplicate_count = subdf.duplicated(subset=key_cols).sum()
-
-        results.append({
-            "table": table_name,
-            "country": country,
-            "check": "duplicate_keys",
-            "column": "+".join(key_cols),
-            "value": duplicate_count,
-            "threshold": 0,
-            "status": "OK" if duplicate_count == 0 else "KO"
-        })
+            results.append({
+                "table": table_name,
+                "country": country,
+                "check": "numeric_quality",
+                "column": col,
+                "missing_rate": round(subdf[col].isna().mean(), 4),
+                "min": subdf[col].min(),
+                "max": subdf[col].max(),
+                "mean": subdf[col].mean(),
+                "zero_count": zero_count,
+                "negative_count": negative_count,
+                "status": "KO" if not allow_negative and negative_count > 0 else "OK"
+            })
 
     return pd.DataFrame(results)
