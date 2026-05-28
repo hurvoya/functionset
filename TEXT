@@ -1,42 +1,15 @@
-def infer_column_types(df, id_keywords=("id", "key", "code")):
+def check_volume_by_country(df, table_name, country_col="country"):
     """
-    Classe les colonnes en grandes familles :
-    - keys
-    - numeric
-    - categorical
-    - dates
-    - boolean
-    - text
+    Vérifie le nombre de lignes par pays.
     """
 
-    column_types = {
-        "keys": [],
-        "numeric": [],
-        "categorical": [],
-        "dates": [],
-        "boolean": [],
-        "text": []
-    }
+    result = (
+        df.groupby(country_col)
+        .size()
+        .reset_index(name="row_count")
+    )
 
-    for col in df.columns:
-        col_lower = col.lower()
+    result["table"] = table_name
+    result["check"] = "volume_by_country"
 
-        if any(keyword in col_lower for keyword in id_keywords):
-            column_types["keys"].append(col)
-
-        elif pd.api.types.is_bool_dtype(df[col]):
-            column_types["boolean"].append(col)
-
-        elif pd.api.types.is_numeric_dtype(df[col]):
-            column_types["numeric"].append(col)
-
-        elif pd.api.types.is_datetime64_any_dtype(df[col]):
-            column_types["dates"].append(col)
-
-        elif df[col].nunique(dropna=True) <= 30:
-            column_types["categorical"].append(col)
-
-        else:
-            column_types["text"].append(col)
-
-    return column_types
+    return result[["table", country_col, "check", "row_count"]]
