@@ -1,54 +1,82 @@
-def infer_column_types(
+def audit_table(
     df,
-    id_keywords=("id", "key", "code", "uuid"),
+    table_name,
     country_col="country",
-    categorical_threshold=30
+    key_cols=None,
+    categorical_threshold=30,
+    allow_negative=True
 ):
     """
-    Infère les types fonctionnels des colonnes.
+    Lance automatiquement les contrôles qualité sur une table.
     
-    Retourne un dictionnaire :
-    - keys
-    - numeric
-    - categorical
-    - dates
-    - boolean
-    - text
-    - country
+    Les colonnes numériques, catégorielles, dates, booléennes et texte
+    sont inférées automatiquement.
+    
+    key_cols peut être fourni manuellement si la clé métier exacte est connue.
+    Sinon, la fonction utilise les colonnes détectées comme keys.
     """
 
-    column_types = {
-        "country": [],
-        "keys": [],
-        "numeric": [],
-        "categorical": [],
-        "dates": [],
-        "boolean": [],
-        "text": []
-    }
+    reports = []
 
-    for col in df.columns:
-        col_lower = col.lower()
+    column_types = infer_column_types(
+        df,
+        country_col=country_col,
+        categorical_threshold=categorical_threshold
+    )
 
-        if col == country_col:
-            column_types["country"].append(col)
+    numeric_cols = column_types["numeric"]
+    categorical_cols = column_types["categorical"]
+    date_cols = column_types["dates"]
 
-        elif any(keyword in col_lower for keyword in id_keywords):
-            column_types["keys"].append(col)
+    if key_cols is None:
+        key_cols = column_types["keys"]
 
-        elif pd.api.types.is_bool_dtype(df[col]):
-            column_types["boolean"].append(col)
+    reports.append(check_volume_by_country(df, table_name, country_col))
+    reports.append(check_missing_values(df, table_name, country_col))
 
-        elif pd.api.types.is_datetime64_any_dtype(df[col]):
-            column_types["dates"].append(col)
+    if key_cols:
+        reports.append(check_duplicates(df, table_name, key_cols, country_col))
 
-        elif pd.api.types.is_numeric_dtype(df[col]):
-            column_types["numeric"].append(col)
+    if numeric_cols:
+        reports.append(
+            check_numeric_quality(
+                df=df,
+                table_name=table_name,
+                numeric_cols=numeric_cols,
+                country_col=country_col,
+                allow_negative=allow_negative
+            )
+        )
 
-        elif df[col].nunique(dropna=True) <= categorical_threshold:
-            column_types["categorical"].append(col)
+        reports.append(
+            check_outliers_iqr(
+                df=df,
+                table_name=table_name,
+                numeric_cols=numeric_cols,
+                country_col=country_col
+            )
+        )
 
-        else:
-            column_types["text"].append(col)
+    if categorical_cols:
+        reports.append(
+            check_categorical_quality(
+                df=df,
+                table_name=table_name,
+                categorical_cols=categorical_cols,
+                country_col=country_col
+            )
+        )
 
-    return column_types
+    if date_cols:
+        reports.append(
+            check_date_quality(
+                df=df,
+                table_name=table_name,
+                date_cols=date_cols,
+                country_col=country_col
+            )
+        )
+
+    final_report = pd.concat(reports, ignore_index=True, sort=False)
+
+    return final_report, column_types
