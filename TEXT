@@ -1,15 +1,22 @@
-def check_volume_by_country(df, table_name, country_col="country"):
+def check_missing_values(df, table_name, country_col="country", threshold=0.05):
     """
-    Vérifie le nombre de lignes par pays.
+    Calcule le taux de valeurs manquantes par colonne et par pays.
     """
 
-    result = (
-        df.groupby(country_col)
-        .size()
-        .reset_index(name="row_count")
-    )
+    results = []
 
-    result["table"] = table_name
-    result["check"] = "volume_by_country"
+    for country, subdf in df.groupby(country_col):
+        for col in subdf.columns:
+            missing_rate = subdf[col].isna().mean()
 
-    return result[["table", country_col, "check", "row_count"]]
+            results.append({
+                "table": table_name,
+                "country": country,
+                "check": "missing_rate",
+                "column": col,
+                "value": round(missing_rate, 4),
+                "threshold": threshold,
+                "status": "OK" if missing_rate <= threshold else "KO"
+            })
+
+    return pd.DataFrame(results)
