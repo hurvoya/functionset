@@ -1,37 +1,34 @@
-def check_date_quality(
-    df,
-    table_name,
-    date_cols,
-    country_col="country",
-    allow_future_dates=False
-):
+def check_outliers_iqr(df, table_name, numeric_cols, country_col="country"):
     """
-    Contrôle les colonnes de date :
-    - taux de valeurs manquantes
-    - date min
-    - date max
-    - nombre de dates futures
+    Détecte les outliers avec la méthode IQR.
+    Ce n'est pas forcément une erreur, plutôt un signal à analyser.
     """
 
     results = []
-    today = pd.Timestamp.today().normalize()
 
     for country, subdf in df.groupby(country_col):
-        for col in date_cols:
-            date_series = pd.to_datetime(subdf[col], errors="coerce")
+        for col in numeric_cols:
+            q1 = subdf[col].quantile(0.25)
+            q3 = subdf[col].quantile(0.75)
+            iqr = q3 - q1
 
-            future_count = (date_series > today).sum()
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
+
+            outlier_count = (
+                (subdf[col] < lower_bound) |
+                (subdf[col] > upper_bound)
+            ).sum()
 
             results.append({
                 "table": table_name,
                 "country": country,
-                "check": "date_quality",
+                "check": "outliers_iqr",
                 "column": col,
-                "missing_rate": round(date_series.isna().mean(), 4),
-                "min_date": date_series.min(),
-                "max_date": date_series.max(),
-                "future_date_count": future_count,
-                "status": "KO" if not allow_future_dates and future_count > 0 else "OK"
+                "lower_bound": lower_bound,
+                "upper_bound": upper_bound,
+                "outlier_count": outlier_count,
+                "status": "WARNING" if outlier_count > 0 else "OK"
             })
 
     return pd.DataFrame(results)
