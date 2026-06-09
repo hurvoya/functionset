@@ -1,82 +1,19 @@
-def audit_table(
-    df,
-    table_name,
-    country_col="country",
-    key_cols=None,
-    categorical_threshold=30,
-    allow_negative=True
-):
-    """
-    Lance automatiquement les contrôles qualité sur une table.
-    
-    Les colonnes numériques, catégorielles, dates, booléennes et texte
-    sont inférées automatiquement.
-    
-    key_cols peut être fourni manuellement si la clé métier exacte est connue.
-    Sinon, la fonction utilise les colonnes détectées comme keys.
-    """
+import numpy as np
 
-    reports = []
+conditions = [
+    df["incoming_channel"].isin(["ECC", "PAP"]),
+    df["incoming_channel"].eq("MAN"),
+    df["incoming_channel"].eq("IDP") & df["flg_segregate_mail"].eq(1) & df["email_sender_type"].eq("external"),
+    df["incoming_channel"].eq("IDP") & df["flg_segregate_mail"].eq(1) & df["email_sender_type"].eq("internal"),
+    df["incoming_channel"].eq("IDP") & df["flg_segregate_mail"].eq(0),
+]
 
-    column_types = infer_column_types(
-        df,
-        country_col=country_col,
-        categorical_threshold=categorical_threshold
-    )
+choices = [
+    "Customer",
+    "Customer Services",
+    "Dealer",
+    "Internal",
+    "Not segregated",
+]
 
-    numeric_cols = column_types["numeric"]
-    categorical_cols = column_types["categorical"]
-    date_cols = column_types["dates"]
-
-    if key_cols is None:
-        key_cols = column_types["keys"]
-
-    reports.append(check_volume_by_country(df, table_name, country_col))
-    reports.append(check_missing_values(df, table_name, country_col))
-
-    if key_cols:
-        reports.append(check_duplicates(df, table_name, key_cols, country_col))
-
-    if numeric_cols:
-        reports.append(
-            check_numeric_quality(
-                df=df,
-                table_name=table_name,
-                numeric_cols=numeric_cols,
-                country_col=country_col,
-                allow_negative=allow_negative
-            )
-        )
-
-        reports.append(
-            check_outliers_iqr(
-                df=df,
-                table_name=table_name,
-                numeric_cols=numeric_cols,
-                country_col=country_col
-            )
-        )
-
-    if categorical_cols:
-        reports.append(
-            check_categorical_quality(
-                df=df,
-                table_name=table_name,
-                categorical_cols=categorical_cols,
-                country_col=country_col
-            )
-        )
-
-    if date_cols:
-        reports.append(
-            check_date_quality(
-                df=df,
-                table_name=table_name,
-                date_cols=date_cols,
-                country_col=country_col
-            )
-        )
-
-    final_report = pd.concat(reports, ignore_index=True, sort=False)
-
-    return final_report, column_types
+df["incoming_channel_type"] = np.select(conditions, choices, default=pd.NA)
