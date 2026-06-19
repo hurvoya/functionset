@@ -1,25 +1,22 @@
-def merge_and_clean_user(dfcc, df_extractcc):
-    """Merge contract data with customer account connection information.
+def aggregate_user_stats(dfcc):
+    """Aggregate customer statistics for Power BI reporting.
 
-    The function enriches the contract/customer dataframe with customer account
-    and connection information from an external customer account extract. It
-    also performs basic cleaning and preparation steps, including extracting
-    year and month values, replacing selected values, creating a customer
-    account existence flag, and selecting the final set of columns.
+    The function builds an aggregated table from the prepared customer dataset
+    to reduce the volume of data loaded into Power BI. It computes customer
+    statistics across the variables defined in ``group_vars``, including the
+    total number of unique customers and the number of registered customers
+    based on the sum of the customer account creation flag.
 
     Parameters
     ----------
     dfcc : pandas.DataFrame
-        Contract/customer dataframe computed from database sources.
-
-    df_extractcc : pandas.DataFrame
-        Customer account extract containing information related to customer
-        portal accounts and connection activity.
+        Prepared customer dataframe containing customer identifiers, the
+        customer account creation flag, and the variables used for aggregation.
 
     Returns
     -------
     pandas.DataFrame
-        Final enriched dataframe combining contract/customer information with
-        customer account and connection data, including the customer account
-        existence flag and the selected final columns.
+        Aggregated customer statistics dataframe with one row per combination
+        of grouping variables, including the total number of unique customers
+        and the number of registered customers.
     """
