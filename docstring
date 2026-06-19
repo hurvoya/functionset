@@ -1,57 +1,19 @@
-def mergeContractMailInfo(
-    df_contract_mail,
-    df_contract,
-    df_produit_financier,
-    df_produit_commercial,
-    df_marche,
-    df_partenaire,
-    df_apporteur,
-    df_request,
-    df_avis,
-    df_signature,
-):
-    """Enrich contract mail data with contract, product, market, and request information.
+def mergeApporteurInfo(df_apporteur, df_hierarchie_apporteur):
+    """Enrich introducer data with hierarchy information.
 
-    The function uses the contract mail dataframe as the base table and enriches
-    it with information from contract, financial product, commercial product,
-    market, partner, introducer, request, review, and signature dataframes.
+    The function merges the introducer dataframe with the introducer hierarchy
+    dataframe in order to add hierarchy-related information to each introducer.
 
     Parameters
     ----------
-    df_contract_mail : pandas.DataFrame
-        Base dataframe containing contract mail information.
-
-    df_contract : pandas.DataFrame
-        Dataframe containing contract information.
-
-    df_produit_financier : pandas.DataFrame
-        Dataframe containing financial product information.
-
-    df_produit_commercial : pandas.DataFrame
-        Dataframe containing commercial product information.
-
-    df_marche : pandas.DataFrame
-        Dataframe containing market information.
-
-    df_partenaire : pandas.DataFrame
-        Dataframe containing partner information.
-
     df_apporteur : pandas.DataFrame
         Dataframe containing introducer information.
 
-    df_request : pandas.DataFrame
-        Dataframe containing request information.
-
-    df_avis : pandas.DataFrame
-        Dataframe containing review or decision information.
-
-    df_signature : pandas.DataFrame
-        Dataframe containing signature information.
+    df_hierarchie_apporteur : pandas.DataFrame
+        Dataframe containing introducer hierarchy information.
 
     Returns
     -------
     pandas.DataFrame
-        Enriched contract mail dataframe containing the merged information from
-        the related contract, product, market, partner, introducer, request,
-        review, and signature dataframes.
+        Enriched introducer dataframe including hierarchy information.
     """
