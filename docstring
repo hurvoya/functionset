@@ -1,0 +1,21 @@
+def PrepareUserStock(dfContractCCT):
+    """Build a monthly contract stock dataset over the last 13 months.
+
+    For each month in the last 13 months, the function identifies contracts
+    that were active during that month based on historical contract data. The
+    resulting stock represents the contracts that were ongoing, or in rental
+    status, for each monthly period.
+
+    Parameters
+    ----------
+    dfContractCCT : pandas.DataFrame
+        Historical contract dataframe containing customer-related contract
+        information, including the fields required to determine whether a
+        contract was active during each monthly stock period.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Monthly stock dataframe containing the contracts considered active for
+        each of the last 13 months.
+    """
