@@ -1,25 +1,21 @@
-def mergeDemandeInformation(
-    df_request,
-    df_avis,
+def mergeContractECCInfo(
+    df_contractECC,
     df_produit_financier,
     df_produit_commercial,
     df_marche,
     df_partenaire,
     df_apporteur,
 ):
-    """Enrich request data with review, product, market, partner, and introducer information.
+    """Enrich ECC contract data with product, market, partner, and introducer information.
 
-    The function uses the request dataframe as the base table and enriches it
-    with information from review, financial product, commercial product, market,
+    The function uses the ECC contract dataframe as the base table and enriches
+    it with information from financial product, commercial product, market,
     partner, and introducer dataframes.
 
     Parameters
     ----------
-    df_request : pandas.DataFrame
-        Base dataframe containing request information.
-
-    df_avis : pandas.DataFrame
-        Dataframe containing review or decision information related to requests.
+    df_contractECC : pandas.DataFrame
+        Base dataframe containing ECC contract information.
 
     df_produit_financier : pandas.DataFrame
         Dataframe containing financial product information.
@@ -39,6 +35,6 @@ def mergeDemandeInformation(
     Returns
     -------
     pandas.DataFrame
-        Enriched request dataframe containing the merged information from the
-        related review, product, market, partner, and introducer dataframes.
+        Enriched ECC contract dataframe containing the merged information from
+        the related product, market, partner, and introducer dataframes.
     """
