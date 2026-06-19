@@ -1,22 +1,18 @@
-def aggregate_user_stats(dfcc):
-    """Aggregate customer statistics for Power BI reporting.
+def clean_nan_df(df):
+    """Clean missing values in a dataframe.
 
-    The function builds an aggregated table from the prepared customer dataset
-    to reduce the volume of data loaded into Power BI. It computes customer
-    statistics across the variables defined in ``group_vars``, including the
-    total number of unique customers and the number of registered customers
-    based on the sum of the customer account creation flag.
+    The function replaces actual pandas missing values with ``"Not defined"``.
+    It also replaces string values that are exactly equal to ``"nan"`` or
+    ``"(nan)"`` with ``"Not defined"``, while leaving other strings containing
+    ``"nan"`` as part of a larger word unchanged.
 
     Parameters
     ----------
-    dfcc : pandas.DataFrame
-        Prepared customer dataframe containing customer identifiers, the
-        customer account creation flag, and the variables used for aggregation.
+    df : pandas.DataFrame
+        Dataframe to clean.
 
     Returns
     -------
     pandas.DataFrame
-        Aggregated customer statistics dataframe with one row per combination
-        of grouping variables, including the total number of unique customers
-        and the number of registered customers.
+        Cleaned dataframe with missing values standardized as ``"Not defined"``.
     """
