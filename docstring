@@ -1,21 +1,18 @@
-def PrepareUserStock(dfContractCCT):
-    """Build a monthly contract stock dataset over the last 13 months.
+def prepare_user_calls(dfCC):
+    """Prepare the user calls dataframe for downstream processing.
 
-    For each month in the last 13 months, the function identifies contracts
-    that were active during that month based on historical contract data. The
-    resulting stock represents the contracts that were ongoing, or in rental
-    status, for each monthly period.
+    The function standardizes the input calls data by enforcing data types,
+    renaming columns, creating combined label/code columns, and selecting the
+    final set of columns.
 
     Parameters
     ----------
-    dfContractCCT : pandas.DataFrame
-        Historical contract dataframe containing customer-related contract
-        information, including the fields required to determine whether a
-        contract was active during each monthly stock period.
+    dfCC : pandas.DataFrame
+        Input dataframe containing raw user call data.
 
     Returns
     -------
     pandas.DataFrame
-        Monthly stock dataframe containing the contracts considered active for
-        each of the last 13 months.
+        Prepared user calls dataframe with standardized data types, renamed
+        columns, combined label/code fields, and the selected final columns.
     """
