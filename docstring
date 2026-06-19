@@ -1,19 +1,44 @@
-def mergeApporteurInfo(df_apporteur, df_hierarchie_apporteur):
-    """Enrich introducer data with hierarchy information.
+def mergeDemandeInformation(
+    df_request,
+    df_avis,
+    df_produit_financier,
+    df_produit_commercial,
+    df_marche,
+    df_partenaire,
+    df_apporteur,
+):
+    """Enrich request data with review, product, market, partner, and introducer information.
 
-    The function merges the introducer dataframe with the introducer hierarchy
-    dataframe in order to add hierarchy-related information to each introducer.
+    The function uses the request dataframe as the base table and enriches it
+    with information from review, financial product, commercial product, market,
+    partner, and introducer dataframes.
 
     Parameters
     ----------
+    df_request : pandas.DataFrame
+        Base dataframe containing request information.
+
+    df_avis : pandas.DataFrame
+        Dataframe containing review or decision information related to requests.
+
+    df_produit_financier : pandas.DataFrame
+        Dataframe containing financial product information.
+
+    df_produit_commercial : pandas.DataFrame
+        Dataframe containing commercial product information.
+
+    df_marche : pandas.DataFrame
+        Dataframe containing market information.
+
+    df_partenaire : pandas.DataFrame
+        Dataframe containing partner information.
+
     df_apporteur : pandas.DataFrame
         Dataframe containing introducer information.
-
-    df_hierarchie_apporteur : pandas.DataFrame
-        Dataframe containing introducer hierarchy information.
 
     Returns
     -------
     pandas.DataFrame
-        Enriched introducer dataframe including hierarchy information.
+        Enriched request dataframe containing the merged information from the
+        related review, product, market, partner, and introducer dataframes.
     """
