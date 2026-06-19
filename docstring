@@ -1,18 +1,25 @@
-def prepare_user_calls(dfCC):
-    """Prepare the user calls dataframe for downstream processing.
+def merge_and_clean_user(dfcc, df_extractcc):
+    """Merge contract data with customer account connection information.
 
-    The function standardizes the input calls data by enforcing data types,
-    renaming columns, creating combined label/code columns, and selecting the
-    final set of columns.
+    The function enriches the contract/customer dataframe with customer account
+    and connection information from an external customer account extract. It
+    also performs basic cleaning and preparation steps, including extracting
+    year and month values, replacing selected values, creating a customer
+    account existence flag, and selecting the final set of columns.
 
     Parameters
     ----------
-    dfCC : pandas.DataFrame
-        Input dataframe containing raw user call data.
+    dfcc : pandas.DataFrame
+        Contract/customer dataframe computed from database sources.
+
+    df_extractcc : pandas.DataFrame
+        Customer account extract containing information related to customer
+        portal accounts and connection activity.
 
     Returns
     -------
     pandas.DataFrame
-        Prepared user calls dataframe with standardized data types, renamed
-        columns, combined label/code fields, and the selected final columns.
+        Final enriched dataframe combining contract/customer information with
+        customer account and connection data, including the customer account
+        existence flag and the selected final columns.
     """
