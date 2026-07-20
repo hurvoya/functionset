@@ -1,80 +1,26 @@
-## Model Z FTE Calculation Methodology
+## Model Z FTE Calculation — Summary
 
-The **Model Z FTE** represents the theoretical number of full-time equivalents required to process the cases closed during a given month, for each country.
+The **Model Z FTE** measures the theoretical number of full-time equivalents required to process the cases closed during a given month, by country.
 
-### 1. Selection of eligible cases
+Only cases meeting the following criteria are included:
 
-The calculation only includes cases with a **Closed** status.
+* the case status is **Closed**;
+* the **Process and Status** combination is listed as eligible in the reference Excel file.
 
-For each closed case, two fields from the data source are checked:
+Eligible cases are grouped by **country** and **closure month**, based on their closure date.
 
-* the **Process**;
-* the **Status**.
-
-These values must match an eligible Process and Status combination defined in the reference Excel file.
-
-If no match is found, the case is excluded from the Model Z FTE calculation. If a match is found, the case and its associated processing time are included.
-
-This step ensures that only cases within the defined Model Z scope are considered.
-
-### 2. Grouping by closure month
-
-Eligible cases are grouped by **country** and **closure month**, based on the case closure date.
-
-This means that the workload is allocated to the month in which the case was completed, rather than the month in which it was created or started.
-
-For each country and closure month, the **Time Minutes** values of all eligible cases are added together.
-
-### 3. Conversion from minutes to hours
-
-As the **Time Minutes** field is expressed in minutes, the total is divided by 60 to convert it into hours:
-
-**Total Processing Hours = Sum of Time Minutes ÷ 60**
-
-### 4. Conversion from hours to FTE
-
-The total number of processing hours is then compared with the theoretical monthly working capacity of one full-time employee.
-
-The monthly capacity of one FTE is calculated as follows:
-
-**Monthly Capacity of One FTE = Working Hours per Day × Working Days in the Month**
-
-The complete formula is:
+### Formula
 
 **Model Z FTE = Sum of Time Minutes ÷ 60 ÷ Working Hours per Day ÷ Working Days**
 
-It can also be presented in a more intuitive way:
+Alternatively:
 
 **Model Z FTE = Total Processing Hours ÷ Monthly Capacity of One FTE**
 
-### Why do we divide by working hours and working days?
+Where:
 
-Dividing by the number of working hours per day converts the total number of hours into an equivalent number of working days.
+**Monthly Capacity of One FTE = Working Hours per Day × Working Days**
 
-Dividing by the number of working days in the month then converts this workload into a monthly full-time equivalent.
+### Interpretation
 
-In other words, the calculation answers the following question:
-
-**How many full-time employees would theoretically have been required to complete this volume of work during the month?**
-
-### Example
-
-For a given country, assume that:
-
-* the total Time Minutes equals 16,800 minutes;
-* one working day equals 7 hours;
-* the month includes 20 working days.
-
-The total processing time is:
-
-**16,800 ÷ 60 = 280 hours**
-
-The monthly capacity of one FTE is:
-
-**7 × 20 = 140 hours**
-
-The Model Z FTE is therefore:
-
-**280 ÷ 140 = 2 FTE**
-
-This means that the workload recorded for cases closed during the month is equivalent to the theoretical monthly capacity of two full-time employees.
+The result indicates how many full-time employees would theoretically have been required to manage the workload recorded during the month.
