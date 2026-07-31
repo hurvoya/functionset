@@ -1,26 +1,55 @@
-## Model Z FTE Calculation — Summary
+# Compte rendu – Réunion de transfert du use case « Fruit de la journée »
 
-The **Model Z FTE** measures the theoretical number of full-time equivalents required to process the cases closed during a given month, by country.
+**Participants :**
 
-Only cases meeting the following criteria are included:
+* Anthony Hurvoy
+* Mehdi Elzaid
 
-* the case status is **Closed**;
-* the **Process and Status** combination is listed as eligible in the reference Excel file.
+## Contexte
 
-Eligible cases are grouped by **country** and **closure month**, based on their closure date.
+Suite à l'absence de la personne précédemment en charge de l'industrialisation, Mehdi Elzaid reprend le suivi de l'industrialisation du use case **« Fruit de la journée »**. Cette réunion avait pour objectif de lui présenter l'ensemble des éléments nécessaires à la compréhension du use case et de préparer sa reprise dans les meilleures conditions.
 
-### Formula
+## 1. Présentation du flow Dataiku
 
-**Model Z FTE = Sum of Time Minutes ÷ 60 ÷ Working Hours per Day ÷ Working Days**
+Une présentation complète du flow Dataiku a été réalisée, couvrant l'ensemble des traitements SQL et Python utilisés pour alimenter le dashboard.
 
-Alternatively:
+Les principaux points présentés sont les suivants :
 
-**Model Z FTE = Total Processing Hours ÷ Monthly Capacity of One FTE**
+* Présentation de l'architecture générale du flow.
+* Explication de la logique multi-pays mise en place : les traitements communs sont centralisés dans des librairies partagées afin d'éviter la duplication de code. Toute évolution est réalisée directement dans les fonctions communes, puis répercutée automatiquement sur les différents flux pays.
+* Présentation de la structure du code, incluant les commentaires et la documentation des fonctions (docstrings) afin de faciliter la maintenance.
+* Rappel que le flow actuel est dédié exclusivement à l'alimentation du dashboard et ne contient pas les développements liés aux études ou analyses annexes.
 
-Where:
+Les différentes tables utilisées ont ensuite été présentées :
 
-**Monthly Capacity of One FTE = Working Hours per Day × Working Days**
+* les tables de travail du flow ;
+* les tables de sortie utilisées par le dashboard ;
+* les tables d'entrée externes, correspondant aux extractions provenant d'autres systèmes et utilisées pour enrichir les données internes.
 
-### Interpretation
+## 2. Présentation du dashboard
 
-The result indicates how many full-time employees would theoretically have been required to manage the workload recorded during the month.
+Présentation de la structure générale du dashboard, organisée autour des deux principales sections :
+
+* **Figures** ;
+* **Details**.
+
+Les différents indicateurs (KPIs) ont été passés en revue. Il a également été rappelé qu'un document de référence décrit l'ensemble des KPIs, leur définition ainsi que leur mode de calcul.
+
+## 3. Présentation de la documentation du use case
+
+Présentation de la documentation du use case (lien partagé durant la réunion).
+
+La documentation est organisée selon les sections suivantes :
+
+* **Framing** : contexte du projet, besoin métier, périmètre et éléments de cadrage.
+* **Data Preparation** : description des étapes de préparation des données ainsi que le **Use Case Dictionary**, recensant les tables utilisées et leur définition.
+* **EDA (Exploratory Data Analysis)** : analyses réalisées sur les données, contrôles de qualité et études métiers (notamment les analyses réalisées pour l'Italie).
+* **Dashboard** : définition détaillée des KPIs, leur propriétaire (owner) ainsi que leur description.
+* **Pilote** : suivi du pilote, retours des utilisateurs et évolutions apportées.
+* **Industrialisation des scénarios** : documentation dédiée à la phase d'industrialisation.
+
+En complément de cette documentation, un dossier **"0"** a été présenté. Celui-ci centralise les éléments nécessaires à l'exécution du use case (dashboard, fichiers d'entrée et de sortie, etc.) afin de faciliter la reprise et l'exploitation.
+
+### Nota bene
+
+Une **checklist**, disponible à la racine de la documentation, permet de suivre l'ensemble des livrables et des différentes étapes du projet. Elle constitue un point d'entrée recommandé pour obtenir une vision globale de l'avancement et des éléments disponibles.
