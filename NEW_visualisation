@@ -1,61 +1,15 @@
-Hi [Manager's Name],
+Thank you for your email.
 
-Before leaving for my vacation, here's a summary of the current status of my main topics and the associated backups.
+I am currently out of the office on vacation and will be back on **[return date]**. During this period, I will have limited or no access to my emails.
 
-### Welcome Call
+For urgent requests, please contact:
 
-* The Welcome Call process has now been fully automated with Asana. The Power BI dashboard is directly connected to the PostgreSQL database, so no manual updates are normally required anymore.
-* I have communicated this change to the users.
-* Kamal has been briefed as my backup. His only task is to check every morning that the published dashboard has refreshed correctly. If not, he can verify the Asana credentials to identify any issue.
-* As a contingency plan, the previous manual version will remain available during my vacation, so Kamal can still update it if the automation encounters any unexpected issue.
-* I also briefed Violaine, who is covering for Delphine during her vacation.
+* **Welcome Call & KYX Purge:** Kamal
+* **Customer Service:** Violaine
+* **Monthly Dashboards (including Payout):** Hassan
 
-Regarding the new Welcome Call dashboard:
+I will reply to your email as soon as possible after my return.
 
-* Delphine and I finalized the design and I completed the development with all the new KPIs.
-* The only remaining step is testing, which we will do together after our vacations before starting the pilot phase.
+Kind regards,
 
-### KYX Purge
-
-* We investigated the issue raised by Spain regarding customers that were incorrectly purged.
-* We identified a specific data scenario where the customer linked to a request is different from the customer linked to the contract. This could incorrectly identify a customer as having no associated contract.
-* I implemented a new rule to handle this case and ensure the contract information is correctly considered before a purge.
-* I performed several manual validations, including on the Spanish cases, and shared the results with Elliot.
-* The next deployments should be Germany and the UK within the next couple of weeks.
-* Kamal has also received the procedure to refresh a new country. It only requires running the existing scenario, so there should be no issue during my absence.
-
-### Customer Service Dashboard
-
-* The pilot is still ongoing.
-* I updated the dashboard with the latest monthly data and implemented several improvements following user feedback, mainly related to the dashboard layout and visual aspects.
-* A few additional feedback items remain and will be implemented after I return.
-
-### Monthly Dashboards
-
-* All monthly dashboards have been updated except the Payout dashboard, as the latest data was not yet available.
-* Hassan will update the Payout dashboard on Monday or Tuesday once the data is available.
-
-### Boost My Transfers (BMT)
-
-* I investigated the Devlon partner configuration.
-* The current logic has only been defined for Italy and relies on specific dealer and brand codes that do not appear to be applicable to the other countries.
-* After my return, I suggest organizing a meeting with Philippe to review the Italian implementation and define the appropriate business rules for the remaining countries.
-
-### Documentation
-
-* I have almost completed the documentation for both the Customer Service and Welcome Call projects.
-* Most of the documentation is already available. The remaining work mainly concerns the detailed tracking Excel file and the Word documentation.
-* I will finalize everything after my return, together with the remaining dashboard documentation, so that everything is ready by mid-September, as requested by Samira.
-
-### Backup During My Vacation
-
-* **Welcome Call:** Kamal is my backup.
-* **KYX Purge:** Kamal is also covering this topic.
-* **Customer Service:** Violaine will handle any feedback received during my absence.
-* **Monthly Dashboards:** completed, except Payout, which will be updated by Hassan.
-* **Boost My Transfers & Documentation:** the current status is summarized above should any questions arise during my absence.
-
-Please let me know if you need any additional information before I leave.
-
-Best regards,
-Anthony
+Anthony Hurvoy
