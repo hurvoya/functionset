@@ -1,18 +1,61 @@
-Bonjour Violaine, bonjour Kamal,
+Hi [Manager's Name],
 
-Comme convenu, voici un petit récapitulatif des actions à prévoir concernant le dashboard **Welcome Call**.
+Before leaving for my vacation, here's a summary of the current status of my main topics and the associated backups.
 
-* **Violaine** : peux-tu mettre à jour la version **manuelle** du dashboard lundi, afin qu'elle contienne le message indiquant que la nouvelle version automatisée est désormais disponible ? *(cf. capture d'écran ci-dessous).*
+### Welcome Call
 
-* **Violaine & Kamal** : pourriez-vous vérifier chaque matin que la date de rafraîchissement du dashboard automatisé est bien à jour, afin de s'assurer que les données ont été correctement actualisées ? *(cf. capture d'écran ci-dessous).*
+* The Welcome Call process has now been fully automated with Asana. The Power BI dashboard is directly connected to the PostgreSQL database, so no manual updates are normally required anymore.
+* I have communicated this change to the users.
+* Kamal has been briefed as my backup. His only task is to check every morning that the published dashboard has refreshed correctly. If not, he can verify the Asana credentials to identify any issue.
+* As a contingency plan, the previous manual version will remain available during my vacation, so Kamal can still update it if the automation encounters any unexpected issue.
+* I also briefed Violaine, who is covering for Delphine during her vacation.
 
-À terme, cette vérification sera réalisée par **Kamal**. En attendant qu'il dispose des accès nécessaires, si tu peux y jeter un œil, Violaine, ce serait parfait.
+Regarding the new Welcome Call dashboard:
 
-**Kamal** : peux-tu également faire la demande des droits **[Nom des droits]** ? La demande sera validée par Violaine.
+* Delphine and I finalized the design and I completed the development with all the new KPIs.
+* The only remaining step is testing, which we will do together after our vacations before starting the pilot phase.
 
-Merci à vous deux !
+### KYX Purge
 
-Bonne journée,
-[Votre prénom]
+* We investigated the issue raised by Spain regarding customers that were incorrectly purged.
+* We identified a specific data scenario where the customer linked to a request is different from the customer linked to the contract. This could incorrectly identify a customer as having no associated contract.
+* I implemented a new rule to handle this case and ensure the contract information is correctly considered before a purge.
+* I performed several manual validations, including on the Spanish cases, and shared the results with Elliot.
+* The next deployments should be Germany and the UK within the next couple of weeks.
+* Kamal has also received the procedure to refresh a new country. It only requires running the existing scenario, so there should be no issue during my absence.
 
-Il te suffira de remplacer **[Nom des droits]** par le nom exact de l'autorisation et d'insérer les captures d'écran aux emplacements prévus.
+### Customer Service Dashboard
+
+* The pilot is still ongoing.
+* I updated the dashboard with the latest monthly data and implemented several improvements following user feedback, mainly related to the dashboard layout and visual aspects.
+* A few additional feedback items remain and will be implemented after I return.
+
+### Monthly Dashboards
+
+* All monthly dashboards have been updated except the Payout dashboard, as the latest data was not yet available.
+* Hassan will update the Payout dashboard on Monday or Tuesday once the data is available.
+
+### Boost My Transfers (BMT)
+
+* I investigated the Devlon partner configuration.
+* The current logic has only been defined for Italy and relies on specific dealer and brand codes that do not appear to be applicable to the other countries.
+* After my return, I suggest organizing a meeting with Philippe to review the Italian implementation and define the appropriate business rules for the remaining countries.
+
+### Documentation
+
+* I have almost completed the documentation for both the Customer Service and Welcome Call projects.
+* Most of the documentation is already available. The remaining work mainly concerns the detailed tracking Excel file and the Word documentation.
+* I will finalize everything after my return, together with the remaining dashboard documentation, so that everything is ready by mid-September, as requested by Samira.
+
+### Backup During My Vacation
+
+* **Welcome Call:** Kamal is my backup.
+* **KYX Purge:** Kamal is also covering this topic.
+* **Customer Service:** Violaine will handle any feedback received during my absence.
+* **Monthly Dashboards:** completed, except Payout, which will be updated by Hassan.
+* **Boost My Transfers & Documentation:** the current status is summarized above should any questions arise during my absence.
+
+Please let me know if you need any additional information before I leave.
+
+Best regards,
+Anthony
