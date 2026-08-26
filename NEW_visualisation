@@ -1,15 +1,37 @@
-Thank you for your email.
+Bonjour,
 
-I am currently out of the office on vacation and will be back on **[return date]**. During this period, I will have limited or no access to my emails.
+Je me permets de rebondir sur le sujet qui avait déjà été remonté il y a quelques mois par Hassan concernant la gestion des credentials et des accès aux bases PostgreSQL.
 
-For urgent requests, please contact:
+Depuis la mise en place de l’automatisation du use case Welcome Call, nous avons rencontré plusieurs problèmes liés à ces accès, qui commencent à avoir un impact opérationnel et business.
 
-* **Welcome Call & KYX Purge:** Kamal
-* **Customer Service:** Violaine
-* **Monthly Dashboards (including Payout):** Hassan
+Pour rappel, le fonctionnement actuel est le suivant : les tables finales du use case sont alimentées quotidiennement dans PostgreSQL, puis connectées à Power BI afin que le dashboard soit automatiquement mis à jour chaque matin.
 
-I will reply to your email as soon as possible after my return.
+Depuis la mise en production, nous avons notamment rencontré les problèmes suivants :
 
-Kind regards,
+* Les credentials utilisés par Power BI ont sauté à deux reprises en moins d’un mois. Dans ce cas, le dashboard ne se met plus à jour, sans que nous ayons aujourd’hui de monitoring ou d’alerte nous permettant d’identifier rapidement que le problème vient des credentials.
+* Un de ces incidents s’est produit pendant mes congés et n’a pas été identifié immédiatement. Le problème a finalement été remonté par les pays, ce qui nous a conduits à leur communiquer sur l’incident, puis à mettre en place temporairement des solutions manuelles afin de garantir la mise à disposition des données.
+* Depuis lundi, nous rencontrons également un problème d’écriture sur les tables PostgreSQL concernées. Nous avons donc dû maintenir des tables alternatives afin de pouvoir continuer à alimenter le use case. Vous trouverez en pièce jointe des captures illustrant le problème rencontré.
 
-Anthony Hurvoy
+Ces différents incidents sont particulièrement problématiques pour la Welcome Call car, contrairement à la majorité de nos use cases qui sont mis à jour mensuellement, celui-ci est alimenté et publié **tous les jours**. Un problème d’accès ou de credentials a donc un impact très rapidement visible par les pays.
+
+Au-delà de la charge opérationnelle générée de notre côté, le dernier incident a également eu un impact auprès du business et des pays, puisque nous avons dû les informer du retard de mise à jour et mettre en place des actions manuelles pour assurer la continuité du service. À terme, ce type de situation peut également affecter la confiance dans les solutions automatisées que nous mettons à leur disposition.
+
+Il nous semblerait donc important de sécuriser davantage ce fonctionnement.
+
+Pourriez-vous nous indiquer quelles actions pourraient être mises en place, notamment sur les points suivants :
+
+* la mise en place d’un **monitoring/une alerte** permettant de détecter rapidement une expiration ou une modification des credentials ;
+* un monitoring permettant également d’identifier un problème d’accès ou d’écriture sur les bases PostgreSQL ;
+* la possibilité d’avoir un **renouvellement automatique des credentials**, ou à défaut une meilleure visibilité sur leur cycle de renouvellement ;
+* la clarification du fonctionnement actuel concernant leur durée de validité. Il nous avait été indiqué précédemment que les credentials étaient amenés à être modifiés tous les deux mois, alors que nous constatons ici plusieurs changements sur une période beaucoup plus courte ;
+* plus généralement, les mesures qui pourraient être mises en place afin d’éviter que ce type d’incident puisse interrompre la mise à jour quotidienne du use case sans que nous en soyons informés.
+
+L’objectif n’est évidemment pas de remettre en cause le fonctionnement mis en place, mais plutôt de comprendre l’origine de ces incidents et de voir comment nous pouvons rendre l’automatisation plus robuste et surtout mieux monitorée.
+
+Le sujet ayant déjà été remonté précédemment et les derniers incidents ayant désormais eu un impact concret côté business, nous souhaiterions pouvoir avancer sur des actions permettant de sécuriser durablement ce fonctionnement.
+
+Merci d’avance pour votre retour et votre aide sur ce sujet.
+
+Bien à vous,
+
+Anthony
