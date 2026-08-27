@@ -1,5 +1,16 @@
-mask = df["Type of Welcome Call"] == "Strong increase"
+df["date1"] = pd.to_datetime(df["date1"], dayfirst=True)
+df["date2"] = pd.to_datetime(df["date2"], dayfirst=True)
 
-df.loc[mask, "Introsource identification Date"] = (
-    df.loc[mask, "Introsource identification Date"] + pd.Timedelta(days=1)
+df = df[df["date1"] > df["date2"]].copy()
+
+df["date1"] = (
+    df["date1"]
+    .dt.normalize()
+    .dt.strftime("%d/%m/%Y %H:%M:%S")
+)
+
+df["date2"] = (
+    df["date2"]
+    .dt.normalize()
+    .dt.strftime("%d/%m/%Y %H:%M:%S")
 )
