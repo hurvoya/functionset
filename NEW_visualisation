@@ -1,7 +1,14 @@
 Moyenne clients par dealer =
-AVERAGEX(
-    VALUES('Table'[Dealer]),
-    CALCULATE(
-        DISTINCTCOUNT('Table'[Client])
+CALCULATE(
+    AVERAGEX(
+        VALUES('Table'[Dealer]),
+        CALCULATE(
+            DISTINCTCOUNT('Table'[Client])
+        )
+    ),
+    'Table'[Dealer sorti du suivi] = 1,
+    USERELATIONSHIP(
+        'Calendrier'[Date],
+        'Table'[Date sortie du suivi]
     )
 )
