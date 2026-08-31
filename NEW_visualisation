@@ -1,13 +1,7 @@
-df['Introsource identification Date'] = pd.to_datetime(
-    df['Introsource identification Date'],
-    dayfirst=True,
-    errors='coerce'
+Moyenne clients par dealer =
+AVERAGEX(
+    VALUES('Table'[Dealer]),
+    CALCULATE(
+        DISTINCTCOUNT('Table'[Client])
+    )
 )
-
-df['Date sortie du suivi'] = (
-    df['Introsource identification Date'] + pd.DateOffset(months=6)
-)
-
-df['Dealer sorti du suivi'] = (
-    df['Date sortie du suivi'] <= pd.Timestamp.today()
-).astype(int)
