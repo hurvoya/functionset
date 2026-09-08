@@ -1,25 +1,11 @@
-KPI Definitions
+WFC Identification & Follow-up
 
-1. Welcome Call & Intro Source Volume
+Identify Welcome Calls to be performed, create and track their e-folders, and monitor their progress through two complementary views: Last e-Folder, showing the latest e-folder for each call, and All e-Folders, providing the complete history of e-folders created for all calls.
 
-Welcome Call Volume: Number of Welcome Calls executed per month, based on the Welcome Call trigger date and status.
-Intro Source Volume: Number of dealers identified as eligible for an Intro Source per month, based on the Intro Source identification date.
+Dashboard
 
-2. Contracts & Distinct Customers per Intro Source
-Median number of contracts and distinct customers associated with each Intro Source.
+Monitor key Welcome Call KPIs and trends, including monthly volumes, completion rates and operational performance. The WFC After SL List provides a detailed view of Welcome Calls performed after the lease start date, to support monitoring and investigation of exceptions.
 
-3. Welcome Calls Completed
-Number of Welcome Calls completed per month, based on the date of the final Welcome Call outcome.
+Documentation
 
-4. First-Time Customer Reach Rate
-Percentage of customers successfully reached on the first call attempt.
-A first-time reach is identified by a WC To Do / WC To Do with Reserve → WC OK sequence. Cancelled Welcome Calls are excluded from the calculation.
-
-5. Welcome Call Pipeline
-Number of Welcome Calls currently pending and requiring action, providing an overview of the current operational backlog.
-
-6. Welcome Calls after Lease Start – BUTLS
-Number of Welcome Calls performed after the lease start date. These cases should normally be completed before lease start and are monitored to identify and understand exceptions.
-
-7. No E-Folder
-Number of identified Welcome Calls for which no corresponding e-folder has been created within 5 days of identification.
+Access the definitions and business rules supporting the Welcome Call process. Formula & Rules provides KPI definitions and e-folder status descriptions, while e-Folder Code Definition explains the available e-folder codes, their purpose and when to use them throughout the process.
