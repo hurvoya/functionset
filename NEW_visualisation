@@ -1,14 +1,25 @@
-Moyenne clients par dealer =
-CALCULATE(
-    AVERAGEX(
-        VALUES('Table'[Dealer]),
-        CALCULATE(
-            DISTINCTCOUNT('Table'[Client])
-        )
-    ),
-    'Table'[Dealer sorti du suivi] = 1,
-    USERELATIONSHIP(
-        'Calendrier'[Date],
-        'Table'[Date sortie du suivi]
-    )
-)
+KPI Definitions
+
+1. Welcome Call & Intro Source Volume
+
+Welcome Call Volume: Number of Welcome Calls executed per month, based on the Welcome Call trigger date and status.
+Intro Source Volume: Number of dealers identified as eligible for an Intro Source per month, based on the Intro Source identification date.
+
+2. Contracts & Distinct Customers per Intro Source
+Median number of contracts and distinct customers associated with each Intro Source.
+
+3. Welcome Calls Completed
+Number of Welcome Calls completed per month, based on the date of the final Welcome Call outcome.
+
+4. First-Time Customer Reach Rate
+Percentage of customers successfully reached on the first call attempt.
+A first-time reach is identified by a WC To Do / WC To Do with Reserve → WC OK sequence. Cancelled Welcome Calls are excluded from the calculation.
+
+5. Welcome Call Pipeline
+Number of Welcome Calls currently pending and requiring action, providing an overview of the current operational backlog.
+
+6. Welcome Calls after Lease Start – BUTLS
+Number of Welcome Calls performed after the lease start date. These cases should normally be completed before lease start and are monitored to identify and understand exceptions.
+
+7. No E-Folder
+Number of identified Welcome Calls for which no corresponding e-folder has been created within 5 days of identification.
