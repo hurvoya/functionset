@@ -1,30 +1,3 @@
-Hi [Name],
+Regarding the incidents, I have personally been involved in only one incident: [Incident ID]. This issue was not present in the R&D environment and only occurred in the automation environment. It was related to the migration of a Python/PySpark code, which resulted in an aggregation issue during the transition to PySpark. By comparing the version still available in R&D with the version deployed in the automation environment, we were able to identify the difference and the root cause. The fix should now be in place, but you may want to check with Stella for the latest status.
 
-Just a quick update to let you know that I saw my doctor this morning and I have been signed off for three days due to gastroenteritis. I should be back on Friday.
-
-In the meantime, here is a quick status update on the main topics:
-
-**Welcome Call**
-
-* Everything is on track and the dashboard part is now in progress.
-* Delphine is aware and everything is ready and in place.
-* The existing Welcome Call solution remains in run; the dashboard is simply an additional part of the current version, providing more visibility on the calls performed and their follow-up.
-
-**Monthly dashboards**
-
-* The three monthly dashboards are up to date: **Payout, FDJ and Customer Service**.
-* When I’m back on Friday, I’ll check whether anything needs to be rerun in case of any feedback or late changes.
-
-**Incidents & enhancement requests**
-Regarding your email this morning about the incidents and enhancement requests for [project name], I have put together a summary here: **[link]**.
-This should give you the necessary information to provide the appropriate answers to Samira.
-
-**Project updates**
-
-* **Welcome Call:** still in run, with the new dashboard view being added to the existing solution.
-* **Customer Service:** the pilot has been extended until the end of September, as we needed feedback from more countries. August was relatively quiet for testing, so the additional time should give us a more representative set of feedback.
-
-I’ll catch up on everything when I’m back on Friday.
-
-Best,
-Anthony
+For the other incidents, I don't have additional information as they are primarily handled by Philippe and Stella. They should be able to provide the relevant updates, and they can involve me if my support is needed, as was the case for the incident above.
