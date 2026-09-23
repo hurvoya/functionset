@@ -1,3 +1,42 @@
-Regarding the incidents, I have personally been involved in only one incident: [Incident ID]. This issue was not present in the R&D environment and only occurred in the automation environment. It was related to the migration of a Python/PySpark code, which resulted in an aggregation issue during the transition to PySpark. By comparing the version still available in R&D with the version deployed in the automation environment, we were able to identify the difference and the root cause. The fix should now be in place, but you may want to check with Stella for the latest status.
+import pandas as pd
+from datetime import datetime
 
-For the other incidents, I don't have additional information as they are primarily handled by Philippe and Stella. They should be able to provide the relevant updates, and they can involve me if my support is needed, as was the case for the incident above.
+today = pd.Timestamp.today().normalize()
+
+last_month = today - pd.DateOffset(months=1)
+last_year = today - pd.DateOffset(years=1)
+
+df["Portal Period"] = None
+
+df.loc[
+    (df["Creation Date"].dt.year == last_month.year) &
+    (df["Creation Date"].dt.month == last_month.month),
+    "Portal Period"
+] = "Last Month"
+
+df.loc[
+    (df["Creation Date"].dt.year == last_year.year) &
+    (df["Creation Date"].dt.month == last_year.month),
+    "Portal Period"
+] = "Last Year"
+
+
+
+
+2nd option deja en dat time :
+today = pd.Timestamp.today().normalize()
+
+last_month = today.to_period("M") - 1
+last_year = last_month - 12
+
+df["Portal Period"] = None
+
+df.loc[
+    df["Creation Date"].dt.to_period("M") == last_month,
+    "Portal Period"
+] = "Last Month"
+
+df.loc[
+    df["Creation Date"].dt.to_period("M") == last_year,
+    "Portal Period"
+] = "Last Year"
