@@ -1,42 +1,23 @@
 import pandas as pd
-from datetime import datetime
 
-today = pd.Timestamp.today().normalize()
+# S'assurer que la colonne est bien au format date
+df["closing_date"] = pd.to_datetime(df["closing_date"])
 
-last_month = today - pd.DateOffset(months=1)
-last_year = today - pd.DateOffset(years=1)
+# Dernière date disponible dans les données
+last_date = df["closing_date"].max()
 
-df["Portal Period"] = None
+# Dernier mois disponible
+last_month = last_date.month
+last_year = last_date.year
 
-df.loc[
-    (df["Creation Date"].dt.year == last_month.year) &
-    (df["Creation Date"].dt.month == last_month.month),
-    "Portal Period"
-] = "Last Month"
+# Flag Last Month
+df["flg_last_month"] = (
+    (df["closing_date"].dt.year == last_year) &
+    (df["closing_date"].dt.month == last_month)
+).astype(int)
 
-df.loc[
-    (df["Creation Date"].dt.year == last_year.year) &
-    (df["Creation Date"].dt.month == last_year.month),
-    "Portal Period"
-] = "Last Year"
-
-
-
-
-2nd option deja en dat time :
-today = pd.Timestamp.today().normalize()
-
-last_month = today.to_period("M") - 1
-last_year = last_month - 12
-
-df["Portal Period"] = None
-
-df.loc[
-    df["Creation Date"].dt.to_period("M") == last_month,
-    "Portal Period"
-] = "Last Month"
-
-df.loc[
-    df["Creation Date"].dt.to_period("M") == last_year,
-    "Portal Period"
-] = "Last Year"
+# Flag Year To Date
+df["flg_ytd"] = (
+    (df["closing_date"].dt.year == last_year) &
+    (df["closing_date"] <= last_date)
+).astype(int)
