@@ -1,23 +1,187 @@
-import pandas as pd
+# Power BI Dashboard Update Procedure
 
-# S'assurer que la colonne est bien au format date
-df["closing_date"] = pd.to_datetime(df["closing_date"])
+## 1. Purpose
 
-# Dernière date disponible dans les données
-last_date = df["closing_date"].max()
+This procedure describes the daily process for updating and publishing the Power BI dashboard using the input files generated through Data IQ.
 
-# Dernier mois disponible
-last_month = last_date.month
-last_year = last_date.year
+The process includes:
 
-# Flag Last Month
-df["flg_last_month"] = (
-    (df["closing_date"].dt.year == last_year) &
-    (df["closing_date"].dt.month == last_month)
-).astype(int)
+1. Checking the successful execution of the Data IQ scenario.
+2. Downloading the dashboard input files.
+3. Moving the input files to the dedicated Power BI input folder.
+4. Refreshing the Power BI dashboard.
+5. Updating the last execution date.
+6. Saving and publishing the updated Power BI file.
+7. Notifying the designated contact for server deployment.
 
-# Flag Year To Date
-df["flg_ytd"] = (
-    (df["closing_date"].dt.year == last_year) &
-    (df["closing_date"] <= last_date)
-).astype(int)
+---
+
+# 2. Prerequisites
+
+Before starting the update, make sure that:
+
+* You have access to **Data IQ** and the **WAC Design** project.
+* You have access to the dedicated **Power BI Inputs** folder.
+* You have access to the **Middle Office SharePoint**.
+* You have access to the Power BI dashboard file.
+* The daily Data IQ scenario has been executed successfully.
+
+---
+
+# 3. Retrieve the Input Files from Data IQ
+
+### 3.1 Access the WAC Design project
+
+1. Log in to **Data IQ**.
+2. Open the **WAC Design** project.
+3. Locate **Scenario 1**.
+
+**Screenshot:**
+*Insert screenshot showing the WAC Design project and Scenario 1.*
+
+### 3.2 Check the scenario execution
+
+Before downloading the input files, verify that **Scenario 1** has been successfully executed during the morning run.
+
+The scenario must have completed successfully before proceeding with the next steps.
+
+> **Important:** Do not download or use the input files until the morning execution has been successfully completed.
+
+**Screenshot:**
+*Insert screenshot showing the successful execution status.*
+
+### 3.3 Download the dashboard input files
+
+Once the scenario has successfully completed:
+
+1. Open the **Output** section in Data IQ.
+2. Locate the five input files required for the dashboard.
+3. Download the five files in **CSV format**.
+
+The files are referred to as:
+
+* File 1
+* File 2
+* File 3
+* File 4
+* File 5
+
+**Screenshot:**
+*Insert screenshot showing the Output section and the five files.*
+
+---
+
+# 4. Move the Input Files to the Power BI Input Folder
+
+Once the five CSV files have been downloaded:
+
+1. Open the **Power BI Inputs** folder.
+2. Open the **Input** subfolder.
+3. Move or copy the five downloaded CSV files into this folder.
+4. Make sure that the files are correctly named and that the previous input files have been replaced if required.
+
+**Screenshot:**
+*Insert screenshot showing the Power BI Inputs/Input folder containing the five CSV files.*
+
+> **Check:** Make sure that all five input files are present before opening and refreshing the Power BI dashboard.
+
+---
+
+# 5. Refresh the Power BI Dashboard
+
+Once the input files have been placed in the correct folder:
+
+1. Open the Power BI dashboard file.
+2. Trigger a **data refresh**.
+3. Wait for the refresh to complete successfully.
+4. Check that no refresh or data-loading errors are displayed.
+
+The refresh will update the dashboard using the input files downloaded from Data IQ during the morning run.
+
+**Screenshot:**
+*Insert screenshot showing the Power BI refresh action.*
+
+### 5.1 Check the refreshed dashboard
+
+After the refresh has completed:
+
+* Check that the dashboard has been successfully updated.
+* Verify that no data refresh errors are displayed.
+* Perform any standard consistency checks required for the dashboard.
+
+**Screenshot:**
+*Insert screenshot showing the refreshed dashboard.*
+
+---
+
+# 6. Update the Last Execution Date
+
+Once the Power BI data has been successfully refreshed:
+
+1. Locate the **Last Execution Date** displayed at the top of the dashboard.
+2. Manually update the date to the current execution date.
+3. Check that the displayed date is correct.
+
+This date is used as a manual control to indicate when the dashboard was last updated.
+
+**Screenshot:**
+*Insert screenshot showing the Last Execution Date.*
+
+> **Important:** The Last Execution Date must be updated every morning after the Power BI refresh has been successfully completed.
+
+---
+
+# 7. Save the Updated Power BI File
+
+After updating the Last Execution Date:
+
+1. Save the Power BI file.
+2. Make sure that all changes have been saved successfully.
+3. Close the file if required before uploading it to SharePoint.
+
+The saved file now contains the latest data and the current Last Execution Date.
+
+---
+
+# 8. Upload the Dashboard to Middle Office SharePoint
+
+Once the Power BI file has been saved:
+
+1. Access the **Middle Office SharePoint**.
+2. Navigate to the designated location for the dashboard.
+3. Upload the updated Power BI file.
+4. Check that the upload has been completed successfully.
+
+**Screenshot:**
+*Insert screenshot showing the Middle Office SharePoint location.*
+
+---
+
+# 9. Notify the Contact Person
+
+After the dashboard has been uploaded to the Middle Office SharePoint:
+
+1. Contact **Contact Person 1** via Teams.
+2. Inform them that the updated Power BI dashboard has been deposited on the Middle Office SharePoint.
+3. The contact person will then deploy the dashboard to the Power BI server.
+
+Example message:
+
+> The Power BI dashboard has been updated and uploaded to the Middle Office SharePoint. It is now ready for deployment to the Power BI server.
+
+---
+
+# 10. Process Completion
+
+The update process is complete once:
+
+* The Data IQ scenario has successfully run.
+* The five input files have been downloaded.
+* The input files have been placed in the correct Power BI Input folder.
+* The Power BI dashboard has been successfully refreshed.
+* The Last Execution Date has been updated.
+* The Power BI file has been saved.
+* The updated file has been uploaded to the Middle Office SharePoint.
+* The designated contact has been notified.
+
+The dashboard can then be deployed to the Power BI server by the designated contact.
