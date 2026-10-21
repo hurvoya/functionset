@@ -1,14 +1,42 @@
 import pandas as pd
 
-def calculate_completeness(df, country_col="Country"):
-    # Colonnes à analyser, en excluant Country
-    data_cols = [col for col in df.columns if col != country_col]
+# Dictionnaire contenant tous tes DataFrames
+dataframes = {
+    "Contracts": df_contracts,
+    "Customers": df_customers,
+    "Transactions": df_transactions
+}
 
-    # Calcul du taux de complétude par pays
+results = []
+
+for database_name, df in dataframes.items():
+
+    # Colonnes à tester, en excluant Country
+    variables = [col for col in df.columns if col != "Country"]
+
+    # Calcul de la completeness par pays
     completeness = (
-        df.groupby(country_col)[data_cols]
+        df.groupby("Country")[variables]
           .agg(lambda x: x.notna().mean() * 100)
     )
 
-    # Une ligne par donnée et une colonne par pays
-    return completeness.T.round(2)
+    # Transposition : une ligne par variable, une colonne par pays
+    completeness = completeness.T
+
+    # Transformer l'index en colonne classique
+    completeness = completeness.reset_index()
+    completeness = completeness.rename(columns={"index": "Variable"})
+
+    # Ajouter le nom de la base
+    completeness.insert(0, "Database", database_name)
+
+    results.append(completeness)
+
+# Fusionner tous les résultats dans un tableau global
+completeness_global = pd.concat(results, ignore_index=True)
+
+# Export Excel
+completeness_global.to_excel(
+    "data_quality_completeness.xlsx",
+    index=False
+)
