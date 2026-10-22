@@ -1,6 +1,5 @@
 import pandas as pd
 
-# Dictionnaire contenant tous tes DataFrames
 dataframes = {
     "Contracts": df_contracts,
     "Customers": df_customers,
@@ -11,20 +10,24 @@ results = []
 
 for database_name, df in dataframes.items():
 
-    # Colonnes à tester, en excluant Country
+    # Variables à analyser
     variables = [col for col in df.columns if col != "Country"]
 
     # Calcul de la completeness par pays
     completeness = (
         df.groupby("Country")[variables]
-          .agg(lambda x: x.notna().mean() * 100)
+          .agg(
+              lambda x: (
+                  ~x.isna() & 
+                  ~x.astype(str).str.strip().str.lower().isin(
+                      ["not defined", ""]
+                  )
+              ).mean() * 100
+          )
     )
 
-    # Transposition : une ligne par variable, une colonne par pays
-    completeness = completeness.T
-
-    # Transformer l'index en colonne classique
-    completeness = completeness.reset_index()
+    # Une ligne par variable et les pays en colonnes
+    completeness = completeness.T.reset_index()
     completeness = completeness.rename(columns={"index": "Variable"})
 
     # Ajouter le nom de la base
@@ -32,7 +35,7 @@ for database_name, df in dataframes.items():
 
     results.append(completeness)
 
-# Fusionner tous les résultats dans un tableau global
+# Tableau global
 completeness_global = pd.concat(results, ignore_index=True)
 
 # Export Excel
