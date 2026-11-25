@@ -1,8 +1,10 @@
 Bonjour à tous,
 
-Comme vous avez pu le voir, Violenne avait commencé à réaliser quelques tests sur le dashboard et à remonter ses premiers retours.
+Concernant les retours d'Amine sur le dashboard (quelques coquilles de libellés, notamment des « E » manquants et une inversion entre Bottom et Top), les corrections ont bien été apportées. Je n'avais simplement pas encore partagé la dernière version du PBIX, mais celle-ci est désormais à jour et intègre bien ces modifications.
 
-Toutefois, au vu des écarts que vous avez constatés entre vos fichiers d'output et les nôtres, il me semblerait préférable de commencer par analyser ces écarts afin d'en comprendre l'origine et de pouvoir les corriger lorsque cela est possible.
+Par ailleurs, comme vous avez pu le voir, Violenne avait commencé à réaliser quelques tests sur le dashboard et à remonter ses premiers retours.
+
+Toutefois, au vu des écarts constatés entre vos fichiers d'output et les nôtres, il me semblerait préférable de commencer par analyser ces écarts afin d'en comprendre l'origine et de pouvoir les corriger lorsque cela est possible.
 
 L'idée serait d'éviter de solliciter Violenne à plusieurs reprises pour les tests et de pouvoir reprendre cette phase de validation une fois les fichiers d'output alignés (ou les éventuels écarts expliqués et validés).
 
