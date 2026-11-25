@@ -1,29 +1,13 @@
-**Project update – Rollout to other countries**
+Bonjour à tous,
 
-Following last week's discussions with the different countries, here is a quick update on the project progress and next steps.
+Comme vous avez pu le voir, Violenne avait commencé à réaliser quelques tests sur le dashboard et à remonter ses premiers retours.
 
-**1. Initial discussions with countries**
-- We presented the existing UK dashboard and gathered feedback from each country regarding their specific needs and requirements.
-- Overall, the feedback was very positive, with all countries showing strong interest in the dashboard.
-- The main adjustments identified are:
-  - Adding agencies that are not currently covered in the UK scope.
-  - Addressing a few specific requests from France, which represents around 50% of the overall production (e.g. adjusting brackets and adding a few existing visuals from another dashboard tab).
-- No major changes to the existing solution are expected at this stage.
+Toutefois, au vu des écarts que vous avez constatés entre vos fichiers d'output et les nôtres, il me semblerait préférable de commencer par analyser ces écarts afin d'en comprendre l'origine et de pouvoir les corriger lorsque cela est possible.
 
-**2. Scoping phase – Ongoing**
-- Countries will complete the Excel file to document their specific requirements and differences compared to the UK scope.
-- Based on their feedback, Philippe and I will prepare the scoping document, including the scope, key requirements and KPI definitions.
+L'idée serait d'éviter de solliciter Violenne à plusieurs reprises pour les tests et de pouvoir reprendre cette phase de validation une fois les fichiers d'output alignés (ou les éventuels écarts expliqués et validés).
 
-**3. Data analysis phase – Next step**
-- Replicate the existing UK data analysis across the other countries.
-- Assess data quality and identify any country-specific issues or discrepancies.
-- Share the findings with the countries, review examples and validate the results with them.
+Nous pourrons ainsi, Violenne et moi, tester le dashboard dans de bonnes conditions et nous assurer que les restitutions sont conformes.
 
-**4. Power BI development and testing**
-- Implement the required adjustments and extend the existing solution to the other countries.
-- Share the dashboard for testing and collect feedback before final validation.
+Merci d'avance pour votre retour !
 
-**Immediate next steps:**
-- Collect the completed Excel files from the countries.
-- Finalise the scoping document with Philippe based on the feedback received.
-- Agree on and share a project timeline covering the different phases.
+Bonne journée,
