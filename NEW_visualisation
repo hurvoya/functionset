@@ -1,15 +1,14 @@
-Bonjour à tous,
+Bonjour [Prénom],
 
-Concernant les retours d'Amine sur le dashboard (quelques coquilles de libellés, notamment des « E » manquants et une inversion entre Bottom et Top), les corrections ont bien été apportées. Je n'avais simplement pas encore partagé la dernière version du PBIX, mais celle-ci est désormais à jour et intègre bien ces modifications.
+Je me permets de te contacter de la part de Samira, responsable du Data Office, dans le cadre d'un sujet sur lequel je travaille actuellement : ALMA.
 
-Par ailleurs, comme vous avez pu le voir, Violenne avait commencé à réaliser quelques tests sur le dashboard et à remonter ses premiers retours.
+Il s'agit d'un reporting réglementaire qui recense une centaine de données devant être remontées par les différents pays. Dans ce contexte, je réalise actuellement un travail d'analyse afin d'identifier si ces données sont disponibles dans nos systèmes, notamment dans les bases RFA.
 
-Toutefois, au vu des écarts constatés entre vos fichiers d'output et les nôtres, il me semblerait préférable de commencer par analyser ces écarts afin d'en comprendre l'origine et de pouvoir les corriger lorsque cela est possible.
+J'ai effectué un premier travail de mapping sur la base de ma compréhension des données et des systèmes, mais j'aurais besoin de ton expertise pour confirmer certains éléments, notamment les données pour lesquelles j'ai encore des incertitudes, mais également valider celles que j'ai déjà identifiées comme disponibles. Si possible, quelques exemples de données ou de tables sources seraient également très utiles.
 
-L'idée serait d'éviter de solliciter Violenne à plusieurs reprises pour les tests et de pouvoir reprendre cette phase de validation une fois les fichiers d'output alignés (ou les éventuels écarts expliqués et validés).
+Serais-tu disponible demain pour un court échange ? L'idée serait de te présenter rapidement la démarche et de parcourir ensemble les différents points afin de finaliser ce travail.
 
-Nous pourrons ainsi, Violenne et moi, tester le dashboard dans de bonnes conditions et nous assurer que les restitutions sont conformes.
+Merci d'avance pour ton aide et ta disponibilité !
 
-Merci d'avance pour votre retour !
-
-Bonne journée,
+Bonne soirée,
+[Signature]
